@@ -184,6 +184,13 @@ class Scene:
                 surface, rect = obj.get_surface()
                 environment.screen.blit(surface, rect)
 
+        object_lists = [self.boxes, self.buttons, self.cards, self.others, self.overlays]
+
+        for object_list in object_lists:
+            for obj in object_list:
+                if hasattr(obj, "destroyed") and obj.destroyed:
+                    object_list.remove(obj)
+
 
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):

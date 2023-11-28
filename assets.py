@@ -7,17 +7,27 @@ from environment import environment
 import utility_functions as utils
 
 
-class Box:
+class GameObject:
+    def __init__(self, name=""):
+        self.name = name
+        self.destroyed = False
+
+    def destroy(self):
+        """Method that should be used to destroy game objects. Not currently in use."""
+        self.destroyed = True
+
+
+class Box(GameObject):
     def __init__(self, x=0, y=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK,
                  font_size=40, update_text_func=None, name=None):
+        super().__init__(name)
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.color = color
         self.alpha = alpha
-        self.name = name
         self.image = None
         self.source_image = source_image
         self.text = text
@@ -136,8 +146,9 @@ class Box:
         return "Class Box: " + str(self.name)
 
 
-class Border:
+class Border(GameObject):
     def __init__(self, x=0, y=0, width=100, height=100, color=BLACK, thickness=3, alpha=255, parent=None, name=None):
+        super().__init__(name)
         self.x = x
         self.y = y
         self.width = width
@@ -218,7 +229,7 @@ class Border:
         return "Class Border: " + str(self.name)
 
 
-class Button:
+class Button(GameObject):
     # TODO: Add get_pos_relative method.
     def __init__(self, x=0, y=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
@@ -226,7 +237,7 @@ class Button:
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
         """Creates a new button. X and y refers to the upper left corner of the button"""
-
+        super().__init__(name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -495,8 +506,9 @@ class Button:
         return "Class Button: " + str(self.name)
 
 
-class ClickDetector:
+class ClickDetector(GameObject):
     def __init__(self, rect):
+        super().__init__()
         self.rect = rect
         self.left_mouse_down_last_update = pygame.mouse.get_pressed(num_buttons=3)[0]
         self.right_mouse_down_last_update = pygame.mouse.get_pressed(num_buttons=3)[2]
@@ -567,8 +579,9 @@ class ClickDetector:
         self.right_mouse_down_last_update = right_mouse_down
 
 
-class Card:
+class Card(GameObject):
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
+        super().__init__()
         self.image = None
         self.width = standard_card_width
         self.height = standard_card_height
@@ -995,10 +1008,11 @@ class Card:
         return "Class Card: " + self.card_id
 
 
-class Overlay:
+class Overlay(GameObject):
     def __init__(self, x=0, y=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, anchored=False, position_relative_to_parent=(0, 0),
                  external_process_function=None, external_process_arguments=None):
+        super().__init__(name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
