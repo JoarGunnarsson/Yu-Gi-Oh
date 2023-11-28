@@ -17,6 +17,7 @@ import pygame
 # TODO: Right now, the code repetition is high.
 # TODO: Create a "help" button?
 # TODO: Implement text fields, dice, etc? For randomness, life points etc.
+# TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
 # TODO: Fix comments, code, documentation.
 # TODO: Find a way to highlight buttons even when they use images.
 # could work with always highlighting a border around the button, or using a transparent white layer above the button.
@@ -35,9 +36,11 @@ import pygame
 # TODO: Rotating a card on the edge of the field doesnt immediately clamp it, looks weird.
 # TODO: Enable the possibility for checking a new button click.
 
-# TODO: Add buttons to show the entire hand, and only display a certain number of cards at the same time.
-# Currently, this kind of works, but looks weird.
-# TODO: Add hand overlay.
+
+# TODO: Add something indicating what part of the hand is shown (e.g 1-9/11 or something)
+# Also make the buttons look better etc. For example make the hand box have a border.
+# TODO: Add hand overlay?
+
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
@@ -210,13 +213,15 @@ class Board:
         self.field = []
         self.card_processing_order = []
         self.name = name
-        card_space = 10 # TODO: This is hard-coded, and therefore bad.
+        card_space = 10  # TODO: This is hard-coded.
         if environment.current_scene.name == "play_testing":
             self.display_hand_number = utils.find_object_from_name(environment.current_scene.boxes, "hand_box").width \
                                        // (constants.standard_card_width + card_space)
         else:
             self.display_hand_number = 10
         self.display_hand_start_index = 0
+
+        self.old_hand = [card.x for card in self.hand]
 
     def set_display_hand_start_index(self, new_index):
         max_display_index = utils.clamp(len(self.hand) - self.display_hand_number, 0, len(self.hand))
@@ -344,25 +349,37 @@ class Board:
             self.card_processing_order.remove(card)
 
     def schedule_processing(self):
-        for card in self.hand:
+        for i, card in enumerate(self.hand):
             if card.moving:
                 continue
             display_stop_index = self.display_hand_start_index + self.display_hand_number
             is_visible_in_hand = self.display_hand_start_index <= self.hand.index(card) < display_stop_index
+            x, y = self.get_card_in_hand_pos(card, self.hand.index(card) - self.display_hand_start_index)
+            card.set_pos(x, y)
             if is_visible_in_hand:
                 self.begin_processing(card)
-                x, y = self.get_card_in_hand_pos(card, self.hand.index(card) - self.display_hand_start_index)
-                card.set_pos(x, y)
+                # TODO: Fix
             else:
                 self.stop_processing(card)
 
         items_to_be_processed = [self]
+        moving_card = None
         for card in self.card_processing_order:
+            if card.moving:
+                moving_card = card
+                continue
             items_to_be_processed.extend(card.schedule_processing())
+        if moving_card is not None:
+            items_to_be_processed.extend(moving_card.schedule_processing())
         return items_to_be_processed
 
     def process(self):
-        utils.card_sort_x(self.hand)
+        # TODO: This code doesnt really work when sorting a card that is newly added to the hand.
+        for j in range(len(self.hand)):
+            for i in range(len(self.hand)-1):
+                if self.hand[i].x > self.hand[i+1].x:
+                    self.hand[i], self.hand[i+1] = self.hand[i+1], self.hand[i]
+
         all_cards = []
         all_cards.extend(self.hand)
         all_cards.extend(self.field)

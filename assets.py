@@ -638,6 +638,9 @@ class Card(GameObject):
         self.y = y
         self.button.set_pos(x, y)
 
+    def get_pos(self):
+        return self.x, self.y
+
     def clamp_pos(self, rect):
         self.get_rect().clamp_ip(rect)
         self.x = utils.clamp(self.x, rect.x, rect.x + rect.width - self.width)

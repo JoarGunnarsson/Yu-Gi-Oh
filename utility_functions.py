@@ -11,19 +11,6 @@ def clamp(x, lower, upper):
     return x
 
 
-def card_sort_x(cards):
-    """An in-place sorting algorithm that uses insertion sort to sort cards based on their x-coordinate."""
-    i = 1
-    while i < len(cards):
-        temp_card = cards[i]
-        j = i - 1
-        while j >= 0 and cards[j].x > temp_card.x:
-            cards[j + 1] = cards[j]
-            j = j - 1
-        cards[j + 1] = temp_card
-        i = i + 1
-
-
 def card_sort_card_type(cards):
     """An in-place sorting algorithm that uses insertion sort to sort cards based on the card type."""
     i = 1
