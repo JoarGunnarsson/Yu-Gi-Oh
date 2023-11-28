@@ -58,8 +58,9 @@ class Deck:
         self.image = pygame.image.load(card_image_location + self.main_card_id + ".jpg")
 
 
-class CardOverlay:
+class CardOverlay(assets.GameObject):
     def __init__(self, x=0, y=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
+        super().__init__(name)
         self.x = x
         self.y = y
         self.width = width
@@ -87,7 +88,8 @@ class CardOverlay:
         self.close_btn = assets.Button(x=self.x + self.width - close_btn_size - close_btn_offset,
                                        y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
                                        image=pygame.image.load("Images/close_button.png"), name="close_btn",
-                                       left_click_function=self.remove_overlay, left_trigger_keys=["escape"])
+                                       left_click_function=self.destroy, left_trigger_keys=["escape"])
+
         self.buttons.append(self.close_btn)
 
     def create_overlay_card(self, card, i):
@@ -561,7 +563,8 @@ def create_deck_selection_scene():
     environment.change_scene(scene)
 
     deck_selection_overlay = assets.Overlay(width=environment.width, height=environment.height, background_color=WHITE)
-    deck_selection_overlay.close_btn.remove()
+    deck_selection_overlay.close_btn.destroy()
+
     for i, deck in enumerate(DECKS):
         deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, width=large_card_width,
                                  height=large_card_height,
@@ -605,7 +608,7 @@ def generate_token():
     token.x, token.y = scene.get_default_position()
     board = utils.find_object_from_name(scene.others, "board")
     board.field.append(token)
-    board.card_processing_order.append(token)
+    board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
 
 
 def create_deck_overlay():
@@ -691,7 +694,8 @@ def create_confirmation_overlay(position, func, args):
     overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
                              parent=environment.current_scene)
     overlay.parent = environment.current_scene
-    overlay.close_btn.remove()
+    overlay.close_btn.destroy()
+
     overlay_border = assets.Border(x=overlay.x, y=overlay.y, width=overlay.width, height=overlay.height, color=BLACK,
                                    parent=overlay)
     overlay.objects.append(overlay_border)
@@ -705,11 +709,11 @@ def create_confirmation_overlay(position, func, args):
     yes_btn = assets.Button(x=x, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
                             text="Yes", font_size=font_size,
                             left_click_function=utils.execute_multiple_functions,
-                            left_click_args=[[overlay.remove, func], [[], args]])
+                            left_click_args=[[overlay.destroy, func], [[], args]])
     yes_btn.hug_text(offset)
     no_btn = assets.Button(x=x + 50, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
                            text="No", font_size=font_size,
-                           left_click_function=overlay.remove, left_trigger_keys=["escape"])
+                           left_click_function=overlay.destroy, left_trigger_keys=["escape"])
     no_btn.hug_text(offset)
 
     buttons = [yes_btn, no_btn]
@@ -767,6 +771,8 @@ if __name__ == "__main__":
         environment.current_scene.process()
 
         environment.draw_screen()
+
+        environment.end_tick()
 
         environment.clock.tick(FPS)
 

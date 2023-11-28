@@ -11,10 +11,14 @@ class GameObject:
     def __init__(self, name=""):
         self.name = name
         self.destroyed = False
+        self.parent = None
 
     def destroy(self):
-        """Method that should be used to destroy game objects. Not currently in use."""
+        if self.destroyed:
+            return
         self.destroyed = True
+        if self.parent is not None and hasattr(self.parent, "destroy_child"):
+            environment.schedule_end_of_tick_function(self.parent.destroy_child, [self])
 
 
 class Box(GameObject):
@@ -402,12 +406,6 @@ class Button(GameObject):
         self.box.hug_text(offset)
         self.width, self.height = self.box.width, self.box.height
 
-    def remove(self):
-        if self.parent is not None and self in self.parent.buttons:
-            self.parent.buttons.remove(self)
-        if self in environment.current_scene.processing_order:
-            environment.current_scene.processing_order.remove(self)
-
     def click_blocked(self, click_position):
         masking_types = [Button, Overlay, Box]
         blocking_objects_list = environment.current_scene.get_object_mask(self, masking_types)
@@ -699,13 +697,13 @@ class Card(GameObject):
             new_arguments = []
         self.button.set_right_hold_function(new_function, new_arguments)
 
-    def remove(self):
-        board = utils.find_object_from_name(environment.current_scene.others, "board")
-        if board is None and self in environment.current_scene.cards:
-            environment.current_scene.cards.remove(self)
-            return
+    def destroy_child(self, child):
+        # TODO: Rename this to something more appropriate
 
-        board.remove_card(self)
+        if child in self.buttons:
+            environment.schedule_end_of_tick_function(self.buttons.remove, [child])
+        elif child in self.overlays:
+            environment.schedule_end_of_tick_function(self.overlays.remove, [child])
 
     def update_in_hand(self):
         # TODO: Should all of this happen in the Board class?
@@ -797,7 +795,7 @@ class Card(GameObject):
         mouse_position = environment.get_mouse_position()
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
-            self.overlays.remove(card_overlay)
+            card_overlay.destroy()
         board = utils.find_object_from_name(environment.current_scene.others, "board")
         if board is not None:
             board.bump(self)
@@ -886,7 +884,7 @@ class Card(GameObject):
             remove_btn = Button(x=overlay.x + button_space, y=overlay.y + overlay_close_button_size + 2 * button_space,
                                 width=button_width, height=remove_btn_height, text="Remove", font_size=15,
                                 parent=button_parent, name="token_remove_btn",
-                                left_click_function=self.remove, left_trigger_keys=["g", "b", "d"])
+                                left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
             overlay.buttons.append(remove_btn)
             return
 
@@ -955,9 +953,7 @@ class Card(GameObject):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is None:
             return
-
-        self.overlays.remove(card_overlay)
-        environment.current_scene.remove_object(card_overlay)
+        card_overlay.destroy()
 
     def update_card_overlay_anchor(self):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
@@ -1000,9 +996,7 @@ class Card(GameObject):
         large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
         if large_card_btn is None:
             return
-
-        self.buttons.remove(large_card_btn)
-        environment.current_scene.remove_object(large_card_btn)
+        large_card_btn.destroy()
 
     def __repr__(self):
         return "Class Card: " + self.card_id
@@ -1041,13 +1035,9 @@ class Overlay(GameObject):
         self.close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
                                 y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
                                 image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
-                                left_click_function=self.remove, left_trigger_keys=["escape"],
+                                left_click_function=self.destroy, left_trigger_keys=["escape"],
                                 name="close_btn")
         self.buttons.append(self.close_btn)
-
-    def remove(self):
-        self.parent.overlays.remove(self)
-        environment.current_scene.remove_object(self)
 
     def get_rect(self):
         return self.box.get_rect()

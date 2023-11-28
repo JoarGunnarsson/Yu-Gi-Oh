@@ -23,6 +23,8 @@ class Environment:
         self.fonts = {}
         self.start_of_tick_functions = []
         self.start_of_tick_arguments = []
+        self.end_of_tick_functions = []
+        self.end_of_tick_arguments = []
 
     def get_mouse_position(self):
         """Returns the current position of the mouse in screen-space coordinates, not window-space,
@@ -67,10 +69,19 @@ class Environment:
         self.start_of_tick_functions.append(function)
         self.start_of_tick_arguments.append(arguments)
 
+    def schedule_end_of_tick_function(self, function, arguments):
+        self.end_of_tick_functions.append(function)
+        self.end_of_tick_arguments.append(arguments)
+
     def start_tick(self):
         execute_multiple_functions(self.start_of_tick_functions, self.start_of_tick_arguments)
         self.start_of_tick_functions = []
         self.start_of_tick_arguments = []
+
+    def end_tick(self):
+        execute_multiple_functions(self.end_of_tick_functions, self.end_of_tick_arguments)
+        self.end_of_tick_functions = []
+        self.end_of_tick_arguments = []
 
     def handle_events(self):
         """Checks if the user tries to close the program window, or resize the window."""
@@ -175,14 +186,15 @@ class Scene:
         environment.screen.fill(self.background_color)
 
         self.schedule_processing()
-        self.display_order = self.processing_order
-        for obj in reversed(self.processing_order.copy()):
-            self.process_object(obj)
 
         for obj in self.processing_order:
             if hasattr(obj, "get_surface") and callable(obj.get_surface):
                 surface, rect = obj.get_surface()
                 environment.screen.blit(surface, rect)
+
+        self.display_order = self.processing_order
+        for obj in reversed(self.processing_order.copy()):
+            self.process_object(obj)
 
         object_lists = [self.boxes, self.buttons, self.cards, self.others, self.overlays]
 

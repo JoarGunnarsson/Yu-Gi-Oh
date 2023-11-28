@@ -98,4 +98,4 @@ def remove_on_external_clicks(obj, allowed_rect_list):
     for rect in allowed_rect_list:
         if rect.collidepoint(mouse_position):
             return
-    obj.remove()
+    obj.destroy()
