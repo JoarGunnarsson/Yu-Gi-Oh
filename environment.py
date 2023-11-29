@@ -26,6 +26,8 @@ class Environment:
         self.start_of_tick_arguments = []
         self.end_of_tick_functions = []
         self.end_of_tick_arguments = []
+        self.scenes = []
+        self.current_max_id = 0
 
     def get_mouse_position(self):
         """Returns the current position of the mouse in screen-space coordinates, not window-space,
@@ -36,6 +38,11 @@ class Environment:
         scale_x = self.screen.get_width() / window_width
         scale_y = self.screen.get_height() / window_height
         return x * scale_x, y * scale_y
+
+    def get_id(self):
+        new_id = str(self.current_max_id + 1)
+        self.current_max_id += 1
+        return new_id
 
     def set_deck(self, deck):
         self.deck = deck
@@ -55,7 +62,10 @@ class Environment:
 
     def change_scene(self, scene):
         self.clear_current_scene()
+        # TODO: Clearing the scene removes all saved data, sure clear processing queue, but
+        # not everything. Do something else here.
         self.current_scene = scene
+        self.scenes = [scene]
 
     def clear_current_scene(self):
         if self.current_scene is not None:
@@ -100,6 +110,17 @@ class Environment:
         environment.window.blit(resized_screen, (0, 0))
         pygame.display.flip()
 
+    def save(self, save_number=0):
+        with open('save{}.txt'.format(save_number), 'w') as save_file:
+            scene_dict = {}
+            for scene in self.scenes:
+                scene_dict[scene.id] = scene.save()
+            save_string = str(scene_dict)
+            save_file.write(save_string)
+
+    def load(self, save_number=0):
+        pass
+
 
 class Scene:
     def __init__(self, name=""):
@@ -112,6 +133,10 @@ class Scene:
         self.processing_order = []
         self.display_order = []
         self.background_color = WHITE
+        self.id = "Scene" + environment.get_id()
+
+    def get_object_list(self):
+        return [self.boxes, self.buttons, self.cards, self.others, self.overlays]
 
     def get_default_position(self):
         return environment.width // 2, environment.height // 2
@@ -143,9 +168,7 @@ class Scene:
     def schedule_processing(self):
         self.processing_order = []
 
-        object_lists = [self.boxes, self.buttons, self.cards, self.others, self.overlays]
-
-        for object_list in object_lists:
+        for object_list in self.get_object_list():
             for obj in object_list:
                 items_to_be_processed = obj.schedule_processing()
                 self.processing_order.extend(items_to_be_processed)
@@ -200,14 +223,18 @@ class Scene:
         for obj in reversed(self.processing_order.copy()):
             self.process_object(obj)
 
-        object_lists = [self.boxes, self.buttons, self.cards, self.others, self.overlays]
-
         # Remove destroyed objects
-        for object_list in object_lists:
+        for object_list in self.get_object_list():
             for obj in object_list:
                 if hasattr(obj, "destroyed") and obj.destroyed:
                     object_list.remove(obj)
 
+    def save(self):
+        save_dict = {}
+        for object_list in self.get_object_list():
+            for obj in object_list:
+                save_dict[obj.id] = obj.save()  # TODO: Name doesn't have to be unique, use ID here instead.
+        return save_dict
 
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):

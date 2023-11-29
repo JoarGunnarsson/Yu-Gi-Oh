@@ -217,6 +217,7 @@ class Board:
         self.display_hand_start_index = 0
 
         self.old_hand = [card.x for card in self.hand]
+        self.id = str(type(self)) + environment.get_id()
 
     def set_display_hand_start_index(self, new_index):
         max_display_index = utils.clamp(len(self.hand) - self.display_hand_number, 0, len(self.hand))
@@ -387,6 +388,9 @@ class Board:
 
         for card in all_cards:
             card.has_been_processed = False
+
+    def save(self):
+        pass
 
 
 def generate_board():
@@ -795,5 +799,7 @@ if __name__ == "__main__":
         environment.end_tick()
 
         environment.clock.tick(FPS)
+        environment.save()
+        environment.load()
 
     pygame.quit()

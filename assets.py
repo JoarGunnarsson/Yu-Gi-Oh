@@ -18,6 +18,7 @@ class GameObject:
         self.parent = None
         self.children = []
         self.rect = None
+        self.id = str(type(self)) + environment.get_id()
 
     def get_rect(self):
         return self.rect
@@ -81,6 +82,10 @@ class GameObject:
             items_to_be_processed.extend(child.schedule_processing())
         items_to_be_processed.append(self)
         return items_to_be_processed
+
+    def save(self):
+        save_dict = self.__dict__
+        return save_dict
 
 
 class Box(GameObject):
