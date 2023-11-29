@@ -160,13 +160,14 @@ class Scene:
         obj.process()
 
     def remove_object(self, source_object):
+        """Removes the object from the processing order this tick."""
         self.remove_from_processing_order(source_object)
         self.remove_from_display_order(source_object)
 
     def remove_from_processing_order(self, source_object):
         # TODO: This method should take an object as input, and then ask the object for which objects should get removed
         # so that entire overlays can be removed etc.
-        # Actually, could simply call object.destroy()? And then, in destroy, implement which items should be killed
+        # Could ask the object for it's children.
         if source_object in self.processing_order:
             self.processing_order.remove(source_object)
 
