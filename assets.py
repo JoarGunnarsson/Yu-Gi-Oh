@@ -8,10 +8,56 @@ import utility_functions as utils
 
 
 class GameObject:
-    def __init__(self, name=""):
+    def __init__(self, x=0, y=0, width=0, height=0, name=""):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
         self.name = name
         self.destroyed = False
         self.parent = None
+        self.children = []
+        self.rect = None
+
+    def get_rect(self):
+        return self.rect
+
+    def set_x(self, x):
+        self.x = x
+        self.get_rect().update(self.x, self.y, self.width, self.height)
+
+    def set_y(self, y):
+        self.y = y
+        self.get_rect().update(self.x, self.y, self.width, self.height)
+
+    def set_pos(self, x, y):
+        self.set_x(x)
+        self.set_y(y)
+
+    def set_x_relative(self, delta_x):
+        self.set_x(self.x + delta_x)
+
+    def set_y_relative(self, delta_y):
+        self.set_y(self.y + delta_y)
+
+    def set_pos_relative(self, delta_x, delta_y):
+        self.set_x_relative(delta_x)
+        self.set_y_relative(delta_y)
+
+    def set_width(self, width):
+        self.width = width
+
+    def set_height(self, height):
+        self.height = height
+
+    def set_width_relative(self, delta_w):
+        self.set_width(self.width + delta_w)
+
+    def set_height_relative(self, delta_h):
+        self.set_height(self.height + delta_h)
+
+    def update_position(self):
+        pass
 
     def destroy(self):
         if self.destroyed:
@@ -20,12 +66,28 @@ class GameObject:
         if self.parent is not None and hasattr(self.parent, "destroy_child"):
             environment.schedule_end_of_tick_function(self.parent.destroy_child, [self])
 
+    def add_child(self, child):
+        self.children.append(child)
+        if child.parent is None:
+            child.parent = self
+
+    def destroy_child(self, child):
+        if child in self.children:
+            self.children.remove(child)
+
+    def schedule_processing(self):
+        items_to_be_processed = []
+        for child in self.children:
+            items_to_be_processed.extend(child.schedule_processing())
+        items_to_be_processed.append(self)
+        return items_to_be_processed
+
 
 class Box(GameObject):
     def __init__(self, x=0, y=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK,
                  font_size=40, update_text_func=None, name=None):
-        super().__init__(name)
+        super().__init__(name=name)
         self.x = x
         self.y = y
         self.width = width
@@ -61,25 +123,22 @@ class Box(GameObject):
     def set_pos(self, x, y):
         self.x = x
         self.y = y
-        self.rect.update(x, y, self.width, self.height)
+        self.get_rect().update(x, y, self.width, self.height)
 
     def set_size(self, width, height):
-        self.width, self.height = width, height
-        self.rect.update(self.x, self.y, self.width, self.height)
-        if self.source_image is not None:
-            self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
-        self.surface = pygame.transform.scale(self.surface, (self.width, self.height))
+        self.set_width(width)
+        self.set_height(height)
 
     def set_width(self, width):
         self.width = width
-        self.rect.update(self.x, self.y, self.width, self.height)
+        self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image is not None:
             self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
         self.surface = pygame.transform.scale(self.surface, (self.width, self.height))
 
     def set_height(self, height):
         self.height = height
-        self.rect.update(self.x, self.y, self.width, self.height)
+        self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image is not None:
             self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
         self.surface = pygame.transform.scale(self.surface, (self.width, self.height))
@@ -93,7 +152,7 @@ class Box(GameObject):
         self.surface = pygame.transform.rotate(self.surface, theta)
         if self.image is not None:
             self.image = pygame.transform.rotate(self.image, theta)
-        self.rect.update(self.x, self.y, self.width, self.height)
+        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_image(self, image):
         self.source_image = image
@@ -151,8 +210,8 @@ class Box(GameObject):
 
 
 class Border(GameObject):
-    def __init__(self, x=0, y=0, width=100, height=100, color=BLACK, thickness=3, alpha=255, parent=None, name=None):
-        super().__init__(name)
+    def __init__(self, x=0, y=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None, name=None):
+        super().__init__(name=name)
         self.x = x
         self.y = y
         self.width = width
@@ -164,10 +223,11 @@ class Border(GameObject):
         self.rotation_angle = 0
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha)
-        bottom_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness,
-                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
-        left_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
-                       color=self.color, alpha=self.alpha)
+        bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
+                         color=self.color, alpha=self.alpha)
+        left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness,
+                       height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
+
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
         self.side_boxes = [top_box, bottom_box, left_box, right_box]
@@ -180,29 +240,43 @@ class Border(GameObject):
         return self.rect
 
     def set_pos(self, x, y):
+        for box in self.side_boxes:
+            box.set_pos(x=box.x + (x - self.x), y=box.y + (y - self.y))
         self.x = x
         self.y = y
-        self.rect.update(x, y, self.width, self.height)
+        self.get_rect().update(x, y, self.width, self.height)
+
         if hasattr(self, "block_button"):
             self.block_button.set_pos(x, y)
 
     def set_width(self, width):
+        width_difference = width - self.width
         self.width = width
-        self.rect.update(self.x, self.y, self.width, self.height)
-        # TODO: resize top and bottom boxes, and move right side box
+        self.side_boxes[3].set_x_relative(width_difference)
+        self.side_boxes[0].set_width_relative(width_difference)
+        self.side_boxes[1].set_width_relative(width_difference)
+        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_height(self, height):
+        height_difference = height - self.height
         self.height = height
-        self.rect.update(self.x, self.y, self.width, self.height)
-        # TODO: resize side boxes, and move bottom box
+        self.side_boxes[1].set_y_relative(height_difference)
+        self.side_boxes[2].set_height_relative(height_difference)
+        self.side_boxes[3].set_height_relative(height_difference)
+
+        self.get_rect().update(self.x, self.y, self.width, self.height)
+
+    def set_size(self, width, height):
+        self.set_width(width)
+        self.set_height(height)
 
     def set_rotation(self, angle):
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
-            self.width, self.height = self.height, self.width
+            self.set_size(width=self.height, height=self.width)
 
         self.rotation_angle = angle
 
-        self.rect.update(self.x, self.y, self.width, self.height)
+        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_color(self, color):
         self.color = color
@@ -215,6 +289,14 @@ class Border(GameObject):
     def get_displayable_objects(self):
         return self.side_boxes
 
+    def update_position(self):
+        self.update_relative_position()
+
+    def update_relative_position(self):
+        if self.parent is None:
+            return
+        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
+
     def rotate(self, angle):
         self.set_rotation(self.rotation_angle + angle)
 
@@ -226,8 +308,7 @@ class Border(GameObject):
         return items_to_be_processed
 
     def process(self):
-        if self.parent is not None:
-            self.x, self.y = self.parent.x + self.relative_x, self.parent.y + self.relative_y
+        self.update_relative_position()
 
     def __repr__(self):
         return "Class Border: " + str(self.name)
@@ -241,7 +322,7 @@ class Button(GameObject):
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
         """Creates a new button. X and y refers to the upper left corner of the button"""
-        super().__init__(name)
+        super().__init__(name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -312,9 +393,14 @@ class Button(GameObject):
         self.status = "normal"
         self.box = Box(x=self.x, y=self.y, width=self.width, height=self.height, color=self.colors[self.status],
                        alpha=alpha, source_image=self.image, text=self.text, font_size=font_size, text_color=text_color)
+
+        self.add_child(self.box)
         self.set_alpha(alpha)
         self.click_detector = ClickDetector(self.get_rect())
         self.rotation_angle = 0
+
+        self.border = Border(x=self.x, y=self.y, width=self.width, height=self.height, parent=self)
+        self.add_child(self.border)
 
     def get_rect(self):
         return self.box.get_rect()
@@ -325,8 +411,10 @@ class Button(GameObject):
         self.x = x
         self.y = y
         self.box.set_pos(self.x, self.y)
+        for child in self.children:
+            child.update_position()
 
-    def set_pos_relative(self, x, y):
+    def set_pos_relative_to_parent(self, x, y):
         """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
         coordinates of the button in the coordinate system where the parents position is the origin."""
         # TODO: Fix this
@@ -336,7 +424,7 @@ class Button(GameObject):
         self.x_relative_to_parent, self.y_relative_to_parent = x, y
         self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
 
-    def update_pos_relative(self):
+    def update_pos_relative_to_parent(self):
         if self.static:
             return
 
@@ -345,12 +433,14 @@ class Button(GameObject):
     def set_size(self, width, height):
         self.width, self.height = width, height
         self.box.set_size(width, height)
+        self.border.set_size(width, height)
 
     def set_rotation(self, angle):
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.width, self.height = self.height, self.width
         self.rotation_angle = angle
         self.box.set_rotation(angle)
+        self.border.set_rotation(angle)
 
     def rotate(self, angle):
         self.set_rotation(self.rotation_angle + angle)
@@ -404,7 +494,7 @@ class Button(GameObject):
 
     def hug_text(self, offset):
         self.box.hug_text(offset)
-        self.width, self.height = self.box.width, self.box.height
+        self.set_size(width=self.box.width, height=self.box.height)
 
     def click_blocked(self, click_position):
         masking_types = [Button, Overlay, Box]
@@ -483,9 +573,6 @@ class Button(GameObject):
 
         if hovering and self.status != "pressed":
             self.status = "hover"
-
-    def schedule_processing(self):
-        return [self.box, self]
 
     def process(self):
         if self.parent is not None and not self.static:
@@ -947,7 +1034,7 @@ class Card(GameObject):
 
         for btn in location_buttons:
             btn.static = False
-            btn.set_pos_relative(button_space, y)
+            btn.set_pos_relative_to_parent(button_space, y)
             y += btn.height + button_space
 
         overlay.buttons.extend(location_buttons)
@@ -961,7 +1048,7 @@ class Card(GameObject):
     def update_card_overlay_anchor(self):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
-            card_overlay.set_relative_position(self.width, 0)
+            card_overlay.set_relative_position_to_parent(self.width, 0)
 
     def make_large_card_button(self):
         large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
@@ -1009,7 +1096,7 @@ class Overlay(GameObject):
     def __init__(self, x=0, y=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, anchored=False, position_relative_to_parent=(0, 0),
                  external_process_function=None, external_process_arguments=None):
-        super().__init__(name)
+        super().__init__(name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -1050,9 +1137,9 @@ class Overlay(GameObject):
         self.y = y
         self.box.set_pos(x, y)
         for btn in self.buttons:
-            btn.update_pos_relative()
+            btn.update_pos_relative_to_parent()
 
-    def set_relative_position(self, x, y):
+    def set_relative_position_to_parent(self, x, y):
         self.position_relative_to_parent = (x, y)
 
     def set_background_color(self, color):

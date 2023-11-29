@@ -246,14 +246,19 @@ class Board:
         scene = environment.current_scene
         hand_box = utils.find_object_from_name(scene.boxes, "hand_box")
 
-        x_offset = 10
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
         card_space = 10
 
         visible_cards = self.hand[self.display_hand_start_index:self.display_hand_start_index + card_index]
         cards_in_hand_width = sum([hand_card.width + card_space for hand_card in visible_cards])
+
+        all_visible_cards = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+        all_cards_in_hand_width = sum([hand_card.width + card_space for hand_card in all_visible_cards])
+        # TODO: Fix this so the first card is always at the same position.
+        x_offset = (hand_box.width - all_cards_in_hand_width) // 2
         x = hand_box.x + x_offset + cards_in_hand_width
         y = hand_box.y + y_offset
+
         return x, y
 
     def shuffle_the_deck(self):
@@ -358,7 +363,6 @@ class Board:
             card.set_pos(x, y)
             if is_visible_in_hand:
                 self.begin_processing(card)
-                # TODO: Fix
             else:
                 self.stop_processing(card)
 
@@ -374,11 +378,10 @@ class Board:
         return items_to_be_processed
 
     def process(self):
-        # TODO: This code doesnt really work when sorting a card that is newly added to the hand.
         for j in range(len(self.hand)):
-            for i in range(len(self.hand)-1):
-                if self.hand[i].x > self.hand[i+1].x:
-                    self.hand[i], self.hand[i+1] = self.hand[i+1], self.hand[i]
+            for i in range(len(self.hand) - 1):
+                if self.hand[i].x > self.hand[i + 1].x:
+                    self.hand[i], self.hand[i + 1] = self.hand[i + 1], self.hand[i]
 
         all_cards = []
         all_cards.extend(self.hand)
@@ -497,8 +500,11 @@ def create_play_testing():
                           width=environment.width - left_side_box.width - right_side_box.width - 2 * button_width,
                           height=int(card_height) + offset, color=GREY, name="hand_box")
 
-    scene.boxes.extend([field_box, hand_box, left_side_box, right_side_box])
+    hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width, height=hand_box.height,
+                                parent=hand_box)
 
+    scene.boxes.extend([field_box, hand_box, left_side_box, right_side_box])
+    scene.others.append(hand_border)
     board = generate_board()
 
     draw_btn = assets.Button(x=environment.width - button_width - offset, y=environment.height - deck_height - offset,
@@ -555,19 +561,22 @@ def create_play_testing():
     small_button_size = 50
     # TODO: Place these buttons to the left/right of the hand_box. Also, make the hand_box smaller. Perhaps include
     # a smaller box behind the hand_box as well?
-    hand_index_increment_btn = assets.Button(x=hand_box.x+hand_box.width+offset, y=hand_box.y + offset, height=small_button_size,
+    hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset, y=hand_box.y + offset,
+                                             height=small_button_size,
                                              width=small_button_size, text="Inc", font_size=15,
                                              name="index_increment_btn",
                                              left_click_function=board.set_display_hand_start_index_relative,
                                              left_click_args=[board.display_hand_number])
-    hand_index_decrement_btn = assets.Button(x=hand_box.x - small_button_size - 2*offset, y=hand_box.y+offset, height=small_button_size, width=small_button_size, text="Dec",
+    hand_index_decrement_btn = assets.Button(x=hand_box.x - small_button_size - 2 * offset, y=hand_box.y + offset,
+                                             height=small_button_size, width=small_button_size, text="Dec",
                                              font_size=15,
                                              name="index_decrement_btn",
                                              left_click_function=board.set_display_hand_start_index_relative,
                                              left_click_args=[-board.display_hand_number])
 
     scene.buttons.extend([main_menu_btn, draw_btn, show_deck_btn, reset_btn, shuffle_deck_btn, show_extra_deck_btn,
-                          show_gy_btn, show_banished_btn, token_btn, hand_index_increment_btn, hand_index_decrement_btn])
+                          show_gy_btn, show_banished_btn, token_btn, hand_index_increment_btn,
+                          hand_index_decrement_btn])
 
     scene.boxes.extend([deck_text_box])
 

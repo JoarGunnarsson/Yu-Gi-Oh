@@ -1,3 +1,4 @@
+import assets
 from constants import *
 import os
 
@@ -187,6 +188,7 @@ class Scene:
 
         self.schedule_processing()
 
+        # Display objects.
         for obj in self.processing_order:
             if hasattr(obj, "get_surface") and callable(obj.get_surface):
                 surface, rect = obj.get_surface()
@@ -198,6 +200,7 @@ class Scene:
 
         object_lists = [self.boxes, self.buttons, self.cards, self.others, self.overlays]
 
+        # Remove destroyed objects
         for object_list in object_lists:
             for obj in object_list:
                 if hasattr(obj, "destroyed") and obj.destroyed:
