@@ -36,11 +36,6 @@ import pygame
 # TODO: Rotating a card on the edge of the field doesnt immediately clamp it, looks weird.
 # TODO: Enable the possibility for checking a new button click.
 
-
-# TODO: Add something indicating what part of the hand is shown (e.g 1-9/11 or something)
-# Also make the buttons look better etc. For example make the hand box have a border.
-# TODO: Add hand overlay?
-
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
@@ -252,9 +247,8 @@ class Board:
         visible_cards = self.hand[self.display_hand_start_index:self.display_hand_start_index + card_index]
         cards_in_hand_width = sum([hand_card.width + card_space for hand_card in visible_cards])
 
-        all_visible_cards = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
-        all_cards_in_hand_width = sum([hand_card.width + card_space for hand_card in all_visible_cards])
-        # TODO: Fix this so the first card is always at the same position.
+        all_cards_in_hand_width = self.display_hand_number * (self.hand[0].width + card_space)
+
         x_offset = (hand_box.width - all_cards_in_hand_width) // 2
         x = hand_box.x + x_offset + cards_in_hand_width
         y = hand_box.y + y_offset
@@ -559,17 +553,17 @@ def create_play_testing():
     # hand_overlay_button = assets.Button(text="Show hand", name="hand_overlay_btn",
     # left_click_function=create_hand_overlay)
     small_button_size = 50
-    # TODO: Place these buttons to the left/right of the hand_box. Also, make the hand_box smaller. Perhaps include
-    # a smaller box behind the hand_box as well?
-    hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset, y=hand_box.y + offset,
+
+    hand_index_button_offset = (hand_box.height - button_height/2) // 2
+    hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset, y=hand_box.y + hand_index_button_offset,
                                              height=small_button_size,
-                                             width=small_button_size, text="Inc", font_size=15,
+                                             width=small_button_size, text="+", font_size=35,
                                              name="index_increment_btn",
                                              left_click_function=board.set_display_hand_start_index_relative,
                                              left_click_args=[board.display_hand_number])
-    hand_index_decrement_btn = assets.Button(x=hand_box.x - small_button_size - 2 * offset, y=hand_box.y + offset,
-                                             height=small_button_size, width=small_button_size, text="Dec",
-                                             font_size=15,
+    hand_index_decrement_btn = assets.Button(x=hand_box.x - small_button_size - 2 * offset, y=hand_box.y + hand_index_button_offset,
+                                             height=small_button_size, width=small_button_size, text="-",
+                                             font_size=35,
                                              name="index_decrement_btn",
                                              left_click_function=board.set_display_hand_start_index_relative,
                                              left_click_args=[-board.display_hand_number])

@@ -417,7 +417,6 @@ class Button(GameObject):
     def set_pos_relative_to_parent(self, x, y):
         """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
         coordinates of the button in the coordinate system where the parents position is the origin."""
-        # TODO: Fix this
         if self.static:
             return
 
@@ -788,7 +787,7 @@ class Card(GameObject):
         self.button.set_right_hold_function(new_function, new_arguments)
 
     def destroy_child(self, child):
-        # TODO: Rename this to something more appropriate
+        # TODO: Rename this to something more appropriate?
 
         if child in self.buttons:
             environment.schedule_end_of_tick_function(self.buttons.remove, [child])
@@ -812,8 +811,6 @@ class Card(GameObject):
 
         if self.check_deck_collision(board, board.hand):
             return
-
-        x, y = board.get_card_in_hand_pos(self, board.hand.index(self))
 
     def update_on_field(self):
         scene = environment.current_scene
