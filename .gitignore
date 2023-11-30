@@ -2,3 +2,4 @@
 *.png
 *.pyc
 .DS_store
+*.txt
