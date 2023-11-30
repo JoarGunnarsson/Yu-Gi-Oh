@@ -1,7 +1,7 @@
 import assets
 from constants import *
 import os
-
+import pickle
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
@@ -28,6 +28,8 @@ class Environment:
         self.end_of_tick_arguments = []
         self.scenes = []
         self.current_max_id = 0
+        self.surfaces = {}
+        self.images = {}
 
     def get_mouse_position(self):
         """Returns the current position of the mouse in screen-space coordinates, not window-space,
@@ -39,12 +41,57 @@ class Environment:
         scale_y = self.screen.get_height() / window_height
         return x * scale_x, y * scale_y
 
-    def get_id(self):
-        new_id = str(self.current_max_id + 1)
+    def get_new_id(self):
+        new_id = self.current_max_id + 1
         self.current_max_id += 1
         return new_id
 
+    def create_image(self, image_path, image_id=None):
+        if image_id is None:
+            image_id = self.get_new_id()
+        image = pygame.image.load(image_path)
+        self.set_image(image, image_id)
+        return image_id
+
+    def set_image(self, image, image_id=None):
+        if image_id is None:
+            image_id = self.get_new_id()
+        self.images[image_id] = image
+        return image_id
+
+    def fetch_image(self, image_id):
+        return self.images[image_id]
+
+    def set_surface(self, surface, surface_id=None):
+        # TODO: Fix these methods. Rename, refactor etc.
+        if surface_id is None:
+            surface_id = self.get_new_id()
+        self.surfaces[surface_id] = surface
+        return surface_id
+
+    def fetch_surface(self, surface_id):
+        return self.surfaces[surface_id]
+
+    def create_surface(self, width, height, surface_id=None):
+        surface = pygame.Surface((width, height))
+        if surface_id is None:
+            surface_id = self.set_surface(surface)
+        else:
+            self.set_surface(surface, surface_id)
+        return surface_id
+
+    def create_font_surface(self, text, text_color, font_size, font_surface_id=None):
+        font = self.get_font(font_size)
+        font_surface = font.render(text, True, text_color)
+        if font_surface_id is None:
+            font_surface_id = self.set_surface(font_surface)
+        else:
+            self.set_surface(font_surface, font_surface_id)
+
+        return font_surface_id
+
     def set_deck(self, deck):
+        # TODO: This should NOT be in environment.
         self.deck = deck
 
     def create_font(self, size):
@@ -59,22 +106,6 @@ class Environment:
             font = self.create_font(size)
 
         return font
-
-    def change_scene(self, scene):
-        self.clear_current_scene()
-        # TODO: Clearing the scene removes all saved data, sure clear processing queue, but
-        # not everything. Do something else here.
-        self.current_scene = scene
-        self.scenes = [scene]
-
-    def clear_current_scene(self):
-        if self.current_scene is not None:
-            self.current_scene.clear()
-
-    def schedule_scene_change(self, scene_function, scene_arguments=None):
-        if scene_arguments is None:
-            scene_arguments = []
-        self.schedule_start_of_tick_function(scene_function, scene_arguments)
 
     def schedule_start_of_tick_function(self, function, arguments):
         self.start_of_tick_functions.append(function)
@@ -111,15 +142,45 @@ class Environment:
         pygame.display.flip()
 
     def save(self, save_number=0):
-        with open('save{}.txt'.format(save_number), 'w') as save_file:
+        with open('save{}.txt'.format(save_number), 'wb') as save_file:
+            new_scene = Scene()
+            new_scene.buttons.append(assets.Button())
+            new_scene.cards.append(assets.Card())
+            pickle.dump(new_scene, save_file)
+
+            """
             scene_dict = {}
             for scene in self.scenes:
                 scene_dict[scene.id] = scene.save()
             save_string = str(scene_dict)
-            save_file.write(save_string)
+            save_file.write(save_string)"""
 
     def load(self, save_number=0):
         pass
+
+
+class SceneManager:
+    def __init__(self):
+        self.scenes = {}
+        self.current_scene = None
+        # TODO: Implement scene switching. For example, tag a scene as persistent or temporary, and clear it only if
+        # it is temporary.
+
+    def change_scene(self, scene):
+        self.clear_current_scene()
+        # TODO: Clearing the scene removes all saved data, sure clear processing queue, but
+        # not everything. Do something else here.
+        self.current_scene = scene
+        self.scenes[scene.name] = scene
+
+    def clear_current_scene(self):
+        if self.current_scene is not None:
+            self.current_scene.clear()
+
+    def schedule_scene_change(self, scene_function, scene_arguments=None):
+        if scene_arguments is None:
+            scene_arguments = []
+        environment.schedule_start_of_tick_function(scene_function, scene_arguments)
 
 
 class Scene:
@@ -127,13 +188,13 @@ class Scene:
         self.name = name
         self.boxes = []
         self.buttons = []
-        self.cards = []
+        self.cards = []  # TODO: This is bad.
         self.overlays = []
         self.others = []
         self.processing_order = []
         self.display_order = []
         self.background_color = WHITE
-        self.id = "Scene" + environment.get_id()
+        self.id = "Scene" + str(environment.get_new_id())
 
     def get_object_list(self):
         return [self.boxes, self.buttons, self.cards, self.others, self.overlays]
@@ -215,8 +276,8 @@ class Scene:
 
         # Display objects.
         for obj in self.processing_order:
-            if hasattr(obj, "get_surface") and callable(obj.get_surface):
-                surface, rect = obj.get_surface()
+            if hasattr(obj, "get_display_surface") and callable(obj.get_display_surface):
+                surface, rect = obj.get_display_surface()
                 environment.screen.blit(surface, rect)
 
         self.display_order = self.processing_order
@@ -236,6 +297,7 @@ class Scene:
                 save_dict[obj.id] = obj.save()  # TODO: Name doesn't have to be unique, use ID here instead.
         return save_dict
 
+
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):
         if type(argument_list[i]) is dict:
@@ -252,3 +314,4 @@ def find_object_from_name(obj_list, name):
 
 
 environment = Environment()
+scene_manager = SceneManager()

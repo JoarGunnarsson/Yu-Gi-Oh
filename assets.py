@@ -1,9 +1,8 @@
 from constants import *
 import os
-
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-from environment import environment
+from environment import environment, scene_manager
 import utility_functions as utils
 
 
@@ -18,7 +17,7 @@ class GameObject:
         self.parent = None
         self.children = []
         self.rect = None
-        self.id = str(type(self)) + environment.get_id()
+        self.id = str(type(self)) + str(environment.get_new_id())
 
     def get_rect(self):
         return self.rect
@@ -87,6 +86,9 @@ class GameObject:
         save_dict = self.__dict__
         return save_dict
 
+    def get_surface(self, surface_id):
+        return environment.fetch_surface(surface_id)
+
 
 class Box(GameObject):
     def __init__(self, x=0, y=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
@@ -99,25 +101,29 @@ class Box(GameObject):
         self.height = height
         self.color = color
         self.alpha = alpha
-        self.image = None
-        self.source_image = source_image
+        self.image_id = None
+        if source_image is None:
+            self.source_image_id = None
+        else:
+            self.source_image_id = environment.set_image(source_image)
         self.text = text
         self.text_color = text_color
         self.font_size = font_size
-
         if self.text == "":
-            self.font = None
+            self.text_surface_id = environment.get_new_id()
         else:
-            self.font = environment.get_font(self.font_size)
-            self.text_surface = self.font.render(self.text, True, self.text_color)
+            self.text_surface_id = environment.create_font_surface(self.text, self.text_color, self.font_size)
 
-        self.update_text_func = update_text_func
+        self.update_text_func = update_text_func  # TODO: Could all of these things be handled in a Script GameObject?
 
-        if self.source_image is not None:
-            self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
+        if self.source_image_id is not None:
+            # TODO: This, merge with if statement a few lines above
+            source_image = environment.fetch_image(self.source_image_id)
+            scaled_image = pygame.transform.smoothscale(source_image, (self.width, self.height))
+            self.image_id = environment.set_image(scaled_image)
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.surface = pygame.Surface((self.width, self.height))
+        self.surface_id = environment.create_surface(self.width, self.height)
         self.static = True
         self.rotation_angle = 0
         self.set_alpha(self.alpha)
@@ -137,16 +143,27 @@ class Box(GameObject):
     def set_width(self, width):
         self.width = width
         self.get_rect().update(self.x, self.y, self.width, self.height)
-        if self.source_image is not None:
-            self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
-        self.surface = pygame.transform.scale(self.surface, (self.width, self.height))
+        if self.source_image_id is not None:
+            source_image = environment.fetch_image(self.source_image_id)
+            scaled_image = pygame.transform.smoothscale(source_image, (self.width, self.height))
+            environment.set_image(scaled_image, self.image_id)
+
+        # Updates the surface corresponding to self.surface_id
+        scaled_surface = pygame.transform.scale(self.get_surface(self.surface_id), (self.width, self.height))
+        environment.set_surface(scaled_surface, self.surface_id)
 
     def set_height(self, height):
         self.height = height
         self.get_rect().update(self.x, self.y, self.width, self.height)
-        if self.source_image is not None:
-            self.image = pygame.transform.smoothscale(self.source_image, (self.width, self.height))
-        self.surface = pygame.transform.scale(self.surface, (self.width, self.height))
+        if self.source_image_id is not None:
+            source_image = environment.fetch_image(self.source_image_id)
+            scaled_image = pygame.transform.smoothscale(source_image, (self.width, self.height))
+            environment.set_image(scaled_image, self.image_id)
+            # TODO: Put this in a separate method, update image perhaps? Or scale_image.
+
+        # Updates the surface corresponding to self.surface_id
+        scaled_surface = pygame.transform.scale(self.get_surface(self.surface_id), (self.width, self.height))
+        environment.set_surface(scaled_surface, self.surface_id)
 
     def set_rotation(self, angle):
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
@@ -154,35 +171,41 @@ class Box(GameObject):
 
         theta = angle - self.rotation_angle
         self.rotation_angle = angle
-        self.surface = pygame.transform.rotate(self.surface, theta)
-        if self.image is not None:
-            self.image = pygame.transform.rotate(self.image, theta)
+
+        rotated_surface = pygame.transform.rotate(self.get_surface(self.surface_id), theta)
+        environment.set_surface(rotated_surface, self.surface_id)
+
+        if self.image_id is not None:
+            image = environment.fetch_image(self.image_id)
+            rotated_image = pygame.transform.rotate(image, theta)
+            environment.set_image(rotated_image, self.image_id)
+
         self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_image(self, image):
-        self.source_image = image
-        image = pygame.transform.smoothscale(image, (self.width, self.height))
-        self.image = image
+
+        self.source_image_id = environment.set_image(image, self.source_image_id)
+        scaled_image = pygame.transform.smoothscale(image, (self.width, self.height))
+        self.image_id = environment.set_image(scaled_image, self.image_id)
 
     def set_text(self, new_text):
-        if self.font is None:
-            self.font = environment.get_font(self.font_size)
         self.text = new_text
-        self.text_surface = self.font.render(self.text, True, self.text_color)
+        environment.create_font_surface(self.text, self.text_color, self.font_size, self.text_surface_id)
 
     def set_color(self, color):
         self.color = color
 
     def set_alpha(self, alpha):
         self.alpha = alpha
-        self.surface.set_alpha(self.alpha)
+        self.get_surface(self.surface_id).set_alpha(self.alpha)
 
     def get_displayable_objects(self):
         return [self]
 
     def hug_text(self, offset):
-        self.set_width(self.text_surface.get_width() + 2 * offset)
-        self.set_height(self.text_surface.get_height() + 2 * offset)
+        text_surface = self.get_surface(self.text_surface_id)
+        self.set_width(text_surface.get_width() + 2 * offset)
+        self.set_height(text_surface.get_height() + 2 * offset)
 
     def rotate(self, angle):
         self.set_rotation(self.rotation_angle + angle)
@@ -191,24 +214,25 @@ class Box(GameObject):
         """Returns a list, containing only the box itself, for process scheduling."""
         return [self]
 
-    def get_surface(self):
+    def get_display_surface(self):
         """Returns a tuple, where the first element is the surface to be displayed, and the second element
          being the object's rect."""
 
-        if self.image is not None:
-            self.surface.blit(self.image, (0, 0))
+        if self.image_id is not None:
+            image = environment.fetch_image(self.image_id)
+            self.get_surface(self.surface_id).blit(image, (0, 0))
         else:
-            self.surface.fill(self.color)
+            self.get_surface(self.surface_id).fill(self.color)
 
         if self.update_text_func is not None:
             self.text = self.update_text_func()
 
         if self.text != "":
-            self.text_surface = self.font.render(self.text, True, self.text_color)
-            self.surface.blit(self.text_surface, [(self.width - self.text_surface.get_width()) / 2,
-                                                  (self.height - self.text_surface.get_height()) / 2])
+            text_surface = self.get_surface(self.text_surface_id)
+            self.get_surface(self.surface_id).blit(text_surface, [(self.width - text_surface.get_width()) / 2,
+                                                                  (self.height - text_surface.get_height()) / 2])
 
-        return self.surface, self.get_rect()
+        return self.get_surface(self.surface_id), self.get_rect()
 
     def __repr__(self):
         return "Class Box: " + str(self.name)
@@ -384,7 +408,10 @@ class Button(GameObject):
         self.height = height
         self.text = text
         self.alpha = alpha
-        self.image = image
+        if image is None:
+            self.image_id = None
+        else:
+            self.image_id = environment.set_image(image)
         self.name = name
         self.parent = parent
         self.static = True
@@ -397,7 +424,8 @@ class Button(GameObject):
         self.external_process_function = external_process_function
         self.status = "normal"
         self.box = Box(x=self.x, y=self.y, width=self.width, height=self.height, color=self.colors[self.status],
-                       alpha=alpha, source_image=self.image, text=self.text, font_size=font_size, text_color=text_color)
+                       alpha=alpha, source_image=image, text=self.text,
+                       font_size=font_size, text_color=text_color)
 
         self.add_child(self.box)
         self.set_alpha(alpha)
@@ -456,7 +484,7 @@ class Button(GameObject):
             self.colors[key] = (self.colors[key][0], self.colors[key][1], self.colors[key][1])
 
     def set_image(self, image):
-        self.image = image
+        self.image_id = environment.set_image(image)
         self.box.set_image(image)
 
     def set_colors(self, colors):
@@ -502,7 +530,7 @@ class Button(GameObject):
 
     def click_blocked(self, click_position):
         masking_types = [Button, Overlay, Box]
-        blocking_objects_list = environment.current_scene.get_object_mask(self, masking_types)
+        blocking_objects_list = scene_manager.current_scene.get_object_mask(self, masking_types)
         for obj in blocking_objects_list:
             if obj.get_rect().collidepoint(click_position):
                 return True
@@ -670,8 +698,9 @@ class ClickDetector(GameObject):
 
 class Card(GameObject):
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
+        # TODO: Don't store images here.
         super().__init__()
-        self.image = None
+        self.image_id = None
         self.width = standard_card_width
         self.height = standard_card_height
         self.x = x
@@ -686,11 +715,16 @@ class Card(GameObject):
         self.card_id = card_id
         self.parent = parent
 
-        self.original_image = pygame.image.load(card_image_location + '{}.jpg'.format(self.card_id))
-        self.image = pygame.transform.smoothscale(self.original_image, (self.width, self.height))
+        self.original_image_id = environment.create_image(card_image_location + '{}.jpg'.format(self.card_id))
+        # pygame.image.load(card_image_location + '{}.jpg'.format(self.card_id))
+        original_image = environment.fetch_image(self.original_image_id)
+
+        scaled_image = pygame.transform.smoothscale(original_image, (self.width, self.height))
+        self.image_id = environment.set_image(scaled_image)
 
         self.card_type = self.get_card_type()
-        button = Button(x=self.x, y=self.y, width=self.width, height=self.height, image=self.image, name="card_btn",
+        button = Button(x=self.x, y=self.y, width=self.width, height=self.height,
+                        image=environment.fetch_image(self.image_id), name="card_btn",
                         parent=self, left_click_function=self.start_movement,
                         left_hold_function=self.move,
                         right_click_function=self.create_card_overlay)
@@ -702,7 +736,7 @@ class Card(GameObject):
         self.has_been_processed = False
 
     def get_card_type(self):
-        image = self.image
+        image = environment.fetch_image(self.image_id)
         card_colors = {"normal": (200, 169, 105),
                        "effect": (196, 127, 86),
                        "spell": (42, 170, 155),
@@ -801,8 +835,8 @@ class Card(GameObject):
 
     def update_in_hand(self):
         # TODO: Should all of this happen in the Board class?
-        scene = environment.current_scene
-        board = utils.find_object_from_name(environment.current_scene.others, "board")
+        scene = scene_manager.current_scene
+        board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
         if board is None or self not in board.hand:
             return
         hand_box = utils.find_object_from_name(scene.boxes, "hand_box")
@@ -818,8 +852,8 @@ class Card(GameObject):
             return
 
     def update_on_field(self):
-        scene = environment.current_scene
-        board = utils.find_object_from_name(environment.current_scene.others, "board")
+        scene = scene_manager.current_scene
+        board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
         if board is None or self not in board.field:
             return
 
@@ -839,7 +873,7 @@ class Card(GameObject):
             self.clamp_pos(field_box)
 
     def check_deck_collision(self, board, previous_location):
-        scene = environment.current_scene
+        scene = scene_manager.current_scene
         draw_btn = utils.find_object_from_name(scene.buttons, "draw_btn")
         extra_deck_btn = utils.find_object_from_name(scene.buttons, "show_extra_deck_btn")
         on_the_deck = draw_btn.get_rect().colliderect(self.get_rect())
@@ -888,7 +922,7 @@ class Card(GameObject):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
             card_overlay.destroy()
-        board = utils.find_object_from_name(environment.current_scene.others, "board")
+        board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
         if board is not None:
             board.bump(self)
         self.moving = True
@@ -907,13 +941,13 @@ class Card(GameObject):
             self.parent = None
             self.change_to_movable_card()
             if previous_location not in ["hand", "field"]:
-                environment.current_scene.remove_object(self.button)
+                scene_manager.current_scene.remove_object(self.button)
                 self.remove_large_card_button()
 
         elif location in ["main_deck", "extra_deck", "gy", "banished"]:
             self.remove_large_card_button()
             self.remove_card_overlay()
-            environment.current_scene.remove_object(self.button)
+            scene_manager.current_scene.remove_object(self.button)
             self.set_alpha(255)
 
     def change_to_movable_card(self):
@@ -955,7 +989,7 @@ class Card(GameObject):
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         button_parent = overlay
         self.overlays.append(overlay)
-        board = utils.find_object_from_name(environment.current_scene.others, "board")
+        board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
         board.bump(self)
         starting_location = utils.card_starting_location(self.card_type)
         card_location = board.get_location(self)
@@ -1057,7 +1091,7 @@ class Card(GameObject):
         if large_card_btn is not None:
             return
 
-        scene = environment.current_scene
+        scene = scene_manager.current_scene
         left_side_box = utils.find_object_from_name(scene.boxes, "left_side_box")
         if left_side_box is None:
             return
@@ -1067,7 +1101,7 @@ class Card(GameObject):
         large_card_btn = Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
                                 width=large_card_width,
                                 height=int(large_card_width * card_aspect_ratio),
-                                image=self.original_image, name="large_card_btn",
+                                image=environment.fetch_image(self.original_image_id), name="large_card_btn",
                                 left_click_function=create_large_card_overlay, left_click_args=[self],
                                 key_functions={"r": [self.rotate, []]})
 
@@ -1183,7 +1217,7 @@ class Overlay(GameObject):
 
 
 def create_large_card_overlay(card):
-    scene = environment.current_scene
+    scene = scene_manager.current_scene
     large_card_btn = utils.find_object_from_name(scene.overlays, "large_card_overlay")
     if large_card_btn is not None:
         return
