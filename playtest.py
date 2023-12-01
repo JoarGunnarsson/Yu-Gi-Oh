@@ -5,10 +5,11 @@ import math
 import time
 import assets
 import constants
-from environment import environment, Scene, scene_manager
+from environment import environment, Scene, scene_manager, placeholder, surface_manager
 import utility_functions as utils
 from constants import *
 import pickle
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
@@ -43,6 +44,9 @@ import pygame
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
 # to be sent to the extra_deck.
 
+# TODO: Fix saving and loading. Currently an issue with images, and the card overlay close button.
+# Also with destroy_on_external_clicks?
+
 
 class Deck:
     def __init__(self, name="", cards=None, main_card_id=None):
@@ -55,10 +59,10 @@ class Deck:
 
         self.name = name
         self.main_card_id = main_card_id
-        self.image_id = environment.create_image(card_image_location + self.main_card_id + ".jpg")
+        self.image_id = surface_manager.create_image(card_image_location + self.main_card_id + ".jpg")
 
     def get_image(self):
-        return environment.fetch_image(self.image_id)
+        return surface_manager.fetch_image(self.image_id)
 
 
 class CardOverlay(assets.GameObject):
@@ -222,7 +226,6 @@ class Board:
         self.display_hand_start_index = 0
 
         self.old_hand = [card.x for card in self.hand]
-        self.id = str(type(self)) + str(environment.get_new_id())
 
     def set_display_hand_start_index(self, new_index):
         max_display_index = utils.clamp(len(self.hand) - self.display_hand_number, 0, len(self.hand))
@@ -440,21 +443,24 @@ def create_main_menu():
     width = 200
     height = 100
 
-    start_btn = assets.Button(y=environment.height // 2, width=width,
+    start_btn = assets.Button(y=environment.get_height() // 2, width=width,
                               height=height, text="Start", left_click_function=scene_manager.schedule_scene_change,
                               left_click_args=[create_deck_selection_scene])
 
-    test_btn = assets.Button(y=environment.height // 2, width=width, height=height,
+    load_btn = assets.Button(y=environment.get_height() // 2, width=width,
+                             height=height, text="Load Save", left_click_function=scene_manager.load)
+
+    test_btn = assets.Button(y=environment.get_height() // 2, width=width, height=height,
                              text="Testing", font_size=35,
                              left_click_function=scene_manager.schedule_scene_change,
                              left_click_args=[create_test_scene])
 
-    exit_btn = assets.Button(y=environment.height // 2, width=width,
+    exit_btn = assets.Button(y=environment.get_height() // 2, width=width,
                              height=height, text="Exit", left_click_function=sys.exit)
 
-    buttons = [start_btn, test_btn, exit_btn]
+    buttons = [start_btn, load_btn, test_btn, exit_btn]
     number_of_buttons = len(buttons)
-    x_offset = (environment.width - number_of_buttons * width) // (number_of_buttons + 1)
+    x_offset = (environment.get_width() - number_of_buttons * width) // (number_of_buttons + 1)
     for i, btn in enumerate(buttons):
         btn.static = False
         btn.set_pos((i + 1) * x_offset + i * width, btn.y)
@@ -462,7 +468,7 @@ def create_main_menu():
 
 
 def create_test_scene():
-    scene = Scene(name="play_testing")
+    scene = Scene(name="test_scene")
     scene_manager.change_scene(scene)
     scene.background_color = SIENNA
     exit_btn = assets.Button(text="Main Menu", alpha=255, left_click_function=scene_manager.schedule_scene_change,
@@ -473,11 +479,17 @@ def create_test_scene():
                            left_click_args=[(700, 700), test_button, []],
                            colors={"normal": SIENNA, "hover": SADDLE_BROWN, "pressed": SADDLE_BROWN})
     button.hug_text(15)
+    box = assets.Box(x=100, y=100, color=GREY, text="HEJSAN")
+    scene.others.append(box)
     scene.buttons.append(button)
 
 
 def create_play_testing():
     scene = Scene(name="play_testing")
+    scene.persistent = True
+    if scene.name in scene_manager.scenes:
+        scene_manager.change_scene_by_name(scene.name)
+        return
     scene_manager.change_scene(scene)
     scene.background_color = GREY
 
@@ -490,18 +502,20 @@ def create_play_testing():
     card_height = standard_card_width * card_aspect_ratio
 
     left_side_box = assets.Box(x=0, y=0, width=large_card_width + 2 * offset,
-                               height=environment.height, color=GREY, name="left_side_box")
+                               height=environment.get_height(), color=GREY, name="left_side_box")
 
-    right_side_box = assets.Box(x=environment.width - side_width, width=side_width, height=environment.height,
+    right_side_box = assets.Box(x=environment.get_width() - side_width, width=side_width,
+                                height=environment.get_height(),
                                 color=GREY,
                                 name="right_side_box")
 
     field_box = assets.Box(x=left_side_box.x + left_side_box.width,
-                           width=environment.width - left_side_box.width - right_side_box.width,
-                           height=environment.height - int(card_height) - offset, color=SADDLE_BROWN, name="field_box")
+                           width=environment.get_width() - left_side_box.width - right_side_box.width,
+                           height=environment.get_height() - int(card_height) - offset, color=SADDLE_BROWN,
+                           name="field_box")
 
-    hand_box = assets.Box(x=left_side_box.width + button_width, y=environment.height - int(card_height) - offset,
-                          width=environment.width - left_side_box.width - right_side_box.width - 2 * button_width,
+    hand_box = assets.Box(x=left_side_box.width + button_width, y=environment.get_height() - int(card_height) - offset,
+                          width=environment.get_width() - left_side_box.width - right_side_box.width - 2 * button_width,
                           height=int(card_height) + offset, color=GREY, name="hand_box")
 
     hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width, height=hand_box.height,
@@ -511,7 +525,8 @@ def create_play_testing():
     scene.others.append(hand_border)
     board = generate_board()
 
-    draw_btn = assets.Button(x=environment.width - button_width - offset, y=environment.height - deck_height - offset,
+    draw_btn = assets.Button(x=environment.get_width() - button_width - offset,
+                             y=environment.get_height() - deck_height - offset,
                              width=deck_width, height=deck_height, image=pygame.image.load("Images/card_back.png"),
                              name="draw_btn", left_click_function=board.draw)
 
@@ -527,7 +542,7 @@ def create_play_testing():
                                   height=button_height, image=pygame.image.load("Images/millennium_eye.png"),
                                   name="show_deck_btn", left_click_function=create_deck_overlay)
 
-    show_extra_deck_btn = assets.Button(x=left_side_box.x + offset, y=environment.height - deck_height - offset,
+    show_extra_deck_btn = assets.Button(x=left_side_box.x + offset, y=environment.get_height() - deck_height - offset,
                                         width=deck_width, height=deck_height,
                                         image=pygame.image.load("Images/card_back.png"),
                                         name="show_extra_deck_btn", left_click_function=create_extra_deck_overlay)
@@ -551,9 +566,14 @@ def create_play_testing():
                                   left_click_function=scene_manager.schedule_scene_change,
                                   left_click_args=[create_main_menu])
 
-    reset_btn = assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
+    save_btn = assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
+                             text="SAVE", name="save_btn",
+                             left_click_function=placeholder.schedule_end_of_tick_function,
+                             left_click_args=[scene_manager.save, []])
+
+    """assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
                               text="Reset", name="reset_btn", left_click_function=scene_manager.schedule_scene_change,
-                              left_click_args=[create_play_testing])
+                              left_click_args=[create_play_testing])"""
 
     token_btn = assets.Button(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
                               width=button_width,
@@ -564,7 +584,7 @@ def create_play_testing():
     # left_click_function=create_hand_overlay)
     small_button_size = 50
 
-    hand_index_button_offset = (hand_box.height - button_height/2) // 2
+    hand_index_button_offset = (hand_box.height - button_height / 2) // 2
     hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset,
                                              y=hand_box.y + hand_index_button_offset,
                                              height=small_button_size,
@@ -580,7 +600,7 @@ def create_play_testing():
                                              left_click_function=board.set_display_hand_start_index_relative,
                                              left_click_args=[-board.display_hand_number])
 
-    scene.buttons.extend([main_menu_btn, draw_btn, show_deck_btn, reset_btn, shuffle_deck_btn, show_extra_deck_btn,
+    scene.buttons.extend([main_menu_btn, draw_btn, show_deck_btn, save_btn, shuffle_deck_btn, show_extra_deck_btn,
                           show_gy_btn, show_banished_btn, token_btn, hand_index_increment_btn,
                           hand_index_decrement_btn])
 
@@ -594,7 +614,8 @@ def create_deck_selection_scene():
     scene = Scene(name="deck_selection")
     scene_manager.change_scene(scene)
 
-    deck_selection_overlay = assets.Overlay(width=environment.width, height=environment.height, background_color=WHITE)
+    deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
+                                            background_color=WHITE)
     deck_selection_overlay.close_btn.destroy()
     for i, deck in enumerate(DECKS):
         deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, width=large_card_width,
@@ -808,16 +829,13 @@ if __name__ == "__main__":
     running = True
     while running:
         running = environment.handle_events()
-        environment.start_tick()
+        placeholder.start_tick()
         scene_manager.current_scene.process()
 
         environment.draw_screen()
 
-        environment.end_tick()
+        placeholder.end_tick()
 
         environment.clock.tick(FPS)
-        test_pickle()
-        # environment.save()
-        # environment.load()
-
+        # scene_manager.save()
     pygame.quit()

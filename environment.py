@@ -17,19 +17,18 @@ class Environment:
         self.screen = pygame.Surface(self.size)
         self.screen.set_alpha(255)
         self.clock = pygame.time.Clock()
-        self.previous_scene = None
-        self.current_scene = None
         self.standard_offset = 15
-        self.deck = None
-        self.fonts = {}
+        self.deck = None  # TODO: This should not be the responsibility of environment.
         self.start_of_tick_functions = []
         self.start_of_tick_arguments = []
         self.end_of_tick_functions = []
         self.end_of_tick_arguments = []
-        self.scenes = []
-        self.current_max_id = 0
-        self.surfaces = {}
-        self.images = {}
+
+    def get_height(self):
+        return self.height
+
+    def get_width(self):
+        return self.width
 
     def get_mouse_position(self):
         """Returns the current position of the mouse in screen-space coordinates, not window-space,
@@ -41,71 +40,44 @@ class Environment:
         scale_y = self.screen.get_height() / window_height
         return x * scale_x, y * scale_y
 
-    def get_new_id(self):
-        new_id = self.current_max_id + 1
-        self.current_max_id += 1
-        return new_id
-
-    def create_image(self, image_path, image_id=None):
-        if image_id is None:
-            image_id = self.get_new_id()
-        image = pygame.image.load(image_path)
-        self.set_image(image, image_id)
-        return image_id
-
-    def set_image(self, image, image_id=None):
-        if image_id is None:
-            image_id = self.get_new_id()
-        self.images[image_id] = image
-        return image_id
-
-    def fetch_image(self, image_id):
-        return self.images[image_id]
-
-    def set_surface(self, surface, surface_id=None):
-        # TODO: Fix these methods. Rename, refactor etc.
-        if surface_id is None:
-            surface_id = self.get_new_id()
-        self.surfaces[surface_id] = surface
-        return surface_id
-
-    def fetch_surface(self, surface_id):
-        return self.surfaces[surface_id]
-
-    def create_surface(self, width, height, surface_id=None):
-        surface = pygame.Surface((width, height))
-        if surface_id is None:
-            surface_id = self.set_surface(surface)
-        else:
-            self.set_surface(surface, surface_id)
-        return surface_id
-
-    def create_font_surface(self, text, text_color, font_size, font_surface_id=None):
-        font = self.get_font(font_size)
-        font_surface = font.render(text, True, text_color)
-        if font_surface_id is None:
-            font_surface_id = self.set_surface(font_surface)
-        else:
-            self.set_surface(font_surface, font_surface_id)
-
-        return font_surface_id
-
     def set_deck(self, deck):
         # TODO: This should NOT be in environment.
         self.deck = deck
 
-    def create_font(self, size):
-        font = pygame.font.SysFont("Arial", size)
-        self.fonts[size] = font
-        return font
+    def handle_events(self):
+        """Checks if the user tries to close the program window, or resize the window."""
+        is_running = True
+        self.key_press = None
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+            elif event.type == pygame.KEYDOWN:
+                self.key_press = pygame.key.name(event.key)
+        return is_running
 
-    def get_font(self, size):
-        if size in self.fonts:
-            font = self.fonts[size]
-        else:
-            font = self.create_font(size)
+    def draw_screen(self):
+        resized_screen = pygame.transform.scale(self.screen, self.window.get_rect().size)
+        environment.window.blit(resized_screen, (0, 0))
+        pygame.display.flip()
 
-        return font
+
+class GameState:
+    def __init__(self):
+        self.scene_manager = scene_manager
+        self.surface_size_dict = surface_manager.surface_size_dict
+        self.surface_image_dict = surface_manager.surface_image_dict
+        self.surface_type_dict = surface_manager.surface_type_dict
+        self.images = surface_manager.images
+        self.surface_font_dict = surface_manager.surface_font_dict
+        self.max_id = surface_manager.current_max_id
+
+
+class Placeholder:
+    def __init__(self):
+        self.start_of_tick_functions = []
+        self.start_of_tick_arguments = []
+        self.end_of_tick_functions = []
+        self.end_of_tick_arguments = []
 
     def schedule_start_of_tick_function(self, function, arguments):
         self.start_of_tick_functions.append(function)
@@ -125,38 +97,173 @@ class Environment:
         self.end_of_tick_functions = []
         self.end_of_tick_arguments = []
 
-    def handle_events(self):
-        """Checks if the user tries to close the program window, or resize the window."""
-        is_running = True
-        self.key_press = None
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                is_running = False
-            elif event.type == pygame.KEYDOWN:
-                self.key_press = pygame.key.name(event.key)
-        return is_running
 
-    def draw_screen(self):
-        resized_screen = pygame.transform.scale(self.screen, self.window.get_rect().size)
-        environment.window.blit(resized_screen, (0, 0))
-        pygame.display.flip()
+class SurfaceManager:
+    # TODO: Make a method for each type of surface, and a dictionary, what is needed to create a new surface of that
+    # type. For image, simply the image in string format is ok, as well as a size.
+    # For surface, size is enough.
+    # For text surface (font?), text, font size, font, size, should be enough.
+    def __init__(self):
+        self.current_max_id = 0
+        self.fonts = {}
+        self.surfaces = {}
+        self.images = {}
+        self.surface_size_dict = {}
+        self.surface_image_dict = {}
+        self.surface_font_dict = {}
+        self.surface_type_dict = {}
 
-    def save(self, save_number=0):
-        with open('save{}.txt'.format(save_number), 'wb') as save_file:
-            new_scene = Scene()
-            new_scene.buttons.append(assets.Button())
-            new_scene.cards.append(assets.Card())
-            pickle.dump(new_scene, save_file)
+    def get_new_id(self):
+        new_id = self.current_max_id + 1
+        self.current_max_id += 1
+        return new_id
 
-            """
-            scene_dict = {}
-            for scene in self.scenes:
-                scene_dict[scene.id] = scene.save()
-            save_string = str(scene_dict)
-            save_file.write(save_string)"""
+    def set_surface(self, surface, alpha=255, surface_id=None, surface_type="surface"):
+        # TODO: Fix these methods. Rename, refactor etc.
+        if surface_id is None:
+            surface_id = self.get_new_id()
+        self.surface_size_dict[surface_id] = surface.get_width(), surface.get_height(), alpha
+        self.surfaces[surface_id] = surface
+        self.surface_type_dict[surface_id] = surface_type
+        return surface_id
 
-    def load(self, save_number=0):
-        pass
+    def fetch_surface(self, surface_id):
+        return self.surfaces[surface_id]
+
+    def create_surface(self, width, height, alpha=255, surface_id=None):
+        surface = pygame.Surface((width, height))
+        surface.set_alpha(alpha)
+        surface_id = self.set_surface(surface, alpha=alpha, surface_id=surface_id)
+        return surface_id
+
+    def create_image(self, image_path, image_id=None):
+        if image_id is None:
+            image_id = self.get_new_id()
+        image = pygame.image.load(image_path)
+        self.set_image(image, image_id)
+        return image_id
+
+    def set_image(self, image, image_id=None):
+        if image_id is None:
+            image_id = self.get_new_id()
+
+        self.images[image_id] = pygame.image.tostring(image, 'RGBA')
+        self.surface_image_dict[image_id] = pygame.image.tostring(image, 'RGBA')
+        self.set_surface(image, alpha=255, surface_id=image_id, surface_type="image")
+        return image_id
+
+    def fetch_image(self, image_id):
+        image_string = self.images[image_id]
+        width, height, _ = self.surface_size_dict[image_id]
+        size = (width, height)
+        return pygame.image.fromstring(image_string, size, "RGBA")
+
+    def scale_image(self, image_id, size, new_id=None):
+        """Fetches the image with id 'image_id' and scales it. If new_id is given, a new entry in the image dictionary
+        is created with this new id."""
+        # TODO: Perhaps all of the surface transformation logic can be simplified.
+        image = self.fetch_image(image_id)
+        if new_id is not None:
+            image_id = new_id
+        else:
+            image_id = self.get_new_id()
+        scaled_image = pygame.transform.smoothscale(image, size)
+        self.set_image(scaled_image, image_id)
+        return image_id
+
+    def rotate_image(self, image_id, theta, new_id=None):
+        """Fetches the image with id 'image_id' and rotates it. If new_id is given, a new entry in the image dictionary
+        is created with this new id."""
+        image = self.fetch_image(image_id)
+        if new_id is not None:
+            image_id = new_id
+        else:
+            image_id = self.get_new_id()
+        scaled_image = pygame.transform.rotate(image, theta)
+        self.set_image(scaled_image, image_id)
+        return image_id
+
+    def scale_surface(self, surface_id, size, new_id=None):
+        """Fetches the surface with id 'surface_id' and scales it. If new_id is given, a new entry in the surface
+        dictionary is created with this new id."""
+        surface = self.fetch_surface(surface_id)
+        if new_id is not None:
+            surface_id = new_id
+        else:
+            surface_id = self.get_new_id()
+        scaled_surface = pygame.transform.smoothscale(surface, size)
+        self.set_surface(scaled_surface, alpha=255, surface_id=surface_id)
+        return surface_id
+
+    def rotate_surface(self, surface_id, theta, new_id=None):
+        """Fetches the surface with id 'surface_id' and rotates it. If new_id is given, a new entry in the surface
+        dictionary is created with this new id."""
+        surface = self.fetch_surface(surface_id)
+        if new_id is not None:
+            surface_id = new_id
+        else:
+            surface_id = self.get_new_id()
+        scaled_surface = pygame.transform.rotate(surface, theta)
+        self.set_surface(scaled_surface, alpha=255, surface_id=surface_id)
+        return surface_id
+
+    def restore_image(self, image_id):
+        image = self.fetch_image(image_id)
+        self.set_surface(image, alpha=255, surface_id=image_id, surface_type="image")
+
+    def restore_surface(self, surface_id):
+        # TODO: This probably doesn't work for rotated, scaled, images etc.
+        width, height, alpha = self.surface_size_dict[surface_id]
+        self.create_surface(width, height, alpha, surface_id)
+
+    def create_font(self, size):
+        font = pygame.font.SysFont("Arial", size)
+        self.fonts[size] = font
+        return font
+
+    def get_font(self, size):
+        if size in self.fonts:
+            font = self.fonts[size]
+        else:
+            font = self.create_font(size)
+
+        return font
+
+    def create_font_surface(self, text, text_color, font_size, font_surface_id=None):
+        font = self.get_font(font_size)
+        font_surface = font.render(text, True, text_color)
+        if font_surface_id is None:
+            font_surface_id = self.get_new_id()
+
+        self.set_surface(font_surface, alpha=255, surface_id=font_surface_id, surface_type="font")
+        self.surface_font_dict[font_surface_id] = [text, text_color, font_size]
+        return font_surface_id
+
+    def fetch_text_surface(self, surface_id):
+        return self.surfaces[surface_id]
+
+    def restore_text_surface(self, surface_id):
+        text, color, font_size = self.surface_font_dict[surface_id]
+        self.create_font_surface(text, color, font_size, surface_id)
+
+    def load_surfaces(self, loaded_game_state):
+        # TODO: Can you even load a temporary scene? I think so...
+        self.surface_size_dict = loaded_game_state.surface_size_dict
+        self.surface_image_dict = loaded_game_state.surface_image_dict
+        self.surface_font_dict = loaded_game_state.surface_font_dict
+        self.surface_type_dict = loaded_game_state.surface_type_dict
+        self.images = loaded_game_state.images
+        self.current_max_id = loaded_game_state.max_id
+        self.surfaces = {}
+        self.fonts = {}
+        for surface_id in self.surface_type_dict.keys():
+            surface_type = self.surface_type_dict[surface_id]
+            if surface_type == "surface":
+                self.restore_surface(surface_id)
+            elif surface_type == "image":
+                self.restore_image(surface_id)
+            elif surface_type == "font":
+                self.restore_text_surface(surface_id)
 
 
 class SceneManager:
@@ -166,21 +273,47 @@ class SceneManager:
         # TODO: Implement scene switching. For example, tag a scene as persistent or temporary, and clear it only if
         # it is temporary.
 
-    def change_scene(self, scene):
+    def change_scene_by_name(self, name):
         self.clear_current_scene()
-        # TODO: Clearing the scene removes all saved data, sure clear processing queue, but
-        # not everything. Do something else here.
+
+        self.current_scene = self.scenes[name]
+
+    def change_scene(self, scene):
+        # TODO: Implement a proper way to create scenes etc.
+        self.clear_current_scene()
+        if scene.persistent and scene.name in self.scenes:
+            self.current_scene = self.scenes[scene.name]
+            return
         self.current_scene = scene
         self.scenes[scene.name] = scene
 
     def clear_current_scene(self):
-        if self.current_scene is not None:
+        if self.current_scene is not None and not self.current_scene.persistent:
             self.current_scene.clear()
 
     def schedule_scene_change(self, scene_function, scene_arguments=None):
         if scene_arguments is None:
             scene_arguments = []
-        environment.schedule_start_of_tick_function(scene_function, scene_arguments)
+        placeholder.schedule_start_of_tick_function(scene_function, scene_arguments)
+
+    def save(self, save_number=0):
+        placeholder.schedule_end_of_tick_function(self._save, [save_number])
+
+    def _save(self, save_number):
+        with open('save{}.txt'.format(save_number), 'wb') as save_file:
+            game_state = GameState()
+            pickle.dump(game_state, save_file)
+
+    def load(self, save_number=0):
+        placeholder.schedule_end_of_tick_function(self._load, [save_number])
+
+    def _load(self, save_number):
+        with open('save{}.txt'.format(save_number), 'rb') as save_file:
+            loaded_game_state = pickle.load(save_file)
+            surface_manager.load_surfaces(loaded_game_state)
+            scene_manager.scenes = loaded_game_state.scene_manager.scenes
+            scene_manager.current_scene = loaded_game_state.scene_manager.current_scene
+            # TODO: Move the above to a method for GameState class.
 
 
 class Scene:
@@ -194,7 +327,7 @@ class Scene:
         self.processing_order = []
         self.display_order = []
         self.background_color = WHITE
-        self.id = "Scene" + str(environment.get_new_id())
+        self.persistent = False
 
     def get_object_list(self):
         return [self.boxes, self.buttons, self.cards, self.others, self.overlays]
@@ -290,13 +423,6 @@ class Scene:
                 if hasattr(obj, "destroyed") and obj.destroyed:
                     object_list.remove(obj)
 
-    def save(self):
-        save_dict = {}
-        for object_list in self.get_object_list():
-            for obj in object_list:
-                save_dict[obj.id] = obj.save()  # TODO: Name doesn't have to be unique, use ID here instead.
-        return save_dict
-
 
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):
@@ -315,3 +441,5 @@ def find_object_from_name(obj_list, name):
 
 environment = Environment()
 scene_manager = SceneManager()
+placeholder = Placeholder()
+surface_manager = SurfaceManager()

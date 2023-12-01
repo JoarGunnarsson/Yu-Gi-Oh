@@ -1,5 +1,5 @@
 import pygame
-from environment import environment
+from environment import environment, scene_manager
 from constants import *
 
 
