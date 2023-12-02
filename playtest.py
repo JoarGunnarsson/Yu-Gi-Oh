@@ -82,11 +82,11 @@ class CardOverlay(assets.GameObject):
         self.buttons = []
         self.box = assets.Box(x=self.x, y=self.y, width=self.width, height=self.height,
                               color=WHITE, alpha=self.alpha)
-        self.cards = []
 
         self.card_list = self.card_list_function()
+        self.cards = []
         for i, card in enumerate(self.card_list):
-            self.create_overlay_card(card, i)
+            self.set_overlay_card(self.create_overlay_card(card, i), i)
 
         close_btn_size = 30
         close_btn_offset = 5
@@ -104,8 +104,15 @@ class CardOverlay(assets.GameObject):
         card.set_size(card_width, card_height)
         card.set_left_click_function(card.make_large_card_button)
         card.set_left_hold_function(None)
-        self.cards.insert(i, card)
         return card
+
+    def set_overlay_card(self, card, i):
+        if i == len(self.cards):
+            self.cards.append(card)
+        elif i < len(self.cards):
+            self.cards[i] = card
+        else:
+            raise IndexError("Cannot set self.cards[i] to card, to few cards in the list")
 
     def get_card_info(self, i):
         max_cards_to_show = self.cards_per_row * self.number_of_rows
@@ -156,6 +163,7 @@ class CardOverlay(assets.GameObject):
 
     def process(self):
         self.card_list = self.card_list_function()
+
         for i, card in enumerate(self.card_list[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
             card.set_pos(x, y)
@@ -179,11 +187,12 @@ class CardOverlay(assets.GameObject):
             if card not in self.card_list:
                 self.cards.remove(card)
 
+        # This is what's causing the issues with shuffling the deck with overlay.
         for i, card in enumerate(self.card_list):
             if card not in self.cards:
-                self.create_overlay_card(card, i)
+                self.set_overlay_card(self.create_overlay_card(card, i), i)
             else:
-                self.cards[i] = card
+                self.set_overlay_card(card, i)
 
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
@@ -777,17 +786,6 @@ def create_confirmation_overlay(position, func, args):
         overlay.buttons.append(btn)
 
     scene_manager.current_scene.overlays.append(overlay)
-
-
-def test_pickle():
-    test_objects = [scene_manager]
-    # Scene_manager gets a surface when clicking the start button.
-    for obj in test_objects:
-        print("Pickling object:", obj)
-        file = open("save0.txt", "wb")
-        pickle.dump(obj, file)
-        file.close()
-
 
 if __name__ == "__main__":
     spellcaster_cards = ["1003840", "1003840", "12744567", "14087893", "14087893", "17315396", "17315396", "24634594",
