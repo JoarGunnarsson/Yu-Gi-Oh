@@ -5,6 +5,7 @@ import pygame
 from environment import environment, scene_manager, placeholder, surface_manager
 import utility_functions as utils
 # TODO: Add children to all classes etc?
+# TODO: Add GameScript class and functionality
 
 
 class GameObject:
@@ -18,6 +19,7 @@ class GameObject:
         self.parent = None
         self.children = []
         self.rect = None
+        self.script_objects = []
 
     def get_rect(self):
         return self.rect
@@ -59,6 +61,18 @@ class GameObject:
     def update_position(self):
         pass
 
+    def add_script_object(self, script_object):
+        self.script_objects.append(script_object)
+        self.add_child(script_object)
+
+    def remove_script_object(self, script_object):
+        if script_object in self.script_objects:
+            self.script_objects.remove(script_object)
+        self.remove_child(script_object)
+
+    def clear_script_objects(self):
+        self.script_objects = []
+
     def destroy(self):
         if self.destroyed:
             return
@@ -71,9 +85,17 @@ class GameObject:
         if child.parent is None:
             child.parent = self
 
+    def remove_child(self, child):
+        # TODO: This does the same as destroy_child.
+        if child in self.children:
+            self.children.remove(child)
+
     def destroy_child(self, child):
         if child in self.children:
             self.children.remove(child)
+
+    def clear_children(self):
+        self.children = []
 
     def schedule_processing(self):
         items_to_be_processed = []
@@ -328,7 +350,6 @@ class Border(GameObject):
 
 
 class Button(GameObject):
-    # TODO: Add get_pos_relative method.
     def __init__(self, x=0, y=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
@@ -684,7 +705,6 @@ class ClickDetector(GameObject):
 
 class Card(GameObject):
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
-        # TODO: Don't store images here.
         super().__init__()
         self.image_id = None
         self.width = standard_card_width
@@ -873,6 +893,7 @@ class Card(GameObject):
         return False
 
     def schedule_processing(self):
+        # TODO: Is the order important here? Answer: I don't think so.
         items_to_be_processed = []
         for overlay in self.overlays:
             items_to_be_processed.extend(overlay.schedule_processing())
@@ -984,9 +1005,6 @@ class Card(GameObject):
         large_card_btn_allowed_rect_list.append(overlay.get_rect())
         large_card_btn.set_external_process_arguments([large_card_btn_arg, large_card_btn_allowed_rect_list])
 
-        # TODO: Modify the large_card_button remove on external clicks hitbox, to include the overlay box.
-        # However, perhaps include the buttons as a non-allowed area, which requires modifying the remove_on_external_
-        # _clicks function
         if self.card_type == "token":
             remove_btn_height = int(overlay_height - button_space * 4 - overlay_close_button_size)
             remove_btn = Button(x=overlay.x + button_space, y=overlay.y + overlay_close_button_size + 2 * button_space,

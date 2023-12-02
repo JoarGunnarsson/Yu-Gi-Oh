@@ -247,7 +247,6 @@ class SurfaceManager:
         self.create_font_surface(text, color, font_size, surface_id)
 
     def load_surfaces(self, loaded_game_state):
-        # TODO: Can you even load a temporary scene? I think so...
         self.surface_size_dict = loaded_game_state.surface_size_dict
         self.surface_image_dict = loaded_game_state.surface_image_dict
         self.surface_font_dict = loaded_game_state.surface_font_dict
@@ -275,17 +274,16 @@ class SceneManager:
 
     def change_scene_by_name(self, name):
         self.clear_current_scene()
-
         self.current_scene = self.scenes[name]
 
     def change_scene(self, scene):
-        # TODO: Implement a proper way to create scenes etc.
         self.clear_current_scene()
         if scene.persistent and scene.name in self.scenes:
             self.current_scene = self.scenes[scene.name]
-            return
+            return self.current_scene
         self.current_scene = scene
         self.scenes[scene.name] = scene
+        return scene
 
     def clear_current_scene(self):
         if self.current_scene is not None and not self.current_scene.persistent:
@@ -294,6 +292,7 @@ class SceneManager:
     def schedule_scene_change(self, scene_function, scene_arguments=None):
         if scene_arguments is None:
             scene_arguments = []
+            
         placeholder.schedule_start_of_tick_function(scene_function, scene_arguments)
 
     def save(self, save_number=0):

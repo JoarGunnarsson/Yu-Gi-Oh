@@ -44,8 +44,6 @@ import pygame
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
 # to be sent to the extra_deck.
 
-# TODO: Fix saving and loading. Currently an issue with images, and the card overlay close button.
-# Also with destroy_on_external_clicks?
 
 
 class Deck:
@@ -401,13 +399,13 @@ class Board:
         pass
 
 
-def generate_board():
-    existing_board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+def generate_board(scene):
+    existing_board = utils.find_object_from_name(scene.others, "board")
     if existing_board is not None:
-        scene_manager.current_scene.others.remove(existing_board)
+        scene.others.remove(existing_board)
 
     board = Board(card_ids=environment.deck.cards, name="board")
-    scene_manager.current_scene.others.append(board)
+    scene.others.append(board)
     return board
 
 
@@ -487,6 +485,8 @@ def create_test_scene():
 def create_play_testing():
     scene = Scene(name="play_testing")
     scene.persistent = True
+    # TODO: Fix the scene change structure so that the below code doesn't have to be repeated for every scene
+    # creation function. Perhaps using classes?
     if scene.name in scene_manager.scenes:
         scene_manager.change_scene_by_name(scene.name)
         return
@@ -523,7 +523,7 @@ def create_play_testing():
 
     scene.boxes.extend([field_box, hand_box, left_side_box, right_side_box])
     scene.others.append(hand_border)
-    board = generate_board()
+    board = generate_board(scene)
 
     draw_btn = assets.Button(x=environment.get_width() - button_width - offset,
                              y=environment.get_height() - deck_height - offset,
