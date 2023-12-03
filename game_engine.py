@@ -1,4 +1,3 @@
-import assets
 from constants import *
 import os
 import pickle
@@ -63,37 +62,32 @@ class Environment:
 
 class GameState:
     def __init__(self):
-        self.scene_manager = scene_manager
-        self.surface_size_dict = surface_manager.surface_size_dict
-        self.surface_image_dict = surface_manager.surface_image_dict
-        self.surface_type_dict = surface_manager.surface_type_dict
-        self.images = surface_manager.images
-        self.surface_font_dict = surface_manager.surface_font_dict
-        self.max_id = surface_manager.current_max_id
+
+        self.surface_manager = SurfaceManager()
+        self.surface_size_dict = self.surface_manager.surface_size_dict
+        self.surface_image_dict = self.surface_manager.surface_image_dict
+        self.surface_type_dict = self.surface_manager.surface_type_dict
+        self.images = self.surface_manager.images
+        self.surface_font_dict = self.surface_manager.surface_font_dict
+        self.max_id = self.surface_manager.current_max_id
+
+        self.scene_manager = SceneManager()
+
+        self.placeholder = Placeholder()
+
+    def load_from_surface_manager(self):
+        self.surface_size_dict = self.surface_manager.surface_size_dict
+        self.surface_image_dict = self.surface_manager.surface_image_dict
+        self.surface_type_dict = self.surface_manager.surface_type_dict
+        self.images = self.surface_manager.images
+        self.surface_font_dict = self.surface_manager.surface_font_dict
+        self.max_id = self.surface_manager.current_max_id
 
 
 class Placeholder:
     def __init__(self):
         self.start_of_tick_functions = []
         self.start_of_tick_arguments = []
-        self.end_of_tick_functions = []
-        self.end_of_tick_arguments = []
-
-    def schedule_start_of_tick_function(self, function, arguments):
-        self.start_of_tick_functions.append(function)
-        self.start_of_tick_arguments.append(arguments)
-
-    def schedule_end_of_tick_function(self, function, arguments):
-        self.end_of_tick_functions.append(function)
-        self.end_of_tick_arguments.append(arguments)
-
-    def start_tick(self):
-        execute_multiple_functions(self.start_of_tick_functions, self.start_of_tick_arguments)
-        self.start_of_tick_functions = []
-        self.start_of_tick_arguments = []
-
-    def end_tick(self):
-        execute_multiple_functions(self.end_of_tick_functions, self.end_of_tick_arguments)
         self.end_of_tick_functions = []
         self.end_of_tick_arguments = []
 
@@ -292,27 +286,8 @@ class SceneManager:
     def schedule_scene_change(self, scene_function, scene_arguments=None):
         if scene_arguments is None:
             scene_arguments = []
-            
-        placeholder.schedule_start_of_tick_function(scene_function, scene_arguments)
 
-    def save(self, save_number=0):
-        placeholder.schedule_end_of_tick_function(self._save, [save_number])
-
-    def _save(self, save_number):
-        with open('save{}.txt'.format(save_number), 'wb') as save_file:
-            game_state = GameState()
-            pickle.dump(game_state, save_file)
-
-    def load(self, save_number=0):
-        placeholder.schedule_end_of_tick_function(self._load, [save_number])
-
-    def _load(self, save_number):
-        with open('save{}.txt'.format(save_number), 'rb') as save_file:
-            loaded_game_state = pickle.load(save_file)
-            surface_manager.load_surfaces(loaded_game_state)
-            scene_manager.scenes = loaded_game_state.scene_manager.scenes
-            scene_manager.current_scene = loaded_game_state.scene_manager.current_scene
-            # TODO: Move the above to a method for GameState class.
+        schedule_start_of_tick_function(scene_function, scene_arguments)
 
 
 class Scene:
@@ -381,15 +356,12 @@ class Scene:
         self.remove_from_display_order(source_object)
 
     def remove_from_processing_order(self, source_object):
-        # TODO: This method should take an object as input, and then ask the object for which objects should get removed
-        # so that entire overlays can be removed etc.
-        # Could ask the object for it's children.
+        """Removes an object from the processing order."""
         if source_object in self.processing_order:
             self.processing_order.remove(source_object)
 
     def remove_from_display_order(self, source_object):
-        # TODO: This method should take an object as input, and then ask the object for which objects should get removed
-        # so that entire overlays can be removed etc
+        """Removes an object from the display order. This is not currently doing anything"""
         objects_to_remove = source_object.get_displayable_objects()
         for obj in objects_to_remove:
             if obj in self.display_order:
@@ -423,6 +395,85 @@ class Scene:
                     object_list.remove(obj)
 
 
+def get_placeholder():
+    return game_state.placeholder
+
+
+def get_scene_manager():
+    return game_state.scene_manager
+
+
+def set_scene_manager(scene_manager):
+    game_state.scene_manager = scene_manager
+
+
+def get_surface_manager():
+    return game_state.surface_manager
+
+
+def set_surface_manager(surface_manager):
+    game_state.surface_manager = surface_manager
+
+
+def schedule_start_of_tick_function(function, arguments):
+    game_state.placeholder.start_of_tick_functions.append(function)
+    game_state.placeholder.start_of_tick_arguments.append(arguments)
+
+
+def schedule_end_of_tick_function(function, arguments):
+    game_state.placeholder.end_of_tick_functions.append(function)
+    game_state.placeholder.end_of_tick_arguments.append(arguments)
+
+
+def start_tick():
+    execute_multiple_functions(game_state.placeholder.start_of_tick_functions, game_state.placeholder.start_of_tick_arguments)
+    game_state.placeholder.start_of_tick_functions = []
+    game_state.placeholder.start_of_tick_arguments = []
+
+
+def end_tick():
+    execute_multiple_functions(game_state.placeholder.end_of_tick_functions, game_state.placeholder.end_of_tick_arguments)
+    game_state.placeholder.end_of_tick_functions = []
+    game_state.placeholder.end_of_tick_arguments = []
+
+
+def schedule_scene_change(scene_function, scene_arguments=None):
+    get_scene_manager().schedule_scene_change(scene_function, scene_arguments)
+
+
+def save(save_number=0):
+    schedule_end_of_tick_function(_save, [save_number])
+
+
+def _save(save_number):
+    with open('save{}.txt'.format(save_number), 'wb') as save_file:
+        game_state.load_from_surface_manager()
+        surface_manager = get_surface_manager()
+        set_surface_manager(None)
+        pickle.dump(game_state, save_file)
+        set_surface_manager(surface_manager)
+
+
+def load(save_number=0):
+    schedule_end_of_tick_function(_load, [save_number])
+
+
+def _load(save_number):
+    # TODO: The issue with loading comes from saving e.g placeholder.schedule_end_of_tick_functions.
+    # When loading, the loaded GameObjects will call the old placeholder object's methods, but
+    # the current game state will use the new placeholder object.
+    # This can be fixed by scene_manager etc being attributes to environment, and when loading a GameState,
+    # setting the environment attributes like scene_manager etc to the saved loaded_game_state.scene_manager.
+    # In the code, instead of setting a click_function as bar.foo(), use
+    # environment.foo() instead. environment.foo() will simply call self.bar.foo().
+
+    with open('save{}.txt'.format(save_number), 'rb') as save_file:
+        loaded_game_state = pickle.load(save_file)
+        get_surface_manager().load_surfaces(loaded_game_state)
+        set_scene_manager(loaded_game_state.scene_manager)
+        game_state.load_from_surface_manager()
+
+
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):
         if type(argument_list[i]) is dict:
@@ -431,14 +482,5 @@ def execute_multiple_functions(functions, argument_list):
             function(*argument_list[i])
 
 
-def find_object_from_name(obj_list, name):
-    for obj in obj_list:
-        if hasattr(obj, "name") and obj.name == name:
-            return obj
-    return None
-
-
 environment = Environment()
-scene_manager = SceneManager()
-placeholder = Placeholder()
-surface_manager = SurfaceManager()
+game_state = GameState()

@@ -5,10 +5,10 @@ import math
 import time
 import assets
 import constants
-from environment import environment, Scene, scene_manager, placeholder, surface_manager
+from game_engine import environment, Scene
+import game_engine
 import utility_functions as utils
 from constants import *
-import pickle
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -45,7 +45,6 @@ import pygame
 # to be sent to the extra_deck.
 
 
-
 class Deck:
     def __init__(self, name="", cards=None, main_card_id=None):
         if cards is None:
@@ -57,10 +56,10 @@ class Deck:
 
         self.name = name
         self.main_card_id = main_card_id
-        self.image_id = surface_manager.create_image(card_image_location + self.main_card_id + ".jpg")
+        self.image_id = game_engine.get_surface_manager().create_image(card_image_location + self.main_card_id + ".jpg")
 
     def get_image(self):
-        return surface_manager.fetch_image(self.image_id)
+        return game_engine.get_surface_manager().fetch_image(self.image_id)
 
 
 class CardOverlay(assets.GameObject):
@@ -140,7 +139,7 @@ class CardOverlay(assets.GameObject):
         return x, y, card_width, card_height
 
     def remove_overlay(self):
-        scene = scene_manager.current_scene
+        scene = game_engine.get_scene_manager().current_scene
         scene.overlays.remove(self)
 
     def schedule_processing(self):
@@ -169,10 +168,10 @@ class CardOverlay(assets.GameObject):
             card.set_pos(x, y)
             if not card.has_been_processed:
                 items_to_be_processed = card.schedule_processing()
-                scene_manager.current_scene.process_given_objects(items_to_be_processed)
-                item_index = scene_manager.current_scene.display_order.index(self) + 1
+                game_engine.get_scene_manager().current_scene.process_given_objects(items_to_be_processed)
+                item_index = game_engine.get_scene_manager().current_scene.display_order.index(self) + 1
                 for item in items_to_be_processed:
-                    scene_manager.current_scene.add_to_display_order(item, item_index)
+                    game_engine.get_scene_manager().current_scene.add_to_display_order(item, item_index)
                     item_index += 1
 
     def pre_process(self):
@@ -225,9 +224,10 @@ class Board:
         self.card_processing_order = []
         self.name = name
         card_space = 10  # TODO: This is hard-coded.
-        if scene_manager.current_scene.name == "play_testing":
-            self.display_hand_number = utils.find_object_from_name(scene_manager.current_scene.boxes, "hand_box").width \
-                                       // (constants.standard_card_width + card_space)
+        if game_engine.get_scene_manager().current_scene.name == "play_testing":
+            current_scene = game_engine.get_scene_manager().current_scene.boxes
+            hand_box_width = utils.find_object_from_name(current_scene, "hand_box").width
+            self.display_hand_number = hand_box_width // (constants.standard_card_width + card_space)
         else:
             self.display_hand_number = 10
         self.display_hand_start_index = 0
@@ -254,7 +254,7 @@ class Board:
         if card_index is None:
             card_index = self.hand.index(card)
 
-        scene = scene_manager.current_scene
+        scene = game_engine.get_scene_manager().current_scene
         hand_box = utils.find_object_from_name(scene.boxes, "hand_box")
 
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
@@ -332,13 +332,13 @@ class Board:
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
         if card.location != "hand":
-            default_x, default_y = scene_manager.current_scene.get_default_position()
+            default_x, default_y = game_engine.get_scene_manager().current_scene.get_default_position()
             card.set_pos(default_x, default_y)
         card.new_location(location="field")
         self.field.append(card)
         self.begin_processing(card)
         if not card.moving:
-            x, y = scene_manager.current_scene.get_default_position()
+            x, y = game_engine.get_scene_manager().current_scene.get_default_position()
             card.set_pos(x, y)
         previous_location.remove(card)
 
@@ -404,9 +404,6 @@ class Board:
         for card in all_cards:
             card.has_been_processed = False
 
-    def save(self):
-        pass
-
 
 def generate_board(scene):
     existing_board = utils.find_object_from_name(scene.others, "board")
@@ -419,15 +416,16 @@ def generate_board(scene):
 
 
 def cards_in_deck_string(scene=None):
+    # TODO: This is not working any more.
     if scene is None:
-        scene = scene_manager.current_scene
+        scene = game_engine.get_scene_manager().current_scene
     board = utils.find_object_from_name(scene.others, "board")
     return "Cards: {}".format(len(board.deck))
 
 
 def choose_deck(deck):
     environment.set_deck(deck)
-    scene_manager.schedule_scene_change(create_play_testing)
+    game_engine.schedule_scene_change(create_play_testing)
 
 
 def change_overlay_limits(overlay, change_in_limits):
@@ -444,22 +442,27 @@ def change_overlay_limits(overlay, change_in_limits):
 
 def create_main_menu():
     scene = Scene(name="main_menu")
-    # TODO: Perhaps ask scene_manager for a new scene here instead.
-    scene_manager.change_scene(scene)
+    # TODO: Perhaps ask game_engine.get_scene_manager() for a new scene here instead.
+    scene.persistent = True
+    if scene.name in game_engine.get_scene_manager().scenes:
+        game_engine.get_scene_manager().change_scene_by_name(scene.name)
+        return
+    game_engine.get_scene_manager().change_scene(scene)
     scene.background_color = WHITE
     width = 200
     height = 100
 
     start_btn = assets.Button(y=environment.get_height() // 2, width=width,
-                              height=height, text="Start", left_click_function=scene_manager.schedule_scene_change,
+                              height=height, text="Start",
+                              left_click_function=game_engine.schedule_scene_change,
                               left_click_args=[create_deck_selection_scene])
 
     load_btn = assets.Button(y=environment.get_height() // 2, width=width,
-                             height=height, text="Load Save", left_click_function=scene_manager.load)
+                             height=height, text="Load Save", left_click_function=game_engine.load)
 
     test_btn = assets.Button(y=environment.get_height() // 2, width=width, height=height,
                              text="Testing", font_size=35,
-                             left_click_function=scene_manager.schedule_scene_change,
+                             left_click_function=game_engine.schedule_scene_change,
                              left_click_args=[create_test_scene])
 
     exit_btn = assets.Button(y=environment.get_height() // 2, width=width,
@@ -476,9 +479,10 @@ def create_main_menu():
 
 def create_test_scene():
     scene = Scene(name="test_scene")
-    scene_manager.change_scene(scene)
+    game_engine.get_scene_manager().change_scene(scene)
     scene.background_color = SIENNA
-    exit_btn = assets.Button(text="Main Menu", alpha=255, left_click_function=scene_manager.schedule_scene_change,
+    exit_btn = assets.Button(text="Main Menu", alpha=255,
+                             left_click_function=game_engine.schedule_scene_change,
                              left_click_args=[create_main_menu])
     scene.buttons.append(exit_btn)
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
@@ -496,10 +500,10 @@ def create_play_testing():
     scene.persistent = True
     # TODO: Fix the scene change structure so that the below code doesn't have to be repeated for every scene
     # creation function. Perhaps using classes?
-    if scene.name in scene_manager.scenes:
-        scene_manager.change_scene_by_name(scene.name)
+    if scene.name in game_engine.get_scene_manager().scenes:
+        game_engine.get_scene_manager().change_scene_by_name(scene.name)
         return
-    scene_manager.change_scene(scene)
+    game_engine.get_scene_manager().change_scene(scene)
     scene.background_color = GREY
 
     button_width = 200
@@ -572,16 +576,18 @@ def create_play_testing():
 
     main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
                                   text="Main Menu", name="main_menu_btn",
-                                  left_click_function=scene_manager.schedule_scene_change,
+                                  left_click_function=game_engine.schedule_scene_change,
                                   left_click_args=[create_main_menu])
 
     save_btn = assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
                              text="SAVE", name="save_btn",
-                             left_click_function=placeholder.schedule_end_of_tick_function,
-                             left_click_args=[scene_manager.save, []])
-
+                             left_click_function=game_engine.schedule_end_of_tick_function,
+                             left_click_args=[game_engine.save, []])
+    # TODO: The saving issue probably has to do with the fact that this is the save method of an old, discarded scene
+    # manager?
     """assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
-                              text="Reset", name="reset_btn", left_click_function=scene_manager.schedule_scene_change,
+                              text="Reset", name="reset_btn", 
+                              left_click_function=game_engine.schedule_scene_change,
                               left_click_args=[create_play_testing])"""
 
     token_btn = assets.Button(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
@@ -621,7 +627,7 @@ def create_play_testing():
 
 def create_deck_selection_scene():
     scene = Scene(name="deck_selection")
-    scene_manager.change_scene(scene)
+    game_engine.get_scene_manager().change_scene(scene)
 
     deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
                                             background_color=WHITE)
@@ -639,32 +645,32 @@ def create_deck_selection_scene():
 
 
 def cards_in_deck():
-    board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.others, "board")
     return board.deck
 
 
 def cards_in_extra_deck():
-    board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.others, "board")
     return board.extra_deck
 
 
 def cards_in_gy():
-    board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.others, "board")
     return board.gy
 
 
 def cards_in_banished():
-    board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.others, "board")
     return board.banished
 
 
 def cards_in_hand():
-    board = utils.find_object_from_name(scene_manager.current_scene.others, "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.others, "board")
     return board.hand
 
 
 def generate_token():
-    scene = scene_manager.current_scene
+    scene = game_engine.get_scene_manager().current_scene
     token = assets.Card(card_id="token")
     token.x, token.y = scene.get_default_position()
     board = utils.find_object_from_name(scene.others, "board")
@@ -708,7 +714,7 @@ def value_from_card_type(card_type):
 
 
 def create_location_overlay(location_name, card_list_function):
-    scene = scene_manager.current_scene
+    scene = game_engine.get_scene_manager().current_scene
     if len(scene.overlays) > 0:
         overlay_to_remove = utils.find_object_from_name(scene.overlays, location_name)
         scene.overlays = []
@@ -747,14 +753,14 @@ def create_location_overlay(location_name, card_list_function):
 def create_confirmation_overlay(position, func, args):
     # TODO: Add remove_on_external_clicks?
     # TODO: Make this into a sub-class of Overlay?
-    scene_overlays = scene_manager.current_scene.overlays
+    scene_overlays = game_engine.get_scene_manager().current_scene.overlays
     existing_confirmation_overlay = utils.find_object_from_name(scene_overlays, "confirmation_overlay")
     if existing_confirmation_overlay is not None:
         return
     x, y = position
     overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
-                             parent=scene_manager.current_scene)
-    overlay.parent = scene_manager.current_scene
+                             parent=game_engine.get_scene_manager().current_scene)
+    overlay.parent = game_engine.get_scene_manager().current_scene
     overlay.close_btn.destroy()
 
     overlay_border = assets.Border(x=overlay.x, y=overlay.y, width=overlay.width, height=overlay.height, color=BLACK,
@@ -785,7 +791,8 @@ def create_confirmation_overlay(position, func, args):
         btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
         overlay.buttons.append(btn)
 
-    scene_manager.current_scene.overlays.append(overlay)
+    game_engine.get_scene_manager().current_scene.overlays.append(overlay)
+
 
 if __name__ == "__main__":
     spellcaster_cards = ["1003840", "1003840", "12744567", "14087893", "14087893", "17315396", "17315396", "24634594",
@@ -827,13 +834,12 @@ if __name__ == "__main__":
     running = True
     while running:
         running = environment.handle_events()
-        placeholder.start_tick()
-        scene_manager.current_scene.process()
+        game_engine.start_tick()
+        game_engine.get_scene_manager().current_scene.process()
 
         environment.draw_screen()
 
-        placeholder.end_tick()
+        game_engine.end_tick()
 
         environment.clock.tick(FPS)
-        # scene_manager.save()
     pygame.quit()
