@@ -490,8 +490,8 @@ def create_test_scene():
                            left_click_args=[(700, 700), test_button, []],
                            colors={"normal": SIENNA, "hover": SADDLE_BROWN, "pressed": SADDLE_BROWN})
     button.hug_text(15)
-    box = assets.Box(x=100, y=100, color=GREY, text="HEJSAN")
-    scene.others.append(box)
+    movable_btn = assets.MobileButton(x=100, y=100)
+    scene.buttons.append(movable_btn)
     scene.buttons.append(button)
 
 
