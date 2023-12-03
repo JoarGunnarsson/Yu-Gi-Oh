@@ -48,6 +48,14 @@ def find_object_from_name(obj_list, name):
     return None
 
 
+def find_objects_from_type(obj_list, match_type):
+    found_objects = []
+    for obj in obj_list:
+        if hasattr(obj, "name") and type(obj) == match_type:
+            found_objects.append(obj)
+    return found_objects
+
+
 def closest_color(color_dict, color):
     min_distance = 3 * 255 ** 2
     card_type = None

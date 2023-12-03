@@ -13,9 +13,10 @@ import utility_functions as utils
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, alpha=255, width=0, height=0, name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, name=""):
         self.x = x
         self.y = y
+        self.z = z
         self.width = width
         self.height = height
         self.name = name
@@ -249,12 +250,9 @@ class Box(GameObject):
 
         if self.text != "":
             text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
-
-            game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(text_surface,
-                                                                                  [(
-                                                                                               self.width - text_surface.get_width()) / 2,
-                                                                                   (
-                                                                                               self.height - text_surface.get_height()) / 2])
+            surface = game_engine.get_surface_manager().fetch_surface(self.surface_id)
+            surface_middle = [(self.width - text_surface.get_width())/2, (self.height - text_surface.get_height())/2]
+            surface.blit(text_surface, surface_middle)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
 
@@ -700,7 +698,8 @@ class ClickDetector:
 
 
 class MobileButton(Button):
-    def __init__(self, x=0, y=0, width=200, height=120, color=(100, 100, 100), alpha=255, image=None, text="", font_size=40,
+    def __init__(self, x=0, y=0, width=200, height=120, color=(100, 100, 100), alpha=255, image=None, text="",
+                 font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):

@@ -17,7 +17,6 @@ class Environment:
         self.screen.set_alpha(255)
         self.clock = pygame.time.Clock()
         self.standard_offset = 15
-        self.deck = None  # TODO: This should not be the responsibility of environment.
         self.start_of_tick_functions = []
         self.start_of_tick_arguments = []
         self.end_of_tick_functions = []
@@ -38,10 +37,6 @@ class Environment:
         scale_x = self.screen.get_width() / window_width
         scale_y = self.screen.get_height() / window_height
         return x * scale_x, y * scale_y
-
-    def set_deck(self, deck):
-        # TODO: This should NOT be in environment.
-        self.deck = deck
 
     def handle_events(self):
         """Checks if the user tries to close the program window, or resize the window."""
@@ -293,18 +288,24 @@ class SceneManager:
 class Scene:
     def __init__(self, name=""):
         self.name = name
-        self.boxes = []
-        self.buttons = []
-        self.cards = []  # TODO: This is bad.
-        self.overlays = []
-        self.others = []
+        self.objects = []
         self.processing_order = []
         self.display_order = []
         self.background_color = WHITE
         self.persistent = False
 
-    def get_object_list(self):
-        return [self.boxes, self.buttons, self.cards, self.others, self.overlays]
+    def get_objects(self):
+        return self.objects
+
+    def add_object(self, obj):
+        self.objects.append(obj)
+
+    def remove_object(self, obj):
+        if obj in self.objects:
+            self.objects.remove(obj)
+
+    def add_multiple_objects(self, object_list):
+        self.objects.extend(object_list)
 
     def get_default_position(self):
         return environment.width // 2, environment.height // 2
@@ -321,25 +322,19 @@ class Scene:
 
         return blocking_object_list
 
-    def add_button(self, button):
-        self.buttons.append(button)
-
     def clear(self):
-        self.boxes = []
-        self.buttons = []
-        self.cards = []
-        self.others = []
-        self.overlays = []
+        self.objects = []
         self.processing_order = []
         self.display_order = []
 
     def schedule_processing(self):
         self.processing_order = []
 
-        for object_list in self.get_object_list():
-            for obj in object_list:
-                items_to_be_processed = obj.schedule_processing()
-                self.processing_order.extend(items_to_be_processed)
+        self.objects.sort(key=lambda x: x.z)
+
+        for obj in self.objects:
+            items_to_be_processed = obj.schedule_processing()
+            self.processing_order.extend(items_to_be_processed)
 
     def process_given_objects(self, objects):
         for obj in objects:
@@ -350,7 +345,7 @@ class Scene:
             return
         obj.process()
 
-    def remove_object(self, source_object):
+    def hide_object(self, source_object):
         """Removes the object from the processing order this tick."""
         self.remove_from_processing_order(source_object)
         self.remove_from_display_order(source_object)
@@ -389,10 +384,9 @@ class Scene:
             self.process_object(obj)
 
         # Remove destroyed objects
-        for object_list in self.get_object_list():
-            for obj in object_list:
-                if hasattr(obj, "destroyed") and obj.destroyed:
-                    object_list.remove(obj)
+        for obj in self.objects:
+            if hasattr(obj, "destroyed") and obj.destroyed:
+                self.objects.remove(obj)
 
 
 def get_placeholder():
@@ -426,13 +420,15 @@ def schedule_end_of_tick_function(function, arguments):
 
 
 def start_tick():
-    execute_multiple_functions(game_state.placeholder.start_of_tick_functions, game_state.placeholder.start_of_tick_arguments)
+    execute_multiple_functions(game_state.placeholder.start_of_tick_functions,
+                               game_state.placeholder.start_of_tick_arguments)
     game_state.placeholder.start_of_tick_functions = []
     game_state.placeholder.start_of_tick_arguments = []
 
 
 def end_tick():
-    execute_multiple_functions(game_state.placeholder.end_of_tick_functions, game_state.placeholder.end_of_tick_arguments)
+    execute_multiple_functions(game_state.placeholder.end_of_tick_functions,
+                               game_state.placeholder.end_of_tick_arguments)
     game_state.placeholder.end_of_tick_functions = []
     game_state.placeholder.end_of_tick_arguments = []
 
