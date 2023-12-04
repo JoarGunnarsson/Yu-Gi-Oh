@@ -389,6 +389,7 @@ class Scene:
                 surface, rect = obj.get_display_surface()
                 environment.screen.blit(surface, rect)
 
+        # TODO: This should be before displaying
         self.display_order = self.processing_order
         for obj in reversed(self.processing_order.copy()):
             self.process_object(obj)

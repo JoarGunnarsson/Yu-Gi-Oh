@@ -373,7 +373,7 @@ class Card(assets.GameObject):
                                        width=button_width, height=remove_btn_height, text="Remove", font_size=15,
                                        parent=button_parent, name="token_remove_btn",
                                        left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
-            overlay.buttons.append(remove_btn)
+            overlay.add_child(remove_btn)
             return
 
         gy_btn = assets.Button(width=button_width, height=button_height, text="Graveyard", name="gy_btn", font_size=15,
@@ -435,7 +435,7 @@ class Card(assets.GameObject):
             btn.set_pos_relative_to_parent(button_space, y)
             y += btn.height + button_space
 
-        overlay.buttons.extend(location_buttons)
+        overlay.add_multiple_children(location_buttons)
 
     def remove_card_overlay(self):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
@@ -1061,7 +1061,7 @@ def create_large_card_overlay(card):
 
     overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay")
     overlay.parent = scene
-    close_btn = utils.find_object_from_name(overlay.buttons, "close_btn")
+    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     offset = 15
 
     card_height = overlay.height - 3 * offset - close_btn.height
@@ -1081,7 +1081,7 @@ def create_large_card_overlay(card):
 
     large_card_btn.external_process_arguments[1].append(overlay.box.get_rect())
 
-    overlay.objects.append(large_card_box)
+    overlay.add_child(large_card_box)
 
     scene.add_object(overlay)
 
@@ -1091,14 +1091,18 @@ def create_deck_selection_scene():
 
     deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
                                             background_color=WHITE)
-    deck_selection_overlay.close_btn.destroy()
+
+    # TODO: Try overlay.destroy_child() instead
+    close_btn = utils.find_object_from_name(deck_selection_overlay.get_buttons(), "close_btn")
+    close_btn.destroy()
+
     for i, deck in enumerate(DECKS):
         deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, width=large_card_width,
                                  height=large_card_height,
                                  left_click_function=create_confirmation_overlay,
                                  left_click_args=[(i * large_card_width, 500), choose_deck, [deck]])
         deck_btn.set_image(deck.get_image())
-        deck_selection_overlay.buttons.append(deck_btn)
+        deck_selection_overlay.add_child(deck_btn)
 
     deck_selection_overlay.parent = scene
     scene.add_object(deck_selection_overlay)
@@ -1219,7 +1223,7 @@ def create_location_overlay(location_name, card_list_function):
                                     left_click_function=change_overlay_limits,
                                     left_click_args=[overlay, overlay.cards_per_row])
 
-    overlay.buttons.extend([scroll_up_btn, scroll_down_btn])
+    overlay.add_multiple_children([scroll_up_btn, scroll_down_btn])
     scene.add_object(overlay)
 
 
@@ -1235,26 +1239,29 @@ def create_confirmation_overlay(position, func, args):
     overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
                              parent=game_engine.get_scene_manager().current_scene)
     overlay.parent = game_engine.get_scene_manager().current_scene
-    overlay.close_btn.destroy()
+
+    # TODO: Try overlay.destroy_child() instead
+    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
+    close_btn.destroy()
 
     overlay_border = assets.Border(x=overlay.x, y=overlay.y, width=overlay.width, height=overlay.height, color=BLACK,
-                                   parent=overlay)
-    overlay.objects.append(overlay_border)
+                                   parent=overlay, name="overlay_border")
+    overlay.add_child(overlay_border)
     button_size = 50
     offset = 7
     font_size = 30
     text_box = assets.Box(y=y + offset, text="Are you sure?")
     text_box.hug_text(offset)
     text_box.set_pos(x + (overlay.width - text_box.width) // 2, text_box.y)
-    overlay.objects.append(text_box)
+    overlay.add_child(text_box)
     yes_btn = assets.Button(x=x, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
                             text="Yes", font_size=font_size,
                             left_click_function=utils.execute_multiple_functions,
-                            left_click_args=[[overlay.destroy, func], [[], args]])
+                            left_click_args=[[overlay.destroy, func], [[], args]], name="overlay_yes_btn")
     yes_btn.hug_text(offset)
     no_btn = assets.Button(x=x + 50, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
                            text="No", font_size=font_size,
-                           left_click_function=overlay.destroy, left_trigger_keys=["escape"])
+                           left_click_function=overlay.destroy, left_trigger_keys=["escape"], name="overlay_no_btn")
     no_btn.hug_text(offset)
 
     buttons = [yes_btn, no_btn]
@@ -1263,7 +1270,7 @@ def create_confirmation_overlay(position, func, args):
     for i, btn in enumerate(buttons):
         btn.static = False
         btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
-        overlay.buttons.append(btn)
+        overlay.add_child(btn)
 
     game_engine.get_scene_manager().current_scene.add_object(overlay)
 

@@ -110,7 +110,11 @@ class GameObject:
     def add_child(self, child):
         self.children.append(child)
         if child.parent is None:
-            child.parent = self
+            pass#child.parent = self
+
+    def add_multiple_children(self, children):
+        for child in children:
+            self.add_child(child)
 
     def remove_child(self, child):
         # TODO: This does the same as destroy_child.
@@ -704,11 +708,8 @@ class Overlay(GameObject):
             self.external_process_arguments = external_process_arguments
         self.external_process_function = external_process_function
 
-        self.buttons = []
-        self.objects = []
-
         self.box = Box(x=self.x, y=self.y, z=self.z+1, width=self.width, height=self.height, color=background_color,
-                       alpha=self.alpha)
+                       alpha=self.alpha, name="overlay_box")
         self.box.static = False
         self.parent = parent
         self.anchored = anchored
@@ -716,21 +717,27 @@ class Overlay(GameObject):
 
         self.close_btn_size = close_btn_size
         self.close_btn_offset = close_btn_offset
-        self.close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
+        close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
                                 y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
                                 image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
                                 left_click_function=self.destroy, left_trigger_keys=["escape"],
                                 name="close_btn")
-        self.buttons.append(self.close_btn)
+        self.add_child(close_btn)
 
     def get_rect(self):
         return self.box.get_rect()
+
+    def get_box(self):
+        return utils.find_object_from_name(self.children, "overlay_box")
+
+    def get_buttons(self):
+        return utils.find_objects_from_type(self.children, Button)
 
     def set_pos(self, x, y):
         self.x = x
         self.y = y
         self.box.set_pos(x, y)
-        for btn in self.buttons:
+        for btn in self.get_buttons():
             btn.update_pos_relative_to_parent()
 
     def set_relative_position_to_parent(self, x, y):
@@ -741,9 +748,7 @@ class Overlay(GameObject):
 
     def get_displayable_objects(self):
         displayable_objects = [self.box]
-        for btn in self.buttons:
-            displayable_objects.extend(btn.get_displayable_objects())
-        for obj in self.objects:
+        for obj in self.children:
             displayable_objects.extend(obj.get_displayable_objects())
 
         return displayable_objects
@@ -752,11 +757,8 @@ class Overlay(GameObject):
         items_to_be_processed = [self]
         items_to_be_processed.extend(self.box.schedule_processing())
 
-        for obj in self.objects:
+        for obj in self.children:
             items_to_be_processed.extend(obj.schedule_processing())
-
-        for btn in self.buttons:
-            items_to_be_processed.extend(btn.schedule_processing())
 
         return items_to_be_processed
 
