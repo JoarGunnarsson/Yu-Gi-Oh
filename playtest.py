@@ -38,7 +38,6 @@ import pygame
 # TODO: Enable the possibility for checking a new button click.
 
 # TODO: Remove possibility to add extra_deck_card to the hand
-# TODO: Token flickers and teleports on creation.
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
@@ -847,7 +846,6 @@ def generate_board(scene):
 
 
 def cards_in_deck_string(scene=None):
-    # TODO: This is not working any more.
     if scene is None:
         scene = game_engine.get_scene_manager().current_scene
     board = utils.find_object_from_name(scene.get_objects(), "board")
@@ -873,7 +871,6 @@ def change_overlay_limits(overlay, change_in_limits):
 
 def create_main_menu():
     scene = Scene(name="main_menu")
-    # TODO: Perhaps ask game_engine.get_scene_manager() for a new scene here instead.
     scene.persistent = True
     scene.background_color = WHITE
     width = 200
@@ -1008,8 +1005,7 @@ def create_play_testing():
                              text="SAVE", name="save_btn",
                              left_click_function=game_engine.schedule_end_of_tick_function,
                              left_click_args=[game_engine.save, []])
-    # TODO: The saving issue probably has to do with the fact that this is the save method of an old, discarded scene
-    # manager?
+
     """assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
                               text="Reset", name="reset_btn", 
                               left_click_function=game_engine.schedule_scene_change,
@@ -1099,9 +1095,8 @@ def create_deck_selection_scene():
     deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
                                             background_color=WHITE)
 
-    # TODO: Try overlay.destroy_child() instead
     close_btn = utils.find_object_from_name(deck_selection_overlay.get_buttons(), "close_btn")
-    close_btn.destroy()
+    deck_selection_overlay.destroy_child(close_btn)
 
     for i, deck in enumerate(DECKS):
         deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, width=large_card_width,
@@ -1113,6 +1108,11 @@ def create_deck_selection_scene():
 
     deck_selection_overlay.parent = scene
     scene.add_object(deck_selection_overlay)
+    deck = DECKS[0]
+    deck_box = assets.Button(text=deck.name, x=1 * large_card_width, y=0, width=large_card_width,
+                                 height=large_card_height)
+    deck_box.set_image(deck.get_image())
+    scene.add_object(deck_box)
     return scene
 
 
@@ -1142,7 +1142,6 @@ def cards_in_hand():
 
 
 def generate_token():
-    # TODO: Tokens don't really work properly...
     scene = game_engine.get_scene_manager().current_scene
     board = utils.find_object_from_name(scene.get_objects(), "board")
 
@@ -1248,9 +1247,8 @@ def create_confirmation_overlay(position, func, args):
                              parent=game_engine.get_scene_manager().current_scene)
     overlay.set_parent(game_engine.get_scene_manager().current_scene)
 
-    # TODO: Try overlay.destroy_child() instead
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
-    close_btn.destroy()
+    overlay.destroy_child(close_btn)
 
     overlay_border = assets.Border(x=overlay.x, y=overlay.y, width=overlay.width, height=overlay.height, color=BLACK,
                                    parent=overlay, name="overlay_border")

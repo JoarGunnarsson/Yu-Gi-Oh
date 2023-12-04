@@ -8,8 +8,6 @@ import game_engine
 import utility_functions as utils
 
 
-# TODO: Add children to all classes etc?
-
 class GameScript:
     def __init__(self):
         pass
@@ -119,11 +117,6 @@ class GameObject:
     def add_multiple_children(self, children):
         for child in children:
             self.add_child(child)
-
-    def remove_child(self, child):
-        # TODO: This does the same as destroy_child.
-        if child in self.children:
-            self.children.remove(child)
 
     def destroy_child(self, child):
         if child in self.children:
@@ -433,19 +426,11 @@ class Button(Box):
 
         self.colors = colors
 
-        self.text = text
-        if image is None:
-            self.image_id = None
-        else:
-            self.image_id = game_engine.get_surface_manager().set_image(image)
-            game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
-
         self.static = False
 
         self.external_process_function = external_process_function
         self.status = "normal"
 
-        # TODO: Is this necessary? self.set_alpha(alpha)
         self.click_detector = ClickDetector(self.get_rect())
 
         border = Border(x=self.x, y=self.y, z=z, width=self.width, height=self.height, parent=self,
@@ -480,9 +465,6 @@ class Button(Box):
         displayable_objects = [self]
         displayable_objects.extend(self.get_border().get_displayable_objects())
         return displayable_objects
-
-    def set_image(self, image):
-        self.image_id = game_engine.get_surface_manager().set_image(image)
 
     def set_colors(self, colors):
         super().set_color(self.colors[self.status])
