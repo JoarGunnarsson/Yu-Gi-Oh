@@ -110,7 +110,10 @@ class GameObject:
     def add_child(self, child):
         self.children.append(child)
         if child.parent is None:
-            pass#child.parent = self
+            child.set_parent(self)
+
+    def set_parent(self, parent):
+        self.parent = parent
 
     def add_multiple_children(self, children):
         for child in children:
@@ -192,6 +195,12 @@ class Box(GameObject):
             return
 
         self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
+
+    def set_parent(self, parent):
+        super().set_parent(parent)
+        self.x_relative_to_parent = self.x - self.parent.x
+        self.y_relative_to_parent = self.y - self.parent.y
+        self.static = False
 
     def set_width(self, width):
         self.width = width
