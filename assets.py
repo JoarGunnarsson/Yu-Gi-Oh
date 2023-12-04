@@ -9,7 +9,13 @@ import utility_functions as utils
 
 
 # TODO: Add children to all classes etc?
-# TODO: Add GameScript class and functionality
+
+class GameScript:
+    def __init__(self):
+        pass
+
+    def process(self):
+        pass
 
 
 class GameObject:
@@ -25,7 +31,6 @@ class GameObject:
         self.children = []
         self.rect = None
         self.rotation_angle = 0
-        self.script_objects = []
         self.alpha = alpha
 
     def get_rect(self):
@@ -59,6 +64,10 @@ class GameObject:
     def set_height(self, height):
         self.height = height
 
+    def set_size(self, width, height):
+        self.set_width(width)
+        self.set_height(height)
+
     def set_width_relative(self, delta_w):
         self.set_width(self.width + delta_w)
 
@@ -82,18 +91,6 @@ class GameObject:
 
     def update_position(self):
         pass
-
-    def add_script_object(self, script_object):
-        self.script_objects.append(script_object)
-        self.add_child(script_object)
-
-    def remove_script_object(self, script_object):
-        if script_object in self.script_objects:
-            self.script_objects.remove(script_object)
-        self.remove_child(script_object)
-
-    def clear_script_objects(self):
-        self.script_objects = []
 
     def destroy(self):
         if self.destroyed:
@@ -132,16 +129,11 @@ class GameObject:
 
 
 class Box(GameObject):
-    def __init__(self, x=0, y=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
+    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK,
                  font_size=40, update_text_func=None, name=None):
-        super().__init__(x=x, y=y, width=width, height=height, name=name)
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
         self.color = color
-        self.alpha = alpha
         self.image_id = None
         if source_image is None:
             self.source_image_id = None
@@ -159,25 +151,13 @@ class Box(GameObject):
             self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                          self.font_size)
 
-        self.update_text_func = update_text_func  # TODO: Could all of these things be handled in a Script GameObject?
+        self.update_text_func = update_text_func
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
         self.static = True
         self.rotation_angle = 0
         self.set_alpha(self.alpha)
-
-    def get_rect(self):
-        return self.rect
-
-    def set_pos(self, x, y):
-        self.x = x
-        self.y = y
-        self.get_rect().update(x, y, self.width, self.height)
-
-    def set_size(self, width, height):
-        self.set_width(width)
-        self.set_height(height)
 
     def set_width(self, width):
         self.width = width
@@ -258,14 +238,13 @@ class Box(GameObject):
 
 
 class Border(GameObject):
-    def __init__(self, x=0, y=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None, name=None):
-        super().__init__(x=x, y=y, width=width, height=height, name=name)
+    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None, name=None):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+
         self.color = color
         self.thickness = thickness
-        self.alpha = alpha
-        self.name = name
-        self.rotation_angle = 0
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+
         top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha)
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
                          color=self.color, alpha=self.alpha)
@@ -275,24 +254,17 @@ class Border(GameObject):
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
         side_boxes = [top_box, bottom_box, left_box, right_box]
+
         self.children.extend(side_boxes)
         self.parent = parent
         if self.parent is not None:
             self.relative_x = self.parent.x - self.x
             self.relative_y = self.parent.y - self.y
 
-    def get_rect(self):
-        return self.rect
-
     def set_pos(self, x, y):
         for box in self.get_side_boxes():
             box.set_pos(x=box.x + (x - self.x), y=box.y + (y - self.y))
-        self.x = x
-        self.y = y
-        self.get_rect().update(x, y, self.width, self.height)
-
-        if hasattr(self, "block_button"):
-            self.block_button.set_pos(x, y)
+        super().set_pos(x, y)
 
     def set_width(self, width):
         width_difference = width - self.width
@@ -311,10 +283,6 @@ class Border(GameObject):
         side_boxes[3].set_height_relative(height_difference)
 
         super().set_height(height)
-
-    def set_size(self, width, height):
-        self.set_width(width)
-        self.set_height(height)
 
     def set_rotation(self, angle):
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
@@ -352,13 +320,13 @@ class Border(GameObject):
 
 
 class Button(GameObject):
-    def __init__(self, x=0, y=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
+    def __init__(self, x=0, y=0, z=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
         """Creates a new button. X and y refers to the upper left corner of the button"""
-        super().__init__(x=x, y=y, width=width, height=height, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -410,21 +378,15 @@ class Button(GameObject):
         else:
             self.colors = colors
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
         self.text = text
-        self.alpha = alpha
         if image is None:
             self.image_id = None
         else:
             self.image_id = game_engine.get_surface_manager().set_image(image)
             game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
 
-        self.name = name
         self.parent = parent
-        self.static = True
+        self.static = False
 
         if self.parent is not None:
             self.x_relative_to_parent = self.x - self.parent.x
@@ -438,9 +400,8 @@ class Button(GameObject):
                        font_size=font_size, text_color=text_color)
 
         self.add_child(self.box)
-        self.set_alpha(alpha)
+        # TODO: Is this necessary? self.set_alpha(alpha)
         self.click_detector = ClickDetector(self.get_rect())
-        self.rotation_angle = 0
 
         self.border = Border(x=self.x, y=self.y, width=self.width, height=self.height, parent=self)
         self.add_child(self.border)
@@ -698,7 +659,7 @@ class ClickDetector:
 
 
 class MobileButton(Button):
-    def __init__(self, x=0, y=0, width=200, height=120, color=(100, 100, 100), alpha=255, image=None, text="",
+    def __init__(self, x=0, y=0, z=0, width=200, height=120, color=(100, 100, 100), alpha=255, image=None, text="",
                  font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
@@ -709,7 +670,7 @@ class MobileButton(Button):
         self.is_movable = True
         self.click_x = None
         self.click_y = None
-        super().__init__(x=x, y=y, width=width, height=height, colors=colors, alpha=alpha, image=image, text=text,
+        super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image=image, text=text,
                          font_size=font_size, text_color=text_color, name=name, parent=parent,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=self.move,
@@ -740,27 +701,20 @@ class MobileButton(Button):
 
 
 class Overlay(GameObject):
-    def __init__(self, x=0, y=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
+    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, anchored=False, position_relative_to_parent=(0, 0),
                  external_process_function=None, external_process_arguments=None):
-        super().__init__(x=x, y=y, width=width, height=height, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
             self.external_process_arguments = external_process_arguments
         self.external_process_function = external_process_function
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.alpha = alpha
-        self.name = name
-
         self.buttons = []
         self.objects = []
 
-        self.box = Box(x=self.x, y=self.y, width=self.width, height=self.height, color=background_color,
+        self.box = Box(x=self.x, y=self.y, z=self.z+1, width=self.width, height=self.height, color=background_color,
                        alpha=self.alpha)
         self.box.static = False
         self.parent = parent

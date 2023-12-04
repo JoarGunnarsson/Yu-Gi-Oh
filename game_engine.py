@@ -3,7 +3,7 @@ import os
 import pickle
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-
+# TODO: Add get_current_scene() function
 
 class Environment:
     def __init__(self):

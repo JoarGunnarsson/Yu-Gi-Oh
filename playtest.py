@@ -489,14 +489,9 @@ class Card(assets.GameObject):
 
 
 class CardOverlay(assets.GameObject):
-    def __init__(self, x=0, y=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
-        super().__init__(name)
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.alpha = alpha
-        self.name = name
+    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+
         self.card_list_function = card_list_function
 
         self.cards_per_row = 7
@@ -633,7 +628,7 @@ class Board:
         self.deck = []
         self.extra_deck = []
         for card_id in card_ids:
-            new_card = Card(card_id=card_id)
+            new_card = Card(card_id=card_id, parent=self)
             card_start_location = utils.card_starting_location(new_card.card_type)
             new_card.location = card_start_location
             if card_start_location == "main_deck":
@@ -830,6 +825,9 @@ class Board:
 
         for card in all_cards:
             card.has_been_processed = False
+
+    def destroy_child(self, child):
+        self.remove_card(child)
 
 
 def generate_board(scene):
@@ -1066,7 +1064,7 @@ def create_large_card_overlay(card):
     height = field_box.height
     width = int((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
 
-    overlay = assets.Overlay(x=field_box.x, y=field_box.y, width=width, height=height, name="large_card_overlay")
+    overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay")
     overlay.parent = scene
     close_btn = utils.find_object_from_name(overlay.buttons, "close_btn")
     offset = 15
@@ -1138,10 +1136,13 @@ def cards_in_hand():
 
 
 def generate_token():
+    # TODO: Tokens don't really work properly...
     scene = game_engine.get_scene_manager().current_scene
-    token = Card(card_id="token")
-    token.x, token.y = scene.get_default_position()
     board = utils.find_object_from_name(scene.get_objects(), "board")
+
+    token = Card(card_id="token", parent=board)
+    token.x, token.y = scene.get_default_position()
+
     board.field.append(token)
     board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
 
@@ -1201,7 +1202,7 @@ def create_location_overlay(location_name, card_list_function):
     y_offset = 10
     overlay_width = field_box.width - 2 * x_offset
     overlay_height = field_box.height - 2 * y_offset
-    overlay = CardOverlay(x=field_box.x + x_offset, y=field_box.y + y_offset, width=overlay_width,
+    overlay = CardOverlay(x=field_box.x + x_offset, y=field_box.y + y_offset, z=2, width=overlay_width,
                           height=overlay_height, alpha=180, name=location_name, card_list_function=card_list_function)
     small_button_width = 50
     small_button_height = small_button_width
