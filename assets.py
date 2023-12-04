@@ -8,6 +8,7 @@ import game_engine
 import utility_functions as utils
 
 
+# TODO: Fix the relative position system for all GameObjects, and it should work if they are not static.
 class GameScript:
     def __init__(self):
         pass
@@ -264,12 +265,14 @@ class Box(GameObject):
 
         if self.update_text_func is not None:
             self.text = self.update_text_func()
-            game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size, self.text_surface_id)
+            game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
+                                                                  self.text_surface_id)
 
         if self.text != "":
             text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
             surface = game_engine.get_surface_manager().fetch_surface(self.surface_id)
-            surface_middle = [(self.width - text_surface.get_width())/2, (self.height - text_surface.get_height())/2]
+            surface_middle = [(self.width - text_surface.get_width()) / 2,
+                              (self.height - text_surface.get_height()) / 2]
             surface.blit(text_surface, surface_middle)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
@@ -280,7 +283,8 @@ class Box(GameObject):
 
 
 class Border(GameObject):
-    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None, name=None):
+    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
+                 name=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
 
         self.color = color
@@ -441,9 +445,6 @@ class Button(Box):
         return utils.find_object_from_name(self.children, "btn_border")
 
     def set_pos(self, x, y):
-        if self.static:
-            return
-
         super().set_pos(x, y)
 
         for child in self.children:
@@ -716,7 +717,7 @@ class Overlay(GameObject):
             self.external_process_arguments = external_process_arguments
         self.external_process_function = external_process_function
 
-        self.box = Box(x=self.x, y=self.y, z=self.z+1, width=self.width, height=self.height, color=background_color,
+        self.box = Box(x=self.x, y=self.y, z=self.z + 1, width=self.width, height=self.height, color=background_color,
                        alpha=self.alpha, name="overlay_box")
         self.box.static = False
         self.parent = parent
@@ -726,10 +727,10 @@ class Overlay(GameObject):
         self.close_btn_size = close_btn_size
         self.close_btn_offset = close_btn_offset
         close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                                y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
-                                image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
-                                left_click_function=self.destroy, left_trigger_keys=["escape"],
-                                name="close_btn")
+                           y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
+                           image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
+                           left_click_function=self.destroy, left_trigger_keys=["escape"],
+                           name="close_btn")
         self.add_child(close_btn)
 
     def get_rect(self):

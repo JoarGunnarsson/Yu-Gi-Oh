@@ -487,7 +487,6 @@ class Card(assets.GameObject):
         large_card_btn.destroy()
 
 
-
 class CardOverlay(assets.GameObject):
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
@@ -500,7 +499,7 @@ class CardOverlay(assets.GameObject):
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
         box = assets.Box(x=self.x, y=self.y, width=self.width, height=self.height,
-                              color=WHITE, alpha=self.alpha, name="overlay_box")
+                         color=WHITE, alpha=self.alpha, name="overlay_box")
         self.add_child(box)
 
         self.card_list = self.card_list_function()
@@ -511,9 +510,9 @@ class CardOverlay(assets.GameObject):
         close_btn_size = 30
         close_btn_offset = 5
         close_btn = assets.Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                                       y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
-                                       image=pygame.image.load("Images/close_button.png"), name="close_btn",
-                                       left_click_function=self.destroy, left_trigger_keys=["escape"])
+                                  y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
+                                  image=pygame.image.load("Images/close_button.png"), name="close_btn",
+                                  left_click_function=self.destroy, left_trigger_keys=["escape"])
 
         self.add_child(close_btn)
 
@@ -916,6 +915,7 @@ def create_test_scene():
                            colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175)
     button.hug_text(15)
     movable_btn = assets.MobileButton(x=100, y=100)
+
     follow_box = assets.Box(x=200, y=125, parent=movable_btn)
     movable_btn.add_child(follow_box)
     scene.add_object(movable_btn)
@@ -1110,7 +1110,7 @@ def create_deck_selection_scene():
     scene.add_object(deck_selection_overlay)
     deck = DECKS[0]
     deck_box = assets.Button(text=deck.name, x=1 * large_card_width, y=0, width=large_card_width,
-                                 height=large_card_height)
+                             height=large_card_height)
     deck_box.set_image(deck.get_image())
     scene.add_object(deck_box)
     return scene
