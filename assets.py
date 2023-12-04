@@ -19,7 +19,7 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, name=""):
         self.x = x
         self.y = y
         self.z = z
@@ -27,11 +27,15 @@ class GameObject:
         self.height = height
         self.name = name
         self.destroyed = False
-        self.parent = None
+        self.parent = parent
         self.children = []
         self.rect = None
         self.rotation_angle = 0
         self.alpha = alpha
+        if self.parent is None:
+            self.relative_x, self.relative_y = 0, 0
+        else:
+            self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
     def get_rect(self):
         return self.rect
@@ -57,6 +61,13 @@ class GameObject:
     def set_pos_relative(self, delta_x, delta_y):
         self.set_x_relative(delta_x)
         self.set_y_relative(delta_y)
+
+    def update_position(self):
+        if self.parent is not None:
+            self.update_relative_position()
+
+    def update_relative_position(self):
+        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
 
     def set_width(self, width):
         self.width = width
@@ -89,9 +100,6 @@ class GameObject:
     def set_alpha(self, alpha):
         self.alpha = alpha
 
-    def update_position(self):
-        pass
-
     def destroy(self):
         if self.destroyed:
             return
@@ -117,10 +125,11 @@ class GameObject:
         self.children = []
 
     def schedule_processing(self):
-        items_to_be_processed = []
+        items_to_be_processed = [self]
+
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
-        items_to_be_processed.append(self)
+
         return items_to_be_processed
 
     def save(self):
@@ -131,8 +140,8 @@ class GameObject:
 class Box(GameObject):
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK,
-                 font_size=40, update_text_func=None, name=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+                 font_size=40, update_text_func=None, parent=None, name=None):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, name=name)
         self.color = color
         self.image_id = None
         if source_image is None:
@@ -146,7 +155,7 @@ class Box(GameObject):
         self.text_color = text_color
         self.font_size = font_size
         if self.text == "":
-            self.text_surface_id = None  # TODO: Why do this instead of none?
+            self.text_surface_id = None
         else:
             self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                          self.font_size)
@@ -158,6 +167,27 @@ class Box(GameObject):
         self.static = True
         self.rotation_angle = 0
         self.set_alpha(self.alpha)
+
+        self.parent = parent
+        if self.parent is not None:
+            self.x_relative_to_parent = self.x - self.parent.x
+            self.y_relative_to_parent = self.y - self.parent.y
+            self.static = False
+
+    def set_pos_relative_to_parent(self, x, y):
+        """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
+        coordinates of the button in the coordinate system where the parents position is the origin."""
+        if self.static:
+            return
+
+        self.x_relative_to_parent, self.y_relative_to_parent = x, y
+        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
+
+    def update_pos_relative_to_parent(self):
+        if self.static:
+            return
+
+        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
 
     def set_width(self, width):
         self.width = width
@@ -227,6 +257,7 @@ class Box(GameObject):
 
         if self.update_text_func is not None:
             self.text = self.update_text_func()
+            game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size, self.text_surface_id)
 
         if self.text != "":
             text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
@@ -235,6 +266,10 @@ class Box(GameObject):
             surface.blit(text_surface, surface_middle)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
+
+    def process(self):
+        if self.parent is not None and not self.static:
+            self.set_pos(x=self.parent.x + self.x_relative_to_parent, y=self.parent.y + self.y_relative_to_parent)
 
 
 class Border(GameObject):
@@ -307,19 +342,11 @@ class Border(GameObject):
     def get_displayable_objects(self):
         return self.get_side_boxes()
 
-    def update_position(self):
-        self.update_relative_position()
-
-    def update_relative_position(self):
-        if self.parent is None:
-            return
-        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
-
     def process(self):
         self.update_relative_position()
 
 
-class Button(GameObject):
+class Button(Box):
     # TODO: Change left_click_args etc to args and kwargs.
     def __init__(self, x=0, y=0, z=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
@@ -327,7 +354,13 @@ class Button(GameObject):
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
         """Creates a new button. X and y refers to the upper left corner of the button"""
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+
+        # TODO: Perhaps change the format for the colors, use a list or something.
+
+        standard_colors = {"normal": (100, 100, 100), "hover": (150, 150, 150), "pressed": (200, 200, 200)}
+        if colors is None:
+            colors = standard_colors
+
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -368,16 +401,16 @@ class Button(GameObject):
         else:
             self.key_functions = key_functions
 
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors["normal"], alpha=alpha,
+                         source_image=image, text=text, font_size=font_size, text_color=text_color, parent=parent,
+                         name=name)
+
         self.left_click_function = left_click_function
         self.left_hold_function = left_hold_function
         self.right_click_function = right_click_function
         self.right_hold_function = right_hold_function
 
-        if colors is None:
-            # TODO: Perhaps change the format for the colors, use a list or something.
-            self.colors = {"normal": (100, 100, 100), "hover": (150, 150, 150), "pressed": (200, 200, 200)}
-        else:
-            self.colors = colors
+        self.colors = colors
 
         self.text = text
         if image is None:
@@ -386,77 +419,44 @@ class Button(GameObject):
             self.image_id = game_engine.get_surface_manager().set_image(image)
             game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
 
-        self.parent = parent
         self.static = False
-
-        if self.parent is not None:
-            self.x_relative_to_parent = self.x - self.parent.x
-            self.y_relative_to_parent = self.y - self.parent.y
-            self.static = False
 
         self.external_process_function = external_process_function
         self.status = "normal"
-        self.box = Box(x=self.x, y=self.y, width=self.width, height=self.height, color=self.colors[self.status],
-                       alpha=alpha, source_image=image, text=self.text,
-                       font_size=font_size, text_color=text_color)
 
-        self.add_child(self.box)
         # TODO: Is this necessary? self.set_alpha(alpha)
         self.click_detector = ClickDetector(self.get_rect())
 
-        self.border = Border(x=self.x, y=self.y, width=self.width, height=self.height, parent=self)
+        self.border = Border(x=self.x, y=self.y, z=z, width=self.width, height=self.height, parent=self)
         self.add_child(self.border)
-
-    def get_rect(self):
-        return self.box.get_rect()
 
     def set_pos(self, x, y):
         if self.static:
             return
-        self.x = x
-        self.y = y
-        self.box.set_pos(self.x, self.y)
+
+        super().set_pos(x, y)
+
         for child in self.children:
             child.update_position()
 
-    def set_pos_relative_to_parent(self, x, y):
-        """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
-        coordinates of the button in the coordinate system where the parents position is the origin."""
-        if self.static:
-            return
+    def set_width(self, width):
+        super().set_width(width)
+        self.border.set_width(width)
 
-        self.x_relative_to_parent, self.y_relative_to_parent = x, y
-        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
-
-    def update_pos_relative_to_parent(self):
-        if self.static:
-            return
-
-        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
-
-    def set_size(self, width, height):
-        self.width, self.height = width, height
-        self.box.set_size(width, height)
-        self.border.set_size(width, height)
+    def set_height(self, height):
+        super().set_height(height)
+        self.border.set_height(height)
 
     def set_rotation(self, angle):
         super().set_rotation(angle)
-        self.box.set_rotation(angle)
         self.border.set_rotation(angle)
-
-    def set_alpha(self, alpha):
-        self.alpha = alpha
-        self.box.set_alpha(alpha)
-        for key in self.colors.keys():
-            self.colors[key] = (self.colors[key][0], self.colors[key][1], self.colors[key][1])
 
     def set_image(self, image):
         self.image_id = game_engine.get_surface_manager().set_image(image)
-        self.box.set_image(image)
 
     def set_colors(self, colors):
+        super().set_color(self.colors[self.status])
         self.colors = colors
-        self.box.set_color(self.colors[self.status])
 
     def set_left_click_function(self, new_function, new_arguments=None):
         if new_arguments is None:
@@ -487,13 +487,6 @@ class Button(GameObject):
 
     def set_external_process_arguments(self, args):
         self.external_process_arguments = args
-
-    def get_displayable_objects(self):
-        return [self.box]
-
-    def hug_text(self, offset):
-        self.box.hug_text(offset)
-        self.set_size(width=self.box.width, height=self.box.height)
 
     def click_blocked(self, click_position):
         masking_types = [Button, Overlay, Box]
@@ -574,8 +567,7 @@ class Button(GameObject):
             self.status = "hover"
 
     def process(self):
-        if self.parent is not None and not self.static:
-            self.set_pos(x=self.parent.x + self.x_relative_to_parent, y=self.parent.y + self.y_relative_to_parent)
+        super().process()
 
         self.click_detector.update()
 
@@ -584,7 +576,7 @@ class Button(GameObject):
         if self.external_process_function is not None:
             self.external_process_function(*self.external_process_arguments)
 
-        self.box.color = self.colors[self.status]
+        self.set_color(self.colors[self.status])
 
 
 class ClickDetector:

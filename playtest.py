@@ -909,9 +909,11 @@ def create_test_scene():
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                            left_click_function=create_confirmation_overlay,
                            left_click_args=[(700, 700), test_button, []],
-                           colors={"normal": SIENNA, "hover": SADDLE_BROWN, "pressed": SADDLE_BROWN})
+                           colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175)
     button.hug_text(15)
     movable_btn = assets.MobileButton(x=100, y=100)
+    follow_box = assets.Box(x=200, y=125, parent=movable_btn)
+    movable_btn.add_child(follow_box)
     scene.add_object(movable_btn)
     scene.add_object(button)
     return scene
@@ -1134,7 +1136,8 @@ def generate_token():
     board = utils.find_object_from_name(scene.get_objects(), "board")
 
     token = Card(card_id="token", parent=board)
-    token.x, token.y = scene.get_default_position()
+    x, y = scene.get_default_position()  # TODO: Change this to something else?
+    token.set_pos(x, y)
 
     board.field.append(token)
     board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
