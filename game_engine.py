@@ -64,7 +64,7 @@ class GameState:
         self.surface_type_dict = self.surface_manager.surface_type_dict
         self.images = self.surface_manager.images
         self.surface_font_dict = self.surface_manager.surface_font_dict
-        self.max_id = self.surface_manager.current_max_id
+        self.current_max_id = self.surface_manager.current_max_id
 
         self.scene_manager = SceneManager()
 
@@ -76,7 +76,7 @@ class GameState:
         self.surface_type_dict = self.surface_manager.surface_type_dict
         self.images = self.surface_manager.images
         self.surface_font_dict = self.surface_manager.surface_font_dict
-        self.max_id = self.surface_manager.current_max_id
+        self.current_max_id = self.surface_manager.current_max_id
 
 
 class Placeholder:
@@ -241,7 +241,7 @@ class SurfaceManager:
         self.surface_font_dict = loaded_game_state.surface_font_dict
         self.surface_type_dict = loaded_game_state.surface_type_dict
         self.images = loaded_game_state.images
-        self.current_max_id = loaded_game_state.max_id
+        self.current_max_id = loaded_game_state.current_max_id
         self.surfaces = {}
         self.fonts = {}
         for surface_id in self.surface_type_dict.keys():
@@ -261,15 +261,24 @@ class SceneManager:
         # TODO: Implement scene switching. For example, tag a scene as persistent or temporary, and clear it only if
         # it is temporary.
 
+    def create_scene(self, scene_function, scene_name, scene_arguments):
+        if scene_name in self.scenes and self.scenes[scene_name].persistent:
+            return self.change_scene_by_name(scene_name)
+
+        if type(scene_arguments) is dict:
+            scene = scene_function(**scene_arguments)
+        else:
+            scene = scene_function(*scene_arguments)
+
+        return self.change_scene(scene)
+
     def change_scene_by_name(self, name):
         self.clear_current_scene()
         self.current_scene = self.scenes[name]
+        return self.current_scene
 
     def change_scene(self, scene):
         self.clear_current_scene()
-        if scene.persistent and scene.name in self.scenes:
-            self.current_scene = self.scenes[scene.name]
-            return self.current_scene
         self.current_scene = scene
         self.scenes[scene.name] = scene
         return scene
@@ -278,11 +287,11 @@ class SceneManager:
         if self.current_scene is not None and not self.current_scene.persistent:
             self.current_scene.clear()
 
-    def schedule_scene_change(self, scene_function, scene_arguments=None):
+    def schedule_scene_change(self, scene_function, scene_name="", scene_arguments=None):
         if scene_arguments is None:
             scene_arguments = []
 
-        schedule_start_of_tick_function(scene_function, scene_arguments)
+        schedule_start_of_tick_function(self.create_scene, [scene_function, scene_name, scene_arguments])
 
 
 class Scene:
@@ -433,8 +442,12 @@ def end_tick():
     game_state.placeholder.end_of_tick_arguments = []
 
 
-def schedule_scene_change(scene_function, scene_arguments=None):
-    get_scene_manager().schedule_scene_change(scene_function, scene_arguments)
+def create_scene(scene_function, scene_name, scene_arguments):
+    get_scene_manager().create_scene(scene_function, scene_name, scene_arguments)
+
+
+def schedule_scene_change(scene_function, scene_name, scene_arguments=None):
+    get_scene_manager().schedule_scene_change(scene_function, scene_name, scene_arguments)
 
 
 def save(save_number=0):
@@ -448,6 +461,7 @@ def _save(save_number):
         set_surface_manager(None)
         pickle.dump(game_state, save_file)
         set_surface_manager(surface_manager)
+        print(get_surface_manager().current_max_id)
 
 
 def load(save_number=0):

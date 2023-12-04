@@ -320,6 +320,7 @@ class Border(GameObject):
 
 
 class Button(GameObject):
+    # TODO: Change left_click_args etc to args and kwargs.
     def __init__(self, x=0, y=0, z=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,

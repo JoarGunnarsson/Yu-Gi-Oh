@@ -620,7 +620,7 @@ class CardOverlay(assets.GameObject):
 
 
 class Board:
-    def __init__(self, card_ids=None, name=""):
+    def __init__(self, card_ids=None, name="", scene=None):
         self.z = 1
         if card_ids is None:
             card_ids = []
@@ -628,7 +628,7 @@ class Board:
         self.deck = []
         self.extra_deck = []
         for card_id in card_ids:
-            new_card = Card(card_id=card_id, parent=self)
+            new_card = Card(card_id=card_id, parent=None)
             card_start_location = utils.card_starting_location(new_card.card_type)
             new_card.location = card_start_location
             if card_start_location == "main_deck":
@@ -645,10 +645,11 @@ class Board:
         self.field = []
         self.card_processing_order = []
         self.name = name
+        self.scene = scene
         card_space = 10  # TODO: This is hard-coded.
-        if game_engine.get_scene_manager().current_scene.name == "play_testing":
-            current_scene_objects = game_engine.get_scene_manager().current_scene.get_objects()
-            hand_box_width = utils.find_object_from_name(current_scene_objects, "hand_box").width
+        if self.scene.name == "play_testing":
+            scene_objects = self.scene.get_objects()
+            hand_box_width = utils.find_object_from_name(scene_objects, "hand_box").width
             self.display_hand_number = hand_box_width // (constants.standard_card_width + card_space)
         else:
             self.display_hand_number = 10
@@ -676,9 +677,7 @@ class Board:
         if card_index is None:
             card_index = self.hand.index(card)
 
-        scene = game_engine.get_scene_manager().current_scene
-        hand_box = utils.find_object_from_name(scene.get_objects(), "hand_box")
-
+        hand_box = utils.find_object_from_name(self.scene.get_objects(), "hand_box")
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
         card_space = 10
 
@@ -835,7 +834,7 @@ def generate_board(scene):
     if existing_board is not None:
         scene.remove_object(existing_board)
 
-    board = Board(card_ids=deck_manager.get_deck().cards, name="board")
+    board = Board(card_ids=deck_manager.get_deck().cards, name="board", scene=scene)
     scene.add_object(board)
     return board
 
@@ -850,7 +849,7 @@ def cards_in_deck_string(scene=None):
 
 def choose_deck(deck):
     deck_manager.set_deck(deck)
-    game_engine.schedule_scene_change(create_play_testing)
+    game_engine.schedule_scene_change(create_play_testing, scene_name="play_testing")
 
 
 def change_overlay_limits(overlay, change_in_limits):
@@ -869,10 +868,6 @@ def create_main_menu():
     scene = Scene(name="main_menu")
     # TODO: Perhaps ask game_engine.get_scene_manager() for a new scene here instead.
     scene.persistent = True
-    if scene.name in game_engine.get_scene_manager().scenes:
-        game_engine.get_scene_manager().change_scene_by_name(scene.name)
-        return
-    game_engine.get_scene_manager().change_scene(scene)
     scene.background_color = WHITE
     width = 200
     height = 100
@@ -880,7 +875,7 @@ def create_main_menu():
     start_btn = assets.Button(y=environment.get_height() // 2, width=width,
                               height=height, text="Start",
                               left_click_function=game_engine.schedule_scene_change,
-                              left_click_args=[create_deck_selection_scene])
+                              left_click_args=[create_deck_selection_scene, "deck_selection"])
 
     load_btn = assets.Button(y=environment.get_height() // 2, width=width,
                              height=height, text="Load Save", left_click_function=game_engine.load)
@@ -888,7 +883,7 @@ def create_main_menu():
     test_btn = assets.Button(y=environment.get_height() // 2, width=width, height=height,
                              text="Testing", font_size=35,
                              left_click_function=game_engine.schedule_scene_change,
-                             left_click_args=[create_test_scene])
+                             left_click_args=[create_test_scene, "test_scene"])
 
     exit_btn = assets.Button(y=environment.get_height() // 2, width=width,
                              height=height, text="Exit", left_click_function=sys.exit)
@@ -901,14 +896,15 @@ def create_main_menu():
         btn.set_pos((i + 1) * x_offset + i * width, btn.y)
         scene.add_object(btn)
 
+    return scene
+
 
 def create_test_scene():
     scene = Scene(name="test_scene")
-    game_engine.get_scene_manager().change_scene(scene)
     scene.background_color = SIENNA
     exit_btn = assets.Button(text="Main Menu", alpha=255,
                              left_click_function=game_engine.schedule_scene_change,
-                             left_click_args=[create_main_menu])
+                             left_click_args=[create_main_menu, "main_menu"])
     scene.add_object(exit_btn)
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                            left_click_function=create_confirmation_overlay,
@@ -918,17 +914,12 @@ def create_test_scene():
     movable_btn = assets.MobileButton(x=100, y=100)
     scene.add_object(movable_btn)
     scene.add_object(button)
+    return scene
 
 
 def create_play_testing():
     scene = Scene(name="play_testing")
-    scene.persistent = True
-    # TODO: Fix the scene change structure so that the below code doesn't have to be repeated for every scene
-    # creation function. Perhaps using classes?
-    if scene.name in game_engine.get_scene_manager().scenes:
-        game_engine.get_scene_manager().change_scene_by_name(scene.name)
-        return
-    game_engine.get_scene_manager().change_scene(scene)
+
     scene.background_color = GREY
 
     button_width = 200
@@ -1002,7 +993,7 @@ def create_play_testing():
     main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
                                   text="Main Menu", name="main_menu_btn",
                                   left_click_function=game_engine.schedule_scene_change,
-                                  left_click_args=[create_main_menu])
+                                  left_click_args=[create_main_menu, "main_menu"])
 
     save_btn = assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
                              text="SAVE", name="save_btn",
@@ -1049,6 +1040,8 @@ def create_play_testing():
     for _ in range(5):
         board.draw()
 
+    return scene
+
 
 def create_large_card_overlay(card):
     scene = game_engine.get_scene_manager().current_scene
@@ -1093,7 +1086,6 @@ def create_large_card_overlay(card):
 
 def create_deck_selection_scene():
     scene = Scene(name="deck_selection")
-    game_engine.get_scene_manager().change_scene(scene)
 
     deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
                                             background_color=WHITE)
@@ -1108,6 +1100,7 @@ def create_deck_selection_scene():
 
     deck_selection_overlay.parent = scene
     scene.add_object(deck_selection_overlay)
+    return scene
 
 
 def cards_in_deck():
@@ -1309,7 +1302,7 @@ if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("A tool for playtesting Yu-Gi-Oh!")
 
-    create_main_menu()
+    game_engine.schedule_scene_change(create_main_menu, "main_menu")
     running = True
     while running:
         running = environment.handle_events()
