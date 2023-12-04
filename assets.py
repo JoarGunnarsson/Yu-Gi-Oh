@@ -198,9 +198,9 @@ class Box(GameObject):
 
     def set_parent(self, parent):
         super().set_parent(parent)
-        self.x_relative_to_parent = self.x - self.parent.x
-        self.y_relative_to_parent = self.y - self.parent.y
-        self.static = False
+        if not self.static:
+            self.x_relative_to_parent = self.x - self.parent.x
+            self.y_relative_to_parent = self.y - self.parent.y
 
     def set_width(self, width):
         self.width = width

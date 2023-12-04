@@ -463,7 +463,6 @@ def _save(save_number):
         set_surface_manager(None)
         pickle.dump(game_state, save_file)
         set_surface_manager(surface_manager)
-        print(len(get_surface_manager().surfaces.keys()))
 
 
 def load(save_number=0):

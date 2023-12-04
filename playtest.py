@@ -302,7 +302,7 @@ class Card(assets.GameObject):
         self.remove_card_overlay()
         if location in ["hand", "field"]:
             self.set_alpha(255)
-            self.parent = None
+            self.set_parent(None)
             self.change_to_movable_card()
             if previous_location not in ["hand", "field"]:
                 game_engine.get_scene_manager().current_scene.hide_object(self.button)
@@ -471,7 +471,7 @@ class Card(assets.GameObject):
         large_card_btn.toggle_continuous_hovering()
         large_card_btn.external_process_function = utils.remove_on_external_clicks
         large_card_btn.static = True
-        large_card_btn.parent = self
+        large_card_btn.set_parent(self)
         allowed_rect_list = [card_btn.get_rect(), large_card_btn.get_rect()]
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
@@ -499,9 +499,9 @@ class CardOverlay(assets.GameObject):
         self.start_index = 0
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
-        self.buttons = []
-        self.box = assets.Box(x=self.x, y=self.y, width=self.width, height=self.height,
-                              color=WHITE, alpha=self.alpha)
+        box = assets.Box(x=self.x, y=self.y, width=self.width, height=self.height,
+                              color=WHITE, alpha=self.alpha, name="overlay_box")
+        self.add_child(box)
 
         self.card_list = self.card_list_function()
         self.cards = []
@@ -510,15 +510,21 @@ class CardOverlay(assets.GameObject):
 
         close_btn_size = 30
         close_btn_offset = 5
-        self.close_btn = assets.Button(x=self.x + self.width - close_btn_size - close_btn_offset,
+        close_btn = assets.Button(x=self.x + self.width - close_btn_size - close_btn_offset,
                                        y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
                                        image=pygame.image.load("Images/close_button.png"), name="close_btn",
                                        left_click_function=self.destroy, left_trigger_keys=["escape"])
 
-        self.buttons.append(self.close_btn)
+        self.add_child(close_btn)
+
+    def get_box(self):
+        return utils.find_object_from_name(self.children, "overlay_box")
+
+    def get_buttons(self):
+        return utils.find_objects_from_type(self.children, assets.Button)
 
     def create_overlay_card(self, card, i):
-        card.parent = self
+        card.set_parent(self)
         x, y, card_width, card_height = self.get_card_info(i)
         card.set_pos(x, y)
         card.set_size(card_width, card_height)
@@ -542,21 +548,21 @@ class CardOverlay(assets.GameObject):
         aspect_ratio = card_aspect_ratio
 
         card_width = int(
-            min((self.box.height - 2 * min_y_offset - (math.ceil(max_cards_to_show / self.cards_per_row) - 1)
+            min((self.get_box().height - 2 * min_y_offset - (math.ceil(max_cards_to_show / self.cards_per_row) - 1)
                  * card_space) / (math.ceil(max_cards_to_show / self.cards_per_row) * aspect_ratio),
-                (self.box.width - 2 * min_x_offset - (self.cards_per_row - 1) * card_space)
+                (self.get_box().width - 2 * min_x_offset - (self.cards_per_row - 1) * card_space)
                 / self.cards_per_row))
 
         card_height = int(aspect_ratio * card_width)
 
         x_offset = int(
-            (self.box.width - (self.cards_per_row - 1) * card_space - self.cards_per_row * card_width) / 2)
+            (self.get_box().width - (self.cards_per_row - 1) * card_space - self.cards_per_row * card_width) / 2)
 
-        y_offset = int((self.box.height - math.ceil(max_cards_to_show / self.cards_per_row - 1) * card_space
+        y_offset = int((self.get_box().height - math.ceil(max_cards_to_show / self.cards_per_row - 1) * card_space
                         - math.ceil(max_cards_to_show / self.cards_per_row) * card_height) / 2)
 
-        x = self.box.x + x_offset + int(i % self.cards_per_row * (card_space + card_width))
-        y = self.box.y + y_offset + int(i // self.cards_per_row * (card_space + card_height))
+        x = self.get_box().x + x_offset + int(i % self.cards_per_row * (card_space + card_width))
+        y = self.get_box().y + y_offset + int(i // self.cards_per_row * (card_space + card_height))
         return x, y, card_width, card_height
 
     def remove_overlay(self):
@@ -566,9 +572,9 @@ class CardOverlay(assets.GameObject):
     def schedule_processing(self):
         self.pre_process()
         items_to_be_processed = []
-        items_to_be_processed.extend(self.box.schedule_processing())
+        items_to_be_processed.extend(self.get_box().schedule_processing())
 
-        for btn in self.buttons:
+        for btn in self.get_buttons():
             items_to_be_processed.extend(btn.schedule_processing())
 
         items_to_be_processed.append(self)
@@ -1060,7 +1066,7 @@ def create_large_card_overlay(card):
     width = int((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
 
     overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay")
-    overlay.parent = scene
+    overlay.set_parent(scene)
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     offset = 15
 
@@ -1072,9 +1078,9 @@ def create_large_card_overlay(card):
                                 width=card_width,
                                 height=card_height,
                                 source_image=game_engine.get_surface_manager().fetch_image(card.original_image_id))
-
-    large_card_box.parent = overlay
     large_card_box.static = True
+    large_card_box.set_parent(overlay)
+
     allowed_rect_list = [overlay.box.get_rect(), large_card_btn.get_rect()]
     overlay.external_process_function = utils.remove_on_external_clicks
     overlay.external_process_arguments = [overlay, allowed_rect_list]
@@ -1207,8 +1213,9 @@ def create_location_overlay(location_name, card_list_function):
     small_button_width = 50
     small_button_height = small_button_width
 
+    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     scroll_up_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
-                                  y=overlay.y + 2 * y_offset + overlay.close_btn.height,
+                                  y=overlay.y + 2 * y_offset + close_btn.height,
                                   width=small_button_width, height=small_button_height,
                                   image=pygame.image.load("Images/up_arrow.png"), name="scroll_up_btn",
                                   left_trigger_keys=["up"],
@@ -1238,7 +1245,7 @@ def create_confirmation_overlay(position, func, args):
     x, y = position
     overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
                              parent=game_engine.get_scene_manager().current_scene)
-    overlay.parent = game_engine.get_scene_manager().current_scene
+    overlay.set_parent(game_engine.get_scene_manager().current_scene)
 
     # TODO: Try overlay.destroy_child() instead
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
