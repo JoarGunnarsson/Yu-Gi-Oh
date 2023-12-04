@@ -488,6 +488,7 @@ class Card(assets.GameObject):
         large_card_btn.destroy()
 
 
+
 class CardOverlay(assets.GameObject):
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)

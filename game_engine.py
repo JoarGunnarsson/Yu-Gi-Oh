@@ -303,6 +303,7 @@ class Scene:
         self.display_order = []
         self.background_color = WHITE
         self.persistent = False
+        self.hidden_objects = []
 
     def get_objects(self):
         return self.objects
@@ -362,12 +363,16 @@ class Scene:
 
     def remove_from_processing_order(self, source_object):
         """Removes an object from the processing order."""
+        self.hidden_objects.append(source_object)
         if source_object in self.processing_order:
             self.processing_order.remove(source_object)
 
     def remove_from_display_order(self, source_object):
         """Removes an object from the display order. This is not currently doing anything"""
-        objects_to_remove = source_object.get_displayable_objects()
+        if hasattr(source_object, "get_displayable_objects"):
+            objects_to_remove = source_object.get_displayable_objects()
+        else:
+            objects_to_remove = [source_object]
         for obj in objects_to_remove:
             if obj in self.display_order:
                 self.display_order.remove(obj)
@@ -383,16 +388,17 @@ class Scene:
 
         self.schedule_processing()
 
+        # Process objects.
+        self.display_order = self.processing_order
+        for obj in reversed(self.processing_order.copy()):
+            self.process_object(obj)
+
         # Display objects.
         for obj in self.processing_order:
             if hasattr(obj, "get_display_surface") and callable(obj.get_display_surface):
                 surface, rect = obj.get_display_surface()
                 environment.screen.blit(surface, rect)
 
-        # TODO: This should be before displaying
-        self.display_order = self.processing_order
-        for obj in reversed(self.processing_order.copy()):
-            self.process_object(obj)
 
         # Remove destroyed objects
         for obj in self.objects:

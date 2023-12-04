@@ -104,6 +104,7 @@ class GameObject:
         if self.destroyed:
             return
         self.destroyed = True
+        game_engine.get_scene_manager().current_scene.hide_object(self)
         if self.parent is not None and hasattr(self.parent, "destroy_child"):
             game_engine.schedule_end_of_tick_function(self.parent.destroy_child, [self])
 
@@ -293,15 +294,22 @@ class Border(GameObject):
         self.thickness = thickness
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha)
+        top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha,
+                      parent=self)
+
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
-                         color=self.color, alpha=self.alpha)
+                         color=self.color, alpha=self.alpha, parent=self)
+
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness,
-                       height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
+                       height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self)
 
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, width=self.thickness,
-                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha)
+                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self)
+
         side_boxes = [top_box, bottom_box, left_box, right_box]
+
+        for box in side_boxes:
+            box.static = True
 
         self.children.extend(side_boxes)
         self.parent = parent
@@ -440,8 +448,12 @@ class Button(Box):
         # TODO: Is this necessary? self.set_alpha(alpha)
         self.click_detector = ClickDetector(self.get_rect())
 
-        self.border = Border(x=self.x, y=self.y, z=z, width=self.width, height=self.height, parent=self)
-        self.add_child(self.border)
+        border = Border(x=self.x, y=self.y, z=z, width=self.width, height=self.height, parent=self,
+                        name="btn_border")
+        self.add_child(border)
+
+    def get_border(self):
+        return utils.find_object_from_name(self.children, "btn_border")
 
     def set_pos(self, x, y):
         if self.static:
@@ -454,15 +466,20 @@ class Button(Box):
 
     def set_width(self, width):
         super().set_width(width)
-        self.border.set_width(width)
+        self.get_border().set_width(width)
 
     def set_height(self, height):
         super().set_height(height)
-        self.border.set_height(height)
+        self.get_border().set_height(height)
 
     def set_rotation(self, angle):
         super().set_rotation(angle)
-        self.border.set_rotation(angle)
+        self.get_border().set_rotation(angle)
+
+    def get_displayable_objects(self):
+        displayable_objects = [self]
+        displayable_objects.extend(self.get_border().get_displayable_objects())
+        return displayable_objects
 
     def set_image(self, image):
         self.image_id = game_engine.get_surface_manager().set_image(image)
