@@ -57,7 +57,6 @@ class Environment:
 
 class GameState:
     def __init__(self):
-
         self.surface_manager = SurfaceManager()
         self.surface_size_dict = self.surface_manager.surface_size_dict
         self.surface_image_dict = self.surface_manager.surface_image_dict
@@ -88,10 +87,7 @@ class Placeholder:
 
 
 class SurfaceManager:
-    # TODO: Make a method for each type of surface, and a dictionary, what is needed to create a new surface of that
-    # type. For image, simply the image in string format is ok, as well as a size.
-    # For surface, size is enough.
-    # For text surface (font?), text, font size, font, size, should be enough.
+    # TODO: Need some way to remove surfaces that are no longer used. Could do this for scene changes?
     def __init__(self):
         self.current_max_id = 0
         self.fonts = {}
@@ -117,6 +113,8 @@ class SurfaceManager:
         return surface_id
 
     def fetch_surface(self, surface_id):
+        if surface_id not in self.surfaces:
+            self.restore_surface(surface_id)
         return self.surfaces[surface_id]
 
     def create_surface(self, width, height, alpha=255, surface_id=None):
@@ -229,6 +227,8 @@ class SurfaceManager:
         return font_surface_id
 
     def fetch_text_surface(self, surface_id):
+        if surface_id not in self.surfaces:
+            self.restore_text_surface(surface_id)
         return self.surfaces[surface_id]
 
     def restore_text_surface(self, surface_id):
@@ -262,6 +262,7 @@ class SceneManager:
         # it is temporary.
 
     def create_scene(self, scene_function, scene_name, scene_arguments):
+        get_surface_manager().surfaces = {} # TODO: Enable the clearing of old images too...
         if scene_name in self.scenes and self.scenes[scene_name].persistent:
             return self.change_scene_by_name(scene_name)
 
@@ -461,7 +462,7 @@ def _save(save_number):
         set_surface_manager(None)
         pickle.dump(game_state, save_file)
         set_surface_manager(surface_manager)
-        print(get_surface_manager().current_max_id)
+        print(len(get_surface_manager().surfaces.keys()))
 
 
 def load(save_number=0):
