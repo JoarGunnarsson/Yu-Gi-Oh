@@ -1108,11 +1108,6 @@ def create_deck_selection_scene():
 
     deck_selection_overlay.parent = scene
     scene.add_object(deck_selection_overlay)
-    deck = DECKS[0]
-    deck_box = assets.Button(text=deck.name, x=1 * large_card_width, y=0, width=large_card_width,
-                             height=large_card_height)
-    deck_box.set_image(deck.get_image())
-    scene.add_object(deck_box)
     return scene
 
 
