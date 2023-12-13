@@ -43,6 +43,8 @@ import pygame
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
 # to be sent to the extra_deck.
 
+# TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
+
 
 class Deck:
     def __init__(self, name="", cards=None, main_card_id=None):
@@ -61,7 +63,7 @@ class Deck:
         return game_engine.get_surface_manager().fetch_image(self.image_id)
 
 
-class DeckManager():
+class DeckManager:
     def __init__(self):
         self.deck = None
 

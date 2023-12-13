@@ -5,6 +5,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 # TODO: Add get_current_scene() function
 
+
 class Environment:
     def __init__(self):
         self.scale_factor = 1
@@ -262,7 +263,7 @@ class SceneManager:
         # it is temporary.
 
     def create_scene(self, scene_function, scene_name, scene_arguments):
-        get_surface_manager().surfaces = {} # TODO: Enable the clearing of old images too...
+        get_surface_manager().surfaces = {}  # TODO: Enable the clearing of old images too...
         if scene_name in self.scenes and self.scenes[scene_name].persistent:
             return self.change_scene_by_name(scene_name)
 
@@ -398,7 +399,6 @@ class Scene:
             if hasattr(obj, "get_display_surface") and callable(obj.get_display_surface):
                 surface, rect = obj.get_display_surface()
                 environment.screen.blit(surface, rect)
-
 
         # Remove destroyed objects
         for obj in self.objects:
