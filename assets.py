@@ -8,7 +8,6 @@ import game_engine
 import utility_functions as utils
 
 
-# TODO: Fix the relative position system for all GameObjects, and it should work if they are not static.
 class GameScript:
     def __init__(self):
         pass
@@ -18,7 +17,7 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=False, name=""):
         self.x = x
         self.y = y
         self.z = z
@@ -27,7 +26,7 @@ class GameObject:
         self.name = name
         self.destroyed = False
         self.parent = parent
-        self.static = False
+        self.static = static
         self.children = []
         self.rect = None
         self.rotation_angle = 0
