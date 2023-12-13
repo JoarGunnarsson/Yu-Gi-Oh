@@ -502,7 +502,11 @@ class Button(Box):
                 return True
         return False
 
+    def set_require_continuous_hovering(self, boolean):
+        self.click_detector.require_continuous_hovering = boolean
+
     def toggle_continuous_hovering(self):
+        # TODO: Add turn on/turn off methods as well
         self.click_detector.require_continuous_hovering = not self.click_detector.require_continuous_hovering
 
     def check_button_presses(self):
@@ -677,7 +681,7 @@ class MobileButton(Button):
                          right_hold_function=right_hold_function, right_hold_args=right_hold_args,
                          key_functions=key_functions, external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
-        super().toggle_continuous_hovering()
+        super().set_require_continuous_hovering(False)
         self.static = False
 
     def process(self):
@@ -701,7 +705,7 @@ class MobileButton(Button):
 
 class Overlay(GameObject):
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, parent=None, anchored=False,
+                 close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, alpha=alpha, name=name)
         if external_process_arguments is None:
@@ -712,9 +716,7 @@ class Overlay(GameObject):
 
         self.box = Box(x=self.x, y=self.y, z=self.z + 1, width=self.width, height=self.height, color=background_color,
                        alpha=self.alpha, name="overlay_box")
-        self.box.static = False
         self.parent = parent
-        self.anchored = anchored
 
         self.close_btn_size = close_btn_size
         self.close_btn_offset = close_btn_offset

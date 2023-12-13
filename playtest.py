@@ -44,7 +44,8 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
-
+# TODO: Issue with two cards rotating, large card button not getting removed when clicking on closed large_card_button_overlay
+# Perhaps an issue with remove_on_external_clicks arguments.
 
 class Deck:
     def __init__(self, name="", cards=None, main_card_id=None):
@@ -99,7 +100,7 @@ class Card(assets.GameObject):
                                left_hold_function=self.move,
                                right_click_function=self.create_card_overlay)
         self.button = button
-        self.button.toggle_continuous_hovering()
+        self.button.set_require_continuous_hovering(False)
         self.buttons.append(button)
         self.rotation_angle = 0
         self.location = None
@@ -348,7 +349,7 @@ class Card(assets.GameObject):
 
         overlay = assets.Overlay(x=self.x + self.width, y=self.y, width=overlay_width, height=overlay_height,
                                  name="card_overlay",
-                                 close_btn_size=overlay_close_button_size, parent=self, anchored=True,
+                                 close_btn_size=overlay_close_button_size, parent=self,
                                  external_process_function=utils.remove_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         button_parent = overlay
@@ -467,7 +468,7 @@ class Card(assets.GameObject):
                                        left_click_function=create_large_card_overlay, left_click_args=[self],
                                        key_functions={"r": [self.rotate, []]})
 
-        large_card_btn.toggle_continuous_hovering()
+        large_card_btn.set_require_continuous_hovering(False)
         large_card_btn.external_process_function = utils.remove_on_external_clicks
         large_card_btn.static = True
         large_card_btn.set_parent(self)
@@ -622,6 +623,24 @@ class CardOverlay(assets.GameObject):
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
             card.set_pos(x=x, y=y)
+
+
+class LargeCardOverlay(assets.Overlay):
+    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
+                 close_btn_size=30, close_btn_offset=5, parent=None, card=None,
+                 external_process_function=None, external_process_arguments=None):
+
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name,
+                         background_color=background_color,
+                         close_btn_size=close_btn_size, close_btn_offset=close_btn_offset, parent=parent,
+                         external_process_function=external_process_function,
+                         external_process_arguments=external_process_arguments)
+        self.card = card
+
+    def destroy(self):
+        large_card_btn = utils.find_object_from_name(self.card.buttons, "large_card_btn")
+        large_card_btn.external_process_arguments[1].remove(self.get_rect())
+        super().destroy()
 
 
 class Board:
@@ -1048,8 +1067,8 @@ def create_play_testing():
 
 def create_large_card_overlay(card):
     scene = game_engine.get_scene_manager().current_scene
-    large_card_btn = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
-    if large_card_btn is not None:
+    large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
+    if large_card_overlay is not None:
         return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
     large_card_btn = utils.find_object_from_name(card.buttons, "large_card_btn")
@@ -1060,7 +1079,7 @@ def create_large_card_overlay(card):
     height = field_box.height
     width = int((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
 
-    overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay")
+    overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay", card=card)
     # overlay.set_parent(scene)
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     offset = 15
@@ -1073,14 +1092,13 @@ def create_large_card_overlay(card):
                                 width=card_width,
                                 height=card_height,
                                 source_image=game_engine.get_surface_manager().fetch_image(card.original_image_id))
-    large_card_box.static = True
     large_card_box.set_parent(overlay)
 
     allowed_rect_list = [overlay.box.get_rect(), large_card_btn.get_rect()]
     overlay.external_process_function = utils.remove_on_external_clicks
     overlay.external_process_arguments = [overlay, allowed_rect_list]
 
-    large_card_btn.external_process_arguments[1].append(overlay.box.get_rect())
+    large_card_btn.external_process_arguments[1].append(overlay.get_rect())
 
     overlay.add_child(large_card_box)
 
@@ -1236,8 +1254,8 @@ def create_confirmation_overlay(position, func, args):
     if existing_confirmation_overlay is not None:
         return
     x, y = position
-    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay")#,
-                             #parent=game_engine.get_scene_manager().current_scene)
+    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay")  # ,
+    # parent=game_engine.get_scene_manager().current_scene)
     # overlay.set_parent(game_engine.get_scene_manager().current_scene)
 
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
