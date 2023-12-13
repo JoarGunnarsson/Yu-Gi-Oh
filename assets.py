@@ -54,15 +54,15 @@ class GameObject:
         self.set_x(x)
         self.set_y(y)
 
-    def set_x_relative(self, delta_x):
+    def shift_x(self, delta_x):
         self.set_x(self.x + delta_x)
 
-    def set_y_relative(self, delta_y):
+    def shift_y(self, delta_y):
         self.set_y(self.y + delta_y)
 
-    def set_pos_relative(self, delta_x, delta_y):
-        self.set_x_relative(delta_x)
-        self.set_y_relative(delta_y)
+    def shift_pos(self, delta_x, delta_y):
+        self.shift_x(delta_x)
+        self.shift_y(delta_y)
 
     def set_relative_x(self, x):
         self.relative_x = x
@@ -316,7 +316,7 @@ class Border(GameObject):
     def set_width(self, width):
         width_difference = width - self.width
         side_boxes = self.get_side_boxes()
-        side_boxes[3].set_x_relative(width_difference)
+        side_boxes[3].shift_x(width_difference)
         side_boxes[0].set_width_relative(width_difference)
         side_boxes[1].set_width_relative(width_difference)
 
@@ -325,7 +325,7 @@ class Border(GameObject):
     def set_height(self, height):
         height_difference = height - self.height
         side_boxes = self.get_side_boxes()
-        side_boxes[1].set_y_relative(height_difference)
+        side_boxes[1].shift_y(height_difference)
         side_boxes[2].set_height_relative(height_difference)
         side_boxes[3].set_height_relative(height_difference)
 
