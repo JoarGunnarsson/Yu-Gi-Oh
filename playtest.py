@@ -349,7 +349,6 @@ class Card(assets.GameObject):
         overlay = assets.Overlay(x=self.x + self.width, y=self.y, width=overlay_width, height=overlay_height,
                                  name="card_overlay",
                                  close_btn_size=overlay_close_button_size, parent=self, anchored=True,
-                                 position_relative_to_parent=(self.width, 0),
                                  external_process_function=utils.remove_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         button_parent = overlay
@@ -432,7 +431,6 @@ class Card(assets.GameObject):
         y = overlay_close_button_size + 2 * button_space
 
         for btn in location_buttons:
-            btn.static = False
             btn.set_pos_relative_to_parent(button_space, y)
             y += btn.height + button_space
 
@@ -447,7 +445,7 @@ class Card(assets.GameObject):
     def update_card_overlay_anchor(self):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
-            card_overlay.set_relative_position_to_parent(self.width, 0)
+            card_overlay.set_pos_relative_to_parent(self.width, 0)
 
     def make_large_card_button(self):
         large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
@@ -897,7 +895,6 @@ def create_main_menu():
     number_of_buttons = len(buttons)
     x_offset = (environment.get_width() - number_of_buttons * width) // (number_of_buttons + 1)
     for i, btn in enumerate(buttons):
-        btn.static = False
         btn.set_pos((i + 1) * x_offset + i * width, btn.y)
         scene.add_object(btn)
 
@@ -969,7 +966,6 @@ def create_play_testing():
 
     deck_text_box = assets.Box(text=cards_in_deck_string(scene), font_size=25, color=LIGHT_GREY,
                                update_text_func=cards_in_deck_string)
-    deck_text_box.static = False
     deck_text_box.hug_text(5)
 
     deck_text_box.set_pos(x=right_side_box.x + (right_side_box.width - deck_text_box.width) // 2,
@@ -1065,7 +1061,7 @@ def create_large_card_overlay(card):
     width = int((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
 
     overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay")
-    overlay.set_parent(scene)
+    # overlay.set_parent(scene)
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     offset = 15
 
@@ -1108,7 +1104,7 @@ def create_deck_selection_scene():
         deck_btn.set_image(deck.get_image())
         deck_selection_overlay.add_child(deck_btn)
 
-    deck_selection_overlay.parent = scene
+    # deck_selection_overlay.parent = scene
     scene.add_object(deck_selection_overlay)
     return scene
 
@@ -1240,9 +1236,9 @@ def create_confirmation_overlay(position, func, args):
     if existing_confirmation_overlay is not None:
         return
     x, y = position
-    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
-                             parent=game_engine.get_scene_manager().current_scene)
-    overlay.set_parent(game_engine.get_scene_manager().current_scene)
+    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay")#,
+                             #parent=game_engine.get_scene_manager().current_scene)
+    # overlay.set_parent(game_engine.get_scene_manager().current_scene)
 
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     overlay.destroy_child(close_btn)
@@ -1271,9 +1267,8 @@ def create_confirmation_overlay(position, func, args):
     number_of_buttons = len(buttons)
     x_offset = (overlay.width - number_of_buttons * button_size) // (number_of_buttons + 1)
     for i, btn in enumerate(buttons):
-        btn.static = False
-        btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
         overlay.add_child(btn)
+        btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
 
     game_engine.get_scene_manager().current_scene.add_object(overlay)
 

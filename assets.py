@@ -18,7 +18,7 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, name=""):
         self.x = x
         self.y = y
         self.z = z
@@ -27,6 +27,7 @@ class GameObject:
         self.name = name
         self.destroyed = False
         self.parent = parent
+        self.static = False
         self.children = []
         self.rect = None
         self.rotation_angle = 0
@@ -42,10 +43,12 @@ class GameObject:
     def set_x(self, x):
         self.x = x
         self.get_rect().update(self.x, self.y, self.width, self.height)
+        self.update_relative_position()
 
     def set_y(self, y):
         self.y = y
         self.get_rect().update(self.x, self.y, self.width, self.height)
+        self.update_relative_position()
 
     def set_pos(self, x, y):
         self.set_x(x)
@@ -61,12 +64,36 @@ class GameObject:
         self.set_x_relative(delta_x)
         self.set_y_relative(delta_y)
 
-    def update_position(self):
-        if self.parent is not None:
-            self.update_relative_position()
+    def set_relative_x(self, x):
+        self.relative_x = x
+
+    def set_relative_y(self, y):
+        self.relative_y = y
+
+    def set_pos_relative_to_parent(self, x, y):
+        """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
+        coordinates of the button in the coordinate system where the parents position is the origin."""
+        if self.static:
+            return
+
+        self.relative_x, self.relative_y = x, y
+        self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
 
     def update_relative_position(self):
-        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
+        if self.static or self.parent is None:
+            return
+        self.set_relative_x(self.x - self.parent.x)
+        self.set_relative_y(self.y - self.parent.y)
+
+    def update_position(self):
+        if self.parent is not None:
+            self.update_pos_relative_to_parent()
+
+    def update_pos_relative_to_parent(self):
+        if self.static:
+            return
+
+        self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
 
     def set_width(self, width):
         self.width = width
@@ -114,6 +141,8 @@ class GameObject:
 
     def set_parent(self, parent):
         self.parent = parent
+        if not self.static and self.parent is not None:
+            self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
     def add_multiple_children(self, children):
         for child in children:
@@ -134,9 +163,9 @@ class GameObject:
 
         return items_to_be_processed
 
-    def save(self):
-        save_dict = self.__dict__
-        return save_dict
+    def process(self):
+        if self.parent is not None and not self.static:
+            self.update_pos_relative_to_parent()
 
 
 class Box(GameObject):
@@ -169,33 +198,6 @@ class Box(GameObject):
         self.static = True
         self.rotation_angle = 0
         self.set_alpha(self.alpha)
-
-        self.parent = parent
-        if self.parent is not None:
-            self.x_relative_to_parent = self.x - self.parent.x
-            self.y_relative_to_parent = self.y - self.parent.y
-            self.static = False
-
-    def set_pos_relative_to_parent(self, x, y):
-        """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
-        coordinates of the button in the coordinate system where the parents position is the origin."""
-        if self.static:
-            return
-
-        self.x_relative_to_parent, self.y_relative_to_parent = x, y
-        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
-
-    def update_pos_relative_to_parent(self):
-        if self.static:
-            return
-
-        self.set_pos(x=self.x_relative_to_parent + self.parent.x, y=self.y_relative_to_parent + self.parent.y)
-
-    def set_parent(self, parent):
-        super().set_parent(parent)
-        if not self.static:
-            self.x_relative_to_parent = self.x - self.parent.x
-            self.y_relative_to_parent = self.y - self.parent.y
 
     def set_width(self, width):
         self.width = width
@@ -277,15 +279,11 @@ class Box(GameObject):
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
 
-    def process(self):
-        if self.parent is not None and not self.static:
-            self.set_pos(x=self.parent.x + self.x_relative_to_parent, y=self.parent.y + self.y_relative_to_parent)
-
 
 class Border(GameObject):
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
                  name=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, alpha=alpha, name=name)
 
         self.color = color
         self.thickness = thickness
@@ -309,10 +307,6 @@ class Border(GameObject):
             box.static = True
 
         self.children.extend(side_boxes)
-        self.parent = parent
-        if self.parent is not None:
-            self.relative_x = self.parent.x - self.x
-            self.relative_y = self.parent.y - self.y
 
     def set_pos(self, x, y):
         for box in self.get_side_boxes():
@@ -361,7 +355,7 @@ class Border(GameObject):
         return self.get_side_boxes()
 
     def process(self):
-        self.update_relative_position()
+        self.update_pos_relative_to_parent()
 
 
 class Button(Box):
@@ -708,9 +702,9 @@ class MobileButton(Button):
 
 class Overlay(GameObject):
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, parent=None, anchored=False, position_relative_to_parent=(0, 0),
+                 close_btn_size=30, close_btn_offset=5, parent=None, anchored=False,
                  external_process_function=None, external_process_arguments=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, alpha=alpha, name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
@@ -722,7 +716,6 @@ class Overlay(GameObject):
         self.box.static = False
         self.parent = parent
         self.anchored = anchored
-        self.position_relative_to_parent = position_relative_to_parent
 
         self.close_btn_size = close_btn_size
         self.close_btn_offset = close_btn_offset
@@ -749,9 +742,6 @@ class Overlay(GameObject):
         for btn in self.get_buttons():
             btn.update_pos_relative_to_parent()
 
-    def set_relative_position_to_parent(self, x, y):
-        self.position_relative_to_parent = (x, y)
-
     def set_background_color(self, color):
         self.box.set_color(color)
 
@@ -775,8 +765,4 @@ class Overlay(GameObject):
         if self.external_process_function is not None:
             self.external_process_function(*self.external_process_arguments)
 
-        if self.parent is not None and self.anchored:
-            relative_x, relative_y = self.position_relative_to_parent
-            new_x = relative_x + self.parent.x
-            new_y = relative_y + self.parent.y
-            self.set_pos(new_x, new_y)
+        super().process()
