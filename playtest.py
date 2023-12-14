@@ -44,11 +44,32 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
-# TODO: Issue with two cards rotating, large card button not getting removed when clicking on closed large_card_button_overlay
-# Perhaps an issue with remove_on_external_clicks arguments.
+
+# TODO: Issue with returning a card from the field to the hand, not moved to the right place.
+# TODO: Also issue with flickering when removing large card button
 
 class Deck:
+    """
+    A class representing a Yu-Gi-Oh! deck.
+
+    Attributes:
+        - name
+        - cards: a list of card_ids representing the cards in the deck
+        - image_id: the id of the deck cover image
+
+    Methods:
+        - __init__(name, cards, main_card_id): Initializes the deck object
+        - get_image(): returns the image corresponding to the image_id attribute
+    """
     def __init__(self, name="", cards=None, main_card_id=None):
+        """
+
+        Parameters
+        ----------
+        name
+        cards
+        main_card_id
+        """
         if cards is None:
             self.cards = []
         else:
@@ -57,25 +78,35 @@ class Deck:
             main_card_id = cards[0]
 
         self.name = name
-        self.main_card_id = main_card_id
-        self.image_id = game_engine.get_surface_manager().create_image(card_image_location + self.main_card_id + ".jpg")
+        self.image_id = game_engine.get_surface_manager().create_image(card_image_location + main_card_id + ".jpg")
 
     def get_image(self):
+        """
+
+        Returns
+        -------
+        The image corresponding to the image_id attribute
+        """
         return game_engine.get_surface_manager().fetch_image(self.image_id)
 
 
 class DeckManager:
+    """A class to manage the current deck"""
     def __init__(self):
+        """Initialises the deck."""
         self.deck = None
 
     def get_deck(self):
+        """Returns the current selected deck."""
         return self.deck
 
     def set_deck(self, deck):
+        """Sets the deck to a new deck"""
         self.deck = deck
 
 
 class Card(assets.GameObject):
+    """A class representing cards."""
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
         super().__init__(x=x, y=y, z=-1, width=standard_card_width, height=standard_card_height, name=card_id)
         self.image_id = None
