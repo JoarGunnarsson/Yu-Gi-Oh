@@ -732,17 +732,17 @@ class Board:
         if card_index is None:
             card_index = self.hand.index(card)
 
+        card_width = self.hand[0].width
         hand_box = utils.find_object_from_name(self.scene.get_objects(), "hand_box")
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
         card_space = 10
 
-        visible_cards = self.hand[self.display_hand_start_index:self.display_hand_start_index + card_index]
-        cards_in_hand_width = sum([hand_card.width + card_space for hand_card in visible_cards])
+        cards_to_the_left_width = sum([card_width + card_space for i in range(card_index - self.display_hand_start_index)])
 
-        all_cards_in_hand_width = self.display_hand_number * (self.hand[0].width + card_space)
+        all_cards_in_hand_width = self.display_hand_number * (card_width + card_space)
 
         x_offset = (hand_box.width - all_cards_in_hand_width) // 2
-        x = hand_box.x + x_offset + cards_in_hand_width
+        x = hand_box.x + x_offset + cards_to_the_left_width
         y = hand_box.y + y_offset
 
         return x, y
@@ -845,7 +845,7 @@ class Board:
                 continue
             display_stop_index = self.display_hand_start_index + self.display_hand_number
             is_visible_in_hand = self.display_hand_start_index <= self.hand.index(card) < display_stop_index
-            x, y = self.get_card_in_hand_pos(card, self.hand.index(card) - self.display_hand_start_index)
+            x, y = self.get_card_in_hand_pos(card, self.hand.index(card))
             card.set_pos(x, y)
             if is_visible_in_hand:
                 self.begin_processing(card)
