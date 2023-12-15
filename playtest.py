@@ -627,10 +627,6 @@ class CardOverlay(assets.GameObject):
             if not card.has_been_processed:
                 items_to_be_processed = card.schedule_processing()
                 game_engine.get_scene_manager().current_scene.process_given_objects(items_to_be_processed)
-                item_index = game_engine.get_scene_manager().current_scene.display_order.index(self) + 1
-                for item in items_to_be_processed:
-                    game_engine.get_scene_manager().current_scene.add_to_display_order(item, item_index)
-                    item_index += 1
 
     def pre_process(self):
         self.card_list = self.card_list_function()
@@ -737,7 +733,7 @@ class Board:
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
         card_space = 10
 
-        cards_to_the_left_width = sum([card_width + card_space for i in range(card_index - self.display_hand_start_index)])
+        cards_to_the_left_width = (card_width + card_space) * (card_index - self.display_hand_start_index)
 
         all_cards_in_hand_width = self.display_hand_number * (card_width + card_space)
 
@@ -864,6 +860,8 @@ class Board:
         return items_to_be_processed
 
     def process(self):
+
+        ###
         for j in range(len(self.hand)):
             for i in range(len(self.hand) - 1):
                 if self.hand[i].x > self.hand[i + 1].x:
