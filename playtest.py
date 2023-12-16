@@ -61,6 +61,7 @@ class Deck:
         - __init__(name, cards, main_card_id): Initializes the deck object
         - get_image(): returns the image corresponding to the image_id attribute
     """
+
     def __init__(self, name="", cards=None, main_card_id=None):
         """
 
@@ -92,6 +93,7 @@ class Deck:
 
 class DeckManager:
     """A class to manage the current deck"""
+
     def __init__(self):
         """Initialises the deck."""
         self.deck = None
@@ -107,6 +109,7 @@ class DeckManager:
 
 class Card(assets.GameObject):
     """A class representing cards."""
+
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
         super().__init__(x=x, y=y, z=-1, width=standard_card_width, height=standard_card_height, name=card_id)
         self.image_id = None
@@ -115,8 +118,6 @@ class Card(assets.GameObject):
         self.is_movable = True
         self.click_x = None
         self.click_y = None
-        self.buttons = []
-        self.overlays = []
         self.card_id = card_id
         self.parent = parent
 
@@ -132,7 +133,7 @@ class Card(assets.GameObject):
                                right_click_function=self.create_card_overlay)
         self.button = button
         self.button.set_require_continuous_hovering(False)
-        self.buttons.append(button)
+        self.add_child(button)
         self.rotation_angle = 0
         self.location = None
         self.has_been_processed = False
@@ -221,14 +222,6 @@ class Card(assets.GameObject):
             new_arguments = []
         self.button.set_right_hold_function(new_function, new_arguments)
 
-    def destroy_child(self, child):
-        # TODO: Rename this to something more appropriate?
-
-        if child in self.buttons:
-            game_engine.schedule_end_of_tick_function(self.buttons.remove, [child])
-        elif child in self.overlays:
-            game_engine.schedule_end_of_tick_function(self.overlays.remove, [child])
-
     def update_in_hand(self):
         # TODO: Should all of this happen in the Board class?
         scene = game_engine.get_scene_manager().current_scene
@@ -286,18 +279,6 @@ class Card(assets.GameObject):
             return True
         return False
 
-    def schedule_processing(self):
-        # TODO: Is the order important here? Answer: I don't think so.
-        items_to_be_processed = []
-        for overlay in self.overlays:
-            items_to_be_processed.extend(overlay.schedule_processing())
-
-        for btn in self.buttons:
-            items_to_be_processed.extend(btn.schedule_processing())
-
-        items_to_be_processed.append(self)
-        return items_to_be_processed
-
     def process(self):
         if not self.button.click_detector.left_clicked_long:
             self.moving = False
@@ -306,15 +287,6 @@ class Card(assets.GameObject):
         self.update_in_hand()
         self.update_on_field()
         self.has_been_processed = True
-
-        self.children = self.overlays.copy()
-        self.children.extend(self.buttons)
-        # TODO: Change buttons, overlays -> children
-
-    def get_displayable_objects(self):
-        self.children = self.overlays.copy()
-        self.children.extend(self.buttons)
-        return super().get_displayable_objects()
 
     def move(self):
         """Handles the movement of a card."""
@@ -325,7 +297,7 @@ class Card(assets.GameObject):
 
     def start_movement(self):
         mouse_position = environment.get_mouse_position()
-        card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
+        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is not None:
             card_overlay.destroy()
         board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
@@ -370,7 +342,7 @@ class Card(assets.GameObject):
         # TODO: Perhaps add functionality for the overlay class to "add" buttons, which gives them automatic placement,
         #  if no placement is specified.
 
-        card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
+        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
 
         if card_overlay is not None:
             return
@@ -396,13 +368,12 @@ class Card(assets.GameObject):
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         self.add_child(overlay)
         button_parent = overlay
-        self.overlays.append(overlay)
         board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
         board.bump(self)
         starting_location = utils.card_starting_location(self.card_type)
         card_location = board.get_location(self)
 
-        large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
+        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
         if large_card_btn is None:
             large_card_btn = self.make_large_card_button()
 
@@ -481,22 +452,19 @@ class Card(assets.GameObject):
         overlay.add_multiple_children(location_buttons)
 
     def remove_card_overlay(self):
-        card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
+        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is None:
             return
         card_overlay.destroy()
-        if card_overlay in self.overlays:
-            self.overlays.remove(card_overlay)
-        if card_overlay in self.children:
-            self.children.remove(card_overlay)
+        ### ?
 
     def update_card_overlay_anchor(self):
-        card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
+        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is not None:
             card_overlay.set_pos_relative_to_parent(self.width, 0)
 
     def make_large_card_button(self):
-        large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
+        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
         if large_card_btn is not None:
             return
 
@@ -505,7 +473,7 @@ class Card(assets.GameObject):
         if left_side_box is None:
             return
         large_card_offset = (left_side_box.width - large_card_width) // 2
-        card_btn = utils.find_object_from_name(self.buttons, "card_btn")
+        card_btn = utils.find_object_from_name(self.children, "card_btn")
 
         large_card_btn = assets.Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
                                        width=large_card_width,
@@ -518,18 +486,17 @@ class Card(assets.GameObject):
         large_card_btn.set_require_continuous_hovering(False)
         large_card_btn.external_process_function = utils.remove_on_external_clicks
         large_card_btn.static = True
-        self.add_child(large_card_btn)
         allowed_rect_list = [card_btn.get_rect(), large_card_btn.get_rect()]
-        card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
+        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is not None:
             allowed_rect_list.append(card_overlay.get_rect())
         large_card_btn.external_process_arguments = [large_card_btn, allowed_rect_list]
 
-        self.buttons.insert(0, large_card_btn)
+        self.add_child(large_card_btn)  # ### Insert(0, btn) was used here. Why?
         return large_card_btn
 
     def remove_large_card_button(self):
-        large_card_btn = utils.find_object_from_name(self.buttons, "large_card_btn")
+        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
         if large_card_btn is None:
             return
         large_card_btn.destroy()
@@ -688,7 +655,6 @@ class LargeCardOverlay(assets.Overlay):
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, card=None,
                  external_process_function=None, external_process_arguments=None):
-
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name,
                          background_color=background_color,
                          close_btn_size=close_btn_size, close_btn_offset=close_btn_offset, parent=parent,
@@ -697,7 +663,7 @@ class LargeCardOverlay(assets.Overlay):
         self.card = card
 
     def destroy(self):
-        large_card_btn = utils.find_object_from_name(self.card.buttons, "large_card_btn")
+        large_card_btn = utils.find_object_from_name(self.card.children, "large_card_btn")
         large_card_btn.external_process_arguments[1].remove(self.get_rect())
         super().destroy()
 
@@ -917,9 +883,11 @@ class Board:
             displayable_objects.extend(card.get_displayable_objects())
 
         for i, card in enumerate(self.hand):
+            if card.moving:
+                continue
             x, y = self.get_card_in_hand_pos(card, i)
             card.set_pos(x, y)
-        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index+self.display_hand_number]
+        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
         for card in reversed(visible_hand):
             displayable_objects.extend(card.get_displayable_objects())
 
@@ -1145,7 +1113,7 @@ def create_large_card_overlay(card):
     if large_card_overlay is not None:
         return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
-    large_card_btn = utils.find_object_from_name(card.buttons, "large_card_btn")
+    large_card_btn = utils.find_object_from_name(card.children, "large_card_btn")
     dummy_overlay = assets.Overlay()
     close_btn_size = dummy_overlay.close_btn_size
     close_btn_offset = dummy_overlay.close_btn_offset
@@ -1153,7 +1121,8 @@ def create_large_card_overlay(card):
     height = field_box.height
     width = int((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
 
-    overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay", card=card)
+    overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay",
+                               card=card)
     # overlay.set_parent(scene)
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     offset = 15
