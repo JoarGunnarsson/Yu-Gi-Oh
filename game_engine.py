@@ -390,12 +390,19 @@ class Scene:
         self.schedule_processing()
 
         # Process objects.
-        self.display_order = self.processing_order
         for obj in reversed(self.processing_order.copy()):
+            if obj.name == "follow_box":
+                a = 1
             self.process_object(obj)
 
+        # Generate display order
+        self.display_order = []
+        for obj in self.objects:
+            if hasattr(obj, "get_displayable_objects"):
+                self.display_order.extend(obj.get_displayable_objects())
+
         # Display objects.
-        for obj in self.processing_order:
+        for obj in self.display_order:
             if hasattr(obj, "get_display_surface") and callable(obj.get_display_surface):
                 surface, rect = obj.get_display_surface()
                 environment.screen.blit(surface, rect)

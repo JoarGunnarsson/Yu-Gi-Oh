@@ -17,7 +17,8 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=False, name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=False, displayable=False,
+                 name=""):
         self.x = x
         self.y = y
         self.z = z
@@ -27,6 +28,7 @@ class GameObject:
         self.destroyed = False
         self.parent = parent
         self.static = static
+        self.displayable = displayable
         self.children = []
         self.rect = None
         self.rotation_angle = 0
@@ -166,12 +168,26 @@ class GameObject:
         if self.parent is not None and not self.static:
             self.update_pos_relative_to_parent()
 
+    def get_displayable_objects(self):
+        displayable_objects = []
+        if self.destroyed:
+            return displayable_objects
+
+        if self.displayable:
+            displayable_objects.append(self)
+
+        for child in self.children:
+            if hasattr(child, "get_displayable_objects"):
+                displayable_objects.extend(child.get_displayable_objects())
+
+        return displayable_objects
+
 
 class Box(GameObject):
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
-                 text_color=BLACK,
-                 font_size=40, update_text_func=None, parent=None, name=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, name=name)
+                 text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
+                         displayable=True, name=name)
         self.color = color
         self.image_id = None
         if source_image is None:
@@ -194,7 +210,6 @@ class Box(GameObject):
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
-        self.static = True
         self.rotation_angle = 0
         self.set_alpha(self.alpha)
 
@@ -246,9 +261,6 @@ class Box(GameObject):
     def set_alpha(self, alpha):
         self.alpha = alpha
         game_engine.get_surface_manager().fetch_surface(self.surface_id).set_alpha(self.alpha)
-
-    def get_displayable_objects(self):
-        return [self]
 
     def hug_text(self, offset):
         text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
@@ -458,6 +470,7 @@ class Button(Box):
     def get_displayable_objects(self):
         displayable_objects = [self]
         displayable_objects.extend(self.get_border().get_displayable_objects())
+        displayable_objects.extend(super().get_displayable_objects())
         return displayable_objects
 
     def set_colors(self, colors):

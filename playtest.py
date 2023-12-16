@@ -307,6 +307,15 @@ class Card(assets.GameObject):
         self.update_on_field()
         self.has_been_processed = True
 
+        self.children = self.overlays.copy()
+        self.children.extend(self.buttons)
+        # TODO: Change buttons, overlays -> children
+
+    def get_displayable_objects(self):
+        self.children = self.overlays.copy()
+        self.children.extend(self.buttons)
+        return super().get_displayable_objects()
+
     def move(self):
         """Handles the movement of a card."""
         if not self.moving:
@@ -335,6 +344,8 @@ class Card(assets.GameObject):
         self.remove_card_overlay()
         if location in ["hand", "field"]:
             self.set_alpha(255)
+            if self.parent is not None:
+                self.parent.cards.remove(self)  # TODO: Use a method here instead?
             self.set_parent(None)
             self.change_to_movable_card()
             if previous_location not in ["hand", "field"]:
@@ -383,6 +394,7 @@ class Card(assets.GameObject):
                                  close_btn_size=overlay_close_button_size, parent=self,
                                  external_process_function=utils.remove_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
+        self.add_child(overlay)
         button_parent = overlay
         self.overlays.append(overlay)
         board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
@@ -473,6 +485,10 @@ class Card(assets.GameObject):
         if card_overlay is None:
             return
         card_overlay.destroy()
+        if card_overlay in self.overlays:
+            self.overlays.remove(card_overlay)
+        if card_overlay in self.children:
+            self.children.remove(card_overlay)
 
     def update_card_overlay_anchor(self):
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
@@ -502,7 +518,7 @@ class Card(assets.GameObject):
         large_card_btn.set_require_continuous_hovering(False)
         large_card_btn.external_process_function = utils.remove_on_external_clicks
         large_card_btn.static = True
-        large_card_btn.set_parent(self)
+        self.add_child(large_card_btn)
         allowed_rect_list = [card_btn.get_rect(), large_card_btn.get_rect()]
         card_overlay = utils.find_object_from_name(self.overlays, "card_overlay")
         if card_overlay is not None:
@@ -602,13 +618,10 @@ class CardOverlay(assets.GameObject):
 
     def schedule_processing(self):
         self.pre_process()
-        items_to_be_processed = []
+        items_to_be_processed = [self]
         items_to_be_processed.extend(self.get_box().schedule_processing())
-
         for btn in self.get_buttons():
             items_to_be_processed.extend(btn.schedule_processing())
-
-        items_to_be_processed.append(self)
 
         for j, card in enumerate(reversed(self.cards.copy())):
             i = len(self.cards) - 1 - j
@@ -640,7 +653,6 @@ class CardOverlay(assets.GameObject):
             if card not in self.card_list:
                 self.cards.remove(card)
 
-        # This is what's causing the issues with shuffling the deck with overlay.
         for i, card in enumerate(self.card_list):
             if card not in self.cards:
                 self.set_overlay_card(self.create_overlay_card(card, i), i)
@@ -650,6 +662,26 @@ class CardOverlay(assets.GameObject):
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
             card.set_pos(x=x, y=y)
+
+    def get_displayable_objects(self):
+        if self.destroyed:
+            return []
+        displayable_objects = []
+        for child in self.children:
+            if type(child) != Card and hasattr(child, "get_displayable_objects"):
+                displayable_objects.extend(child.get_displayable_objects())
+
+        self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
+        for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
+            x, y, _, _ = self.get_card_info(i)
+            card.set_pos(x=x, y=y)
+
+        for j, card in enumerate(reversed(self.cards)):
+            i = len(self.cards) - 1 - j
+            if self.start_index <= i <= self.stop_index:
+                displayable_objects.extend(card.get_displayable_objects())
+
+        return displayable_objects
 
 
 class LargeCardOverlay(assets.Overlay):
@@ -840,8 +872,8 @@ class Board:
             if card.moving:
                 continue
             display_stop_index = self.display_hand_start_index + self.display_hand_number
-            is_visible_in_hand = self.display_hand_start_index <= self.hand.index(card) < display_stop_index
-            x, y = self.get_card_in_hand_pos(card, self.hand.index(card))
+            is_visible_in_hand = self.display_hand_start_index <= i < display_stop_index
+            x, y = self.get_card_in_hand_pos(card, i)
             card.set_pos(x, y)
             if is_visible_in_hand:
                 self.begin_processing(card)
@@ -860,8 +892,6 @@ class Board:
         return items_to_be_processed
 
     def process(self):
-
-        ###
         for j in range(len(self.hand)):
             for i in range(len(self.hand) - 1):
                 if self.hand[i].x > self.hand[i + 1].x:
@@ -880,6 +910,20 @@ class Board:
 
     def destroy_child(self, child):
         self.remove_card(child)
+
+    def get_displayable_objects(self):
+        displayable_objects = []
+        for card in self.field:
+            displayable_objects.extend(card.get_displayable_objects())
+
+        for i, card in enumerate(self.hand):
+            x, y = self.get_card_in_hand_pos(card, i)
+            card.set_pos(x, y)
+        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index+self.display_hand_number]
+        for card in reversed(visible_hand):
+            displayable_objects.extend(card.get_displayable_objects())
+
+        return displayable_objects
 
 
 def generate_board(scene):
@@ -961,10 +1005,11 @@ def create_test_scene():
                            left_click_args=[(700, 700), test_button, []],
                            colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175)
     button.hug_text(15)
-    movable_btn = assets.MobileButton(x=100, y=100)
+    movable_btn = assets.MobileButton(x=100, y=100, name="mobile_btn")
 
-    follow_box = assets.Box(x=200, y=125, parent=movable_btn)
+    follow_box = assets.Box(x=200, y=125, parent=movable_btn, static=False, name="follow_box")
     movable_btn.add_child(follow_box)
+
     scene.add_object(movable_btn)
     scene.add_object(button)
     return scene
@@ -1347,7 +1392,7 @@ if __name__ == "__main__":
                         "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
                         "9486959"]
 
-    thin_cards = ["14517422"] * 15
+    thin_cards = ["14517422"] * 100
 
     DECKS = [Deck(name="Spellcaster", cards=spellcaster_cards, main_card_id="1003840"),
              Deck(name="Darklord", cards=darklord_cards, main_card_id="14517422"),
