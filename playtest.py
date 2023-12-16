@@ -492,7 +492,9 @@ class Card(assets.GameObject):
             allowed_rect_list.append(card_overlay.get_rect())
         large_card_btn.external_process_arguments = [large_card_btn, allowed_rect_list]
 
-        self.add_child(large_card_btn)  # ### Insert(0, btn) was used here. Why?
+        self.children.insert(0, large_card_btn)  # TODO: remove need for using insert here. The issue is due to
+        # remove on external clicks being called before the button is being called. Should be fixed when using
+        # MobileButton class instead of only GameObject.
         return large_card_btn
 
     def remove_large_card_button(self):
@@ -887,6 +889,7 @@ class Board:
                 continue
             x, y = self.get_card_in_hand_pos(card, i)
             card.set_pos(x, y)
+
         visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
         for card in reversed(visible_hand):
             displayable_objects.extend(card.get_displayable_objects())
