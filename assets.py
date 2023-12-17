@@ -7,6 +7,7 @@ from game_engine import environment
 import game_engine
 import utility_functions as utils
 
+
 # TODO: Perhaps rename the attribute 'static' to something a bit clearer.
 
 
@@ -19,7 +20,8 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, displayable=False,
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, opaque=True,
+                 displayable=False,
                  blocks_clicks=True, name=""):
         self.x = x
         self.y = y
@@ -35,6 +37,7 @@ class GameObject:
         self.rect = None
         self.rotation_angle = 0
         self.alpha = alpha
+        self.opaque = True
         self.blocks_clicks = blocks_clicks
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
@@ -727,15 +730,17 @@ class Overlay(GameObject):
                  close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=static,
-                         alpha=alpha, name=name)
+                         alpha=alpha, opaque=False, name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:
             self.external_process_arguments = external_process_arguments
         self.external_process_function = external_process_function
 
-        self.box = Box(x=self.x, y=self.y, z=self.z + 1, width=self.width, height=self.height, color=background_color,
-                       alpha=self.alpha, name="overlay_box")
+        box = Box(x=self.x, y=self.y, z=self.z + 1, width=self.width, height=self.height, color=background_color,
+                  alpha=self.alpha, name="overlay_box")
+        self.add_child(box)
+
         self.parent = parent
 
         self.close_btn_size = close_btn_size
@@ -748,7 +753,7 @@ class Overlay(GameObject):
         self.add_child(close_btn)
 
     def get_rect(self):
-        return self.box.get_rect()
+        return self.get_box().get_rect()
 
     def get_box(self):
         return utils.find_object_from_name(self.children, "overlay_box")
@@ -759,15 +764,15 @@ class Overlay(GameObject):
     def set_pos(self, x, y):
         self.x = x
         self.y = y
-        self.box.set_pos(x, y)
+        self.get_box().set_pos(x, y)
         for btn in self.get_buttons():
             btn.update_pos_relative_to_parent()
 
     def set_background_color(self, color):
-        self.box.set_color(color)
+        self.get_box().set_color(color)
 
     def get_displayable_objects(self):
-        displayable_objects = [self.box]
+        displayable_objects = [self.get_box()]
         for obj in self.children:
             displayable_objects.extend(obj.get_displayable_objects())
 
@@ -775,7 +780,7 @@ class Overlay(GameObject):
 
     def schedule_processing(self):
         items_to_be_processed = [self]
-        items_to_be_processed.extend(self.box.schedule_processing())
+        items_to_be_processed.extend(self.get_box().schedule_processing())
 
         for obj in self.children:
             items_to_be_processed.extend(obj.schedule_processing())

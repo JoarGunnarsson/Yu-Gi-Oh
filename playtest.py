@@ -439,10 +439,15 @@ class Card(assets.MobileButton):
         large_card_btn.destroy()
 
 
-class CardOverlay(assets.GameObject):
-    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, card_list_function=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name)
-
+class CardOverlay(assets.Overlay):
+    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
+                 close_btn_size=30, close_btn_offset=5, parent=None, external_process_function=None,
+                 external_process_arguments=None, card_list_function=None):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, static=static, name=name,
+                         background_color=background_color, close_btn_size=close_btn_size,
+                         close_btn_offset=close_btn_offset, parent=parent,
+                         external_process_function=external_process_function,
+                         external_process_arguments=external_process_arguments)
         self.card_list_function = card_list_function
 
         self.cards_per_row = 7
@@ -450,29 +455,10 @@ class CardOverlay(assets.GameObject):
         self.start_index = 0
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
-        box = assets.Box(x=self.x, y=self.y, width=self.width, height=self.height,
-                         color=WHITE, alpha=self.alpha, name="overlay_box")
-        self.add_child(box)
-
         self.card_list = self.card_list_function()
         self.cards = []
         for i, card in enumerate(self.card_list):
             self.set_overlay_card(self.create_overlay_card(card, i), i)
-
-        close_btn_size = 30
-        close_btn_offset = 5
-        close_btn = assets.Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                                  y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
-                                  image=pygame.image.load("Images/close_button.png"), name="close_btn",
-                                  left_click_function=self.destroy, left_trigger_keys=["escape"])
-
-        self.add_child(close_btn)
-
-    def get_box(self):
-        return utils.find_object_from_name(self.children, "overlay_box")
-
-    def get_buttons(self):
-        return utils.find_objects_from_type(self.children, assets.Button)
 
     def create_overlay_card(self, card, i):
         card.set_parent(self)
@@ -490,6 +476,13 @@ class CardOverlay(assets.GameObject):
             self.cards[i] = card
         else:
             raise IndexError("Cannot set self.cards[i] to card, to few cards in the list")
+
+    def update_cards(self):
+        for i, card in enumerate(self.card_list):
+            if card not in self.cards:
+                self.set_overlay_card(self.create_overlay_card(card, i), i)
+            else:
+                self.set_overlay_card(card, i)
 
     def get_card_info(self, i):
         max_cards_to_show = self.cards_per_row * self.number_of_rows
@@ -515,10 +508,6 @@ class CardOverlay(assets.GameObject):
         x = self.get_box().x + x_offset + int(i % self.cards_per_row * (card_space + card_width))
         y = self.get_box().y + y_offset + int(i // self.cards_per_row * (card_space + card_height))
         return x, y, card_width, card_height
-
-    def remove_overlay(self):
-        scene = game_engine.get_scene_manager().current_scene
-        scene.get_objects().remove(self)
 
     def schedule_processing(self):
         self.pre_process()
@@ -557,11 +546,7 @@ class CardOverlay(assets.GameObject):
             if card not in self.card_list:
                 self.cards.remove(card)
 
-        for i, card in enumerate(self.card_list):
-            if card not in self.cards:
-                self.set_overlay_card(self.create_overlay_card(card, i), i)
-            else:
-                self.set_overlay_card(card, i)
+        self.update_cards()
 
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
@@ -574,6 +559,8 @@ class CardOverlay(assets.GameObject):
         for child in self.children:
             if type(child) != Card and hasattr(child, "get_displayable_objects"):
                 displayable_objects.extend(child.get_displayable_objects())
+
+        self.update_cards()
 
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
@@ -1078,7 +1065,7 @@ def create_large_card_overlay(card):
                                 source_image=game_engine.get_surface_manager().fetch_image(card.source_image_id))
     large_card_box.set_parent(overlay)
 
-    allowed_rect_list = [overlay.box.get_rect(), large_card_btn.get_rect()]
+    allowed_rect_list = [overlay.get_box().get_rect(), large_card_btn.get_rect()]
     overlay.external_process_function = utils.remove_on_external_clicks
     overlay.external_process_arguments = [overlay, allowed_rect_list]
 
