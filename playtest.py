@@ -249,13 +249,11 @@ class Card(assets.MobileButton):
             self.set_parent(None)
             self.change_to_movable_card()
             if previous_location not in ["hand", "field"]:
-                game_engine.get_scene_manager().get_current_scene().hide_object(self)  # TODO: I don't think this is needed.
                 self.remove_large_card_button()
 
         elif location in ["main_deck", "extra_deck", "gy", "banished"]:
             self.remove_large_card_button()
             self.remove_card_overlay()
-            game_engine.get_scene_manager().get_current_scene().hide_object(self)  # TODO: I don't think this is needed.
             self.set_alpha(255)
 
     def change_to_movable_card(self):
