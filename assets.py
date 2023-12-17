@@ -7,6 +7,8 @@ from game_engine import environment
 import game_engine
 import utility_functions as utils
 
+# TODO: Perhaps rename the attribute 'static' to something a bit clearer.
+
 
 class GameScript:
     def __init__(self):
@@ -17,8 +19,8 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=False, displayable=False,
-                 name=""):
+    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, displayable=False,
+                 blocks_clicks=True, name=""):
         self.x = x
         self.y = y
         self.z = z
@@ -33,6 +35,7 @@ class GameObject:
         self.rect = None
         self.rotation_angle = 0
         self.alpha = alpha
+        self.blocks_clicks = blocks_clicks
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
@@ -133,7 +136,7 @@ class GameObject:
         self.destroyed = True
         game_engine.get_scene_manager().current_scene.hide_object(self)
         if self.parent is not None and hasattr(self.parent, "destroy_child"):
-            game_engine.schedule_end_of_tick_function(self.parent.destroy_child, [self])
+            self.parent.destroy_child(self)
 
     def add_child(self, child):
         self.children.append(child)
@@ -157,11 +160,11 @@ class GameObject:
         self.children = []
 
     def schedule_processing(self):
-        items_to_be_processed = [self]
-
+        items_to_be_processed = []
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
 
+        items_to_be_processed.append(self)
         return items_to_be_processed
 
     def process(self):
@@ -169,6 +172,7 @@ class GameObject:
             self.update_pos_relative_to_parent()
 
     def get_displayable_objects(self):
+        # TODO: Perhaps sort displayable_objects by their z-value?
         displayable_objects = []
         if self.destroyed:
             return displayable_objects
@@ -294,7 +298,7 @@ class Box(GameObject):
 class Border(GameObject):
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
                  name=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, alpha=alpha, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=False, alpha=alpha, name=name)
 
         self.color = color
         self.thickness = thickness
@@ -372,7 +376,8 @@ class Border(GameObject):
 class Button(Box):
     # TODO: Change left_click_args etc to args and kwargs.
     def __init__(self, x=0, y=0, z=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
-                 text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
+                 text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
+                 right_trigger_keys=None,
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
@@ -426,7 +431,7 @@ class Button(Box):
 
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors["normal"], alpha=alpha,
                          source_image=image, text=text, font_size=font_size, text_color=text_color, parent=parent,
-                         name=name)
+                         static=static, name=name)
 
         self.left_click_function = left_click_function
         self.left_hold_function = left_hold_function
@@ -508,7 +513,8 @@ class Button(Box):
         self.external_process_arguments = args
 
     def click_blocked(self, click_position):
-        masking_types = [Button, Overlay, Box]
+        masking_types = [MobileButton, Button, Overlay, Box]  # TODO: Needs to block for cards too. Perhaps add
+        # an option to be masked for "any"? Or exclusion? Or actually, GameObject could have a blocks_clicks attribute.
         blocking_objects_list = game_engine.get_scene_manager().current_scene.get_object_mask(self, masking_types)
         for obj in blocking_objects_list:
             if obj.get_rect().collidepoint(click_position):
@@ -717,10 +723,11 @@ class MobileButton(Button):
 
 
 class Overlay(GameObject):
-    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
+    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, alpha=alpha, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=static,
+                         alpha=alpha, name=name)
         if external_process_arguments is None:
             self.external_process_arguments = []
         else:

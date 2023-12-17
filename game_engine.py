@@ -324,11 +324,14 @@ class Scene:
 
     def get_object_mask(self, obj, masking_types):
         # TODO: Rename this method.
+        # TODO: Perhaps change this to a bool attribute of the object.
         index = self.processing_order.index(obj)
         blocking_object_list = []
         for masking_object in self.processing_order[index + 1:]:
-            if not hasattr(masking_object, "get_rect") or type(masking_object) not in masking_types:
-                continue
+            if not hasattr(masking_object, "get_rect") or type(masking_object) not in masking_types: # TODO: Kind of fixes layer issue a bit.
+                if masking_object.name != "card":
+                    #print(type(masking_object))
+                    continue
             if obj.get_rect().colliderect(masking_object.get_rect()):
                 blocking_object_list.append(masking_object)
 
