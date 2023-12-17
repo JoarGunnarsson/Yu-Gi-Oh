@@ -675,8 +675,8 @@ class ClickDetector:
 
 
 class MobileButton(Button):
-    def __init__(self, x=0, y=0, z=0, width=200, height=120, color=(100, 100, 100), alpha=255, image=None, text="",
-                 font_size=40,
+    def __init__(self, x=0, y=0, z=0, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
+                 image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
@@ -687,7 +687,7 @@ class MobileButton(Button):
         self.click_x = None
         self.click_y = None
         super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image=image, text=text,
-                         font_size=font_size, text_color=text_color, name=name, parent=parent,
+                         font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=self.move,
                          right_click_function=right_click_function, right_click_args=right_click_args,

@@ -38,7 +38,7 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
-
+# TODO: When an empty row is created in a CardOverlay, the index should not move.
 
 class Deck:
     """
@@ -107,7 +107,7 @@ class Card(assets.MobileButton):
         card_img_id = game_engine.get_surface_manager().create_image(card_image_location + '{}.jpg'.format(card_id))
         card_image = game_engine.get_surface_manager().fetch_image(card_img_id)
         super().__init__(x=x, y=y, z=-1, width=standard_card_width, height=standard_card_height, image=card_image,
-                         name=card_id,
+                         name=card_id, static=False,
                          right_click_function=self.create_card_overlay)
 
         self.parent = parent
@@ -116,7 +116,6 @@ class Card(assets.MobileButton):
 
         self.location = None
         self.has_been_processed = False
-        self.name = "card"
 
     def get_card_type(self):
         image = game_engine.get_surface_manager().fetch_image(self.image_id)
@@ -252,6 +251,8 @@ class Card(assets.MobileButton):
                 self.remove_large_card_button()
 
         elif location in ["main_deck", "extra_deck", "gy", "banished"]:
+            if self.parent is not None:
+                self.parent.cards.remove(self)  # TODO: Use a method here instead?
             self.remove_large_card_button()
             self.remove_card_overlay()
             self.set_alpha(255)
@@ -436,6 +437,7 @@ class CardOverlay(assets.Overlay):
                          close_btn_offset=close_btn_offset, parent=parent,
                          external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
+
         self.card_list_function = card_list_function
 
         self.cards_per_row = 7
@@ -465,12 +467,18 @@ class CardOverlay(assets.Overlay):
         else:
             raise IndexError("Cannot set self.cards[i] to card, to few cards in the list")
 
-    def update_cards(self):
+    def update_card_list(self):
         for i, card in enumerate(self.card_list):
             if card not in self.cards:
                 self.set_overlay_card(self.create_overlay_card(card, i), i)
             else:
                 self.set_overlay_card(card, i)
+
+    def update_card_positions(self):
+        # TODO: An issue here with the same card being in self.cards multiple times.
+        for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
+            x, y, _, _ = self.get_card_info(i)
+            card.set_pos(x=x, y=y)
 
     def get_card_info(self, i):
         max_cards_to_show = self.cards_per_row * self.number_of_rows
@@ -530,15 +538,9 @@ class CardOverlay(assets.Overlay):
 
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
-        for i, card in enumerate(self.cards):
-            if card not in self.card_list:
-                self.cards.remove(card)
+        self.update_card_list()
 
-        self.update_cards()
-
-        for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
-            x, y, _, _ = self.get_card_info(i)
-            card.set_pos(x=x, y=y)
+        self.update_card_positions()
 
     def get_displayable_objects(self):
         if self.destroyed:
@@ -548,12 +550,11 @@ class CardOverlay(assets.Overlay):
             if type(child) != Card and hasattr(child, "get_displayable_objects"):
                 displayable_objects.extend(child.get_displayable_objects())
 
-        self.update_cards()
-
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
-        for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
-            x, y, _, _ = self.get_card_info(i)
-            card.set_pos(x=x, y=y)
+
+        self.update_card_list()
+
+        self.update_card_positions()
 
         for j, card in enumerate(reversed(self.cards)):
             i = len(self.cards) - 1 - j
