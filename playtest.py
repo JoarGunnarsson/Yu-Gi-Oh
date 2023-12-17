@@ -38,8 +38,6 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
-# TODO: When an empty row is created in a CardOverlay, the index should not move.
-
 class Deck:
     """
     A class representing a Yu-Gi-Oh! deck.
@@ -475,7 +473,6 @@ class CardOverlay(assets.Overlay):
                 self.set_overlay_card(card, i)
 
     def update_card_positions(self):
-        # TODO: An issue here with the same card being in self.cards multiple times.
         for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
             x, y, _, _ = self.get_card_info(i)
             card.set_pos(x=x, y=y)
@@ -532,9 +529,6 @@ class CardOverlay(assets.Overlay):
 
     def pre_process(self):
         self.card_list = self.card_list_function()
-
-        if self.start_index + (self.number_of_rows - 1) * self.cards_per_row + 1 > len(self.card_list):
-            self.start_index = utils.clamp(self.cards_per_row - self.cards_per_row, 0, self.cards_per_row)
 
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
