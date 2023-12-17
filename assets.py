@@ -8,9 +8,6 @@ import game_engine
 import utility_functions as utils
 
 
-# TODO: Perhaps rename the attribute 'static' to something a bit clearer.
-
-
 class GameScript:
     def __init__(self):
         pass
@@ -37,7 +34,7 @@ class GameObject:
         self.rect = None
         self.rotation_angle = 0
         self.alpha = alpha
-        self.opaque = True
+        self.opaque = opaque
         self.blocks_clicks = blocks_clicks
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
@@ -516,9 +513,7 @@ class Button(Box):
         self.external_process_arguments = args
 
     def click_blocked(self, click_position):
-        masking_types = [MobileButton, Button, Overlay, Box]  # TODO: Needs to block for cards too. Perhaps add
-        # an option to be masked for "any"? Or exclusion? Or actually, GameObject could have a blocks_clicks attribute.
-        blocking_objects_list = game_engine.get_scene_manager().current_scene.get_object_mask(self, masking_types)
+        blocking_objects_list = game_engine.get_scene_manager().current_scene.get_object_mask(self)
         for obj in blocking_objects_list:
             if obj.get_rect().collidepoint(click_position):
                 return True
@@ -526,10 +521,6 @@ class Button(Box):
 
     def set_require_continuous_hovering(self, boolean):
         self.click_detector.require_continuous_hovering = boolean
-
-    def toggle_continuous_hovering(self):
-        # TODO: Add turn on/turn off methods as well
-        self.click_detector.require_continuous_hovering = not self.click_detector.require_continuous_hovering
 
     def check_button_presses(self):
         mouse_position = environment.get_mouse_position()

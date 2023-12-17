@@ -262,6 +262,12 @@ class SceneManager:
         # TODO: Implement scene switching. For example, tag a scene as persistent or temporary, and clear it only if
         # it is temporary.
 
+    def get_current_scene(self):
+        return self.current_scene
+
+    def set_current_scene(self, new_scene):
+        self.current_scene = new_scene
+
     def create_scene(self, scene_function, scene_name, scene_arguments):
         get_surface_manager().surfaces = {}  # TODO: Enable the clearing of old images too...
         if scene_name in self.scenes and self.scenes[scene_name].persistent:
@@ -276,18 +282,18 @@ class SceneManager:
 
     def change_scene_by_name(self, name):
         self.clear_current_scene()
-        self.current_scene = self.scenes[name]
-        return self.current_scene
+        self.set_current_scene(self.scenes[name])
+        return self.get_current_scene()
 
     def change_scene(self, scene):
         self.clear_current_scene()
-        self.current_scene = scene
+        self.set_current_scene(scene)
         self.scenes[scene.name] = scene
         return scene
 
     def clear_current_scene(self):
-        if self.current_scene is not None and not self.current_scene.persistent:
-            self.current_scene.clear()
+        if self.get_current_scene() is not None and not self.get_current_scene().persistent:
+            self.get_current_scene().clear()
 
     def schedule_scene_change(self, scene_function, scene_name="", scene_arguments=None):
         if scene_arguments is None:
@@ -322,9 +328,8 @@ class Scene:
     def get_default_position(self):
         return environment.width // 2, environment.height // 2
 
-    def get_object_mask(self, obj, masking_types):
+    def get_object_mask(self, obj):
         # TODO: Rename this method.
-        # TODO: Perhaps change this to a bool attribute of the object.
         index = self.processing_order.index(obj)
         blocking_object_list = []
         for masking_object in self.processing_order[index + 1:]:
@@ -393,8 +398,6 @@ class Scene:
 
         # Process objects.
         for obj in reversed(self.processing_order.copy()):
-            if obj.name == "follow_box":
-                a = 1
             self.process_object(obj)
 
         # Generate display order
@@ -485,14 +488,6 @@ def load(save_number=0):
 
 
 def _load(save_number):
-    # TODO: The issue with loading comes from saving e.g placeholder.schedule_end_of_tick_functions.
-    # When loading, the loaded GameObjects will call the old placeholder object's methods, but
-    # the current game state will use the new placeholder object.
-    # This can be fixed by scene_manager etc being attributes to environment, and when loading a GameState,
-    # setting the environment attributes like scene_manager etc to the saved loaded_game_state.scene_manager.
-    # In the code, instead of setting a click_function as bar.foo(), use
-    # environment.foo() instead. environment.foo() will simply call self.bar.foo().
-
     with open('save{}.txt'.format(save_number), 'rb') as save_file:
         loaded_game_state = pickle.load(save_file)
         get_surface_manager().load_surfaces(loaded_game_state)

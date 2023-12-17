@@ -14,8 +14,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 
-# TODO: Change CardOverlay into a class that inherits from Overlay!
-# TODO: Right now, the code repetition is high.
 # TODO: Create a "help" button?
 # TODO: Implement text fields, dice, etc? For randomness, life points etc.
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
@@ -25,11 +23,7 @@ import pygame
 # TODO: Fix classes, functions etc so that things work without knowing how everything works in detail.
 # That is, fix the api, so that you can create a new scene easily.
 # TODO: Overlay exit button only looks good on white overlays. Make buttons transparent?
-# TODO: Increase loading speed, creating cards takes too long time. Does everything have to be done immediately?
-# I think it's loading the images that takes time. Perhaps this should be done at start, or maybe the images are too
-# big, and should be the "standard size".
 # TODO: Make small_card_overlay into a sub-class of Overlay?
-# TODO: Rename schedule_processing to something else? And make it prettier.
 # TODO: Make button colors easier to use. Specify one main color, and then the highlighting is done either by
 # opacity or increasing (or decreasing) the brightness by a certain amount.
 # TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
@@ -44,10 +38,6 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
-
-# TODO: Issue with destroying large_card_btn
-# TODO: Issue with Destroying card_overlay
-# TODO: Issue with moving card_anchor
 
 
 class Deck:
@@ -172,8 +162,8 @@ class Card(assets.MobileButton):
 
     def update_in_hand(self):
         # TODO: Should all of this happen in the Board class?
-        scene = game_engine.get_scene_manager().current_scene
-        board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+        scene = game_engine.get_scene_manager().get_current_scene()
+        board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         if board is None or self not in board.hand:
             return
         hand_box = utils.find_object_from_name(scene.get_objects(), "hand_box")
@@ -189,8 +179,8 @@ class Card(assets.MobileButton):
             return
 
     def update_on_field(self):
-        scene = game_engine.get_scene_manager().current_scene
-        board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+        scene = game_engine.get_scene_manager().get_current_scene()
+        board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         if board is None or self not in board.field:
             return
 
@@ -210,7 +200,7 @@ class Card(assets.MobileButton):
             self.clamp_pos(field_box)
 
     def check_deck_collision(self, board, previous_location):
-        scene = game_engine.get_scene_manager().current_scene
+        scene = game_engine.get_scene_manager().get_current_scene()
         draw_btn = utils.find_object_from_name(scene.get_objects(), "draw_btn")
         extra_deck_btn = utils.find_object_from_name(scene.get_objects(), "show_extra_deck_btn")
         on_the_deck = draw_btn.get_rect().colliderect(self.get_rect())
@@ -238,7 +228,7 @@ class Card(assets.MobileButton):
         card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is not None:
             card_overlay.destroy()
-        board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+        board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         if board is not None:
             board.bump(self)
 
@@ -259,13 +249,13 @@ class Card(assets.MobileButton):
             self.set_parent(None)
             self.change_to_movable_card()
             if previous_location not in ["hand", "field"]:
-                game_engine.get_scene_manager().current_scene.hide_object(self)  # TODO: I don't think this is needed.
+                game_engine.get_scene_manager().get_current_scene().hide_object(self)  # TODO: I don't think this is needed.
                 self.remove_large_card_button()
 
         elif location in ["main_deck", "extra_deck", "gy", "banished"]:
             self.remove_large_card_button()
             self.remove_card_overlay()
-            game_engine.get_scene_manager().current_scene.hide_object(self)  # TODO: I don't think this is needed.
+            game_engine.get_scene_manager().get_current_scene().hide_object(self)  # TODO: I don't think this is needed.
             self.set_alpha(255)
 
     def change_to_movable_card(self):
@@ -305,7 +295,7 @@ class Card(assets.MobileButton):
                                  external_process_function=utils.remove_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         self.add_child(overlay)
-        board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+        board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         board.bump(self)
         starting_location = utils.card_starting_location(self.card_type)
         card_location = board.get_location(self)
@@ -405,7 +395,7 @@ class Card(assets.MobileButton):
         if large_card_btn is not None:
             return
 
-        scene = game_engine.get_scene_manager().current_scene
+        scene = game_engine.get_scene_manager().get_current_scene()
         left_side_box = utils.find_object_from_name(scene.get_objects(), "left_side_box")
         if left_side_box is None:
             return
@@ -532,7 +522,7 @@ class CardOverlay(assets.Overlay):
             card.set_pos(x, y)
             if not card.has_been_processed:
                 items_to_be_processed = card.schedule_processing()
-                game_engine.get_scene_manager().current_scene.process_given_objects(items_to_be_processed)
+                game_engine.get_scene_manager().get_current_scene().process_given_objects(items_to_be_processed)
 
     def pre_process(self):
         self.card_list = self.card_list_function()
@@ -726,13 +716,13 @@ class Board:
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
         if card.location != "hand":
-            default_x, default_y = game_engine.get_scene_manager().current_scene.get_default_position()
+            default_x, default_y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(default_x, default_y)
         card.new_location(location="field")
         self.field.append(card)
         self.begin_processing(card)
         if not card.moving:
-            x, y = game_engine.get_scene_manager().current_scene.get_default_position()
+            x, y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(x, y)
         previous_location.remove(card)
 
@@ -803,7 +793,6 @@ class Board:
 
     def get_displayable_objects(self):
         # TODO: Use card_processing_order somehow.
-        # TODO: The card on the bottom is the one being clicked...
         displayable_objects = []
         for card in self.card_processing_order:
             if card in self.field:
@@ -834,7 +823,7 @@ def generate_board(scene):
 
 def cards_in_deck_string(scene=None):
     if scene is None:
-        scene = game_engine.get_scene_manager().current_scene
+        scene = game_engine.get_scene_manager().get_current_scene()
     board = utils.find_object_from_name(scene.get_objects(), "board")
     return "Cards: {}".format(len(board.deck))
 
@@ -1036,7 +1025,7 @@ def create_play_testing():
 
 
 def create_large_card_overlay(card):
-    scene = game_engine.get_scene_manager().current_scene
+    scene = game_engine.get_scene_manager().get_current_scene()
     large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
     if large_card_overlay is not None:
         return
@@ -1099,35 +1088,36 @@ def create_deck_selection_scene():
 
 
 def cards_in_deck():
-    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.deck
 
 
 def cards_in_extra_deck():
-    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.extra_deck
 
 
 def cards_in_gy():
-    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.gy
 
 
 def cards_in_banished():
-    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.banished
 
 
 def cards_in_hand():
-    board = utils.find_object_from_name(game_engine.get_scene_manager().current_scene.get_objects(), "board")
+    board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.hand
 
 
 def generate_token():
-    scene = game_engine.get_scene_manager().current_scene
+    scene = game_engine.get_scene_manager().get_current_scene()
     board = utils.find_object_from_name(scene.get_objects(), "board")
 
     token = Card(card_id="token", parent=board)
+    token.static = True
     x, y = scene.get_default_position()  # TODO: Change this to something else?
     token.set_pos(x, y)
     board.field.append(token)
@@ -1170,7 +1160,7 @@ def value_from_card_type(card_type):
 
 
 def create_location_overlay(location_name, card_list_function):
-    scene = game_engine.get_scene_manager().current_scene
+    scene = game_engine.get_scene_manager().get_current_scene()
     while True:
         same_location_overlay = utils.find_object_from_name(scene.get_objects(), location_name)
         overlays = [obj for obj in scene.get_objects() if type(obj) == CardOverlay and not obj.destroyed]
@@ -1218,15 +1208,15 @@ def create_location_overlay(location_name, card_list_function):
 def create_confirmation_overlay(position, func, args):
     # TODO: Add remove_on_external_clicks?
     # TODO: Make this into a sub-class of Overlay?
-    scene_objects = game_engine.get_scene_manager().current_scene.get_objects()
+    scene_objects = game_engine.get_scene_manager().get_current_scene().get_objects()
     scene_overlays = utils.find_objects_from_type(scene_objects, assets.Overlay)
     existing_confirmation_overlay = utils.find_object_from_name(scene_overlays, "confirmation_overlay")
     if existing_confirmation_overlay is not None:
         return
     x, y = position
     overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay")  # ,
-    # parent=game_engine.get_scene_manager().current_scene)
-    # overlay.set_parent(game_engine.get_scene_manager().current_scene)
+    # parent=game_engine.get_scene_manager().get_current_scene())
+    # overlay.set_parent(game_engine.get_scene_manager().get_current_scene())
 
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     overlay.destroy_child(close_btn)
@@ -1258,7 +1248,7 @@ def create_confirmation_overlay(position, func, args):
         overlay.add_child(btn)
         btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
 
-    game_engine.get_scene_manager().current_scene.add_object(overlay)
+    game_engine.get_scene_manager().get_current_scene().add_object(overlay)
 
 
 if __name__ == "__main__":
@@ -1303,7 +1293,7 @@ if __name__ == "__main__":
     while running:
         running = environment.handle_events()
         game_engine.start_tick()
-        game_engine.get_scene_manager().current_scene.process()
+        game_engine.get_scene_manager().get_current_scene().process()
 
         environment.draw_screen()
 
