@@ -28,7 +28,6 @@ import pygame
 # opacity or increasing (or decreasing) the brightness by a certain amount.
 # TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
 # TODO: Fix the deck selection scene
-# TODO: Rotating a card on the edge of the field doesnt immediately clamp it, looks weird.
 # TODO: Enable the possibility for checking a new button click.
 
 # TODO: Add support for pendulum monsters.
@@ -136,8 +135,9 @@ class Card(assets.MobileButton):
 
     def clamp_pos(self, rect):
         self.get_rect().clamp_ip(rect)
-        self.x = utils.clamp(self.x, rect.x, rect.x + rect.width - self.width)
-        self.y = utils.clamp(self.y, rect.y, rect.y + rect.height - self.height)
+        x = utils.clamp(self.x, rect.x, rect.x + rect.width - self.width)
+        y = utils.clamp(self.y, rect.y, rect.y + rect.height - self.height)
+        self.set_pos(x, y)
 
     def set_rotation(self, angle):
         """Sets the rotation of the card. Only supports rotation with integer multiples of 90 degrees."""
@@ -155,6 +155,11 @@ class Card(assets.MobileButton):
             self.set_rotation(90)
         else:
             self.set_rotation(0)
+
+        scene = game_engine.get_scene_manager().get_current_scene()
+        field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
+        if not self.moving and field_box is not None:
+            self.clamp_pos(field_box)
 
     def update_in_hand(self):
         # TODO: Should all of this happen in the Board class?
