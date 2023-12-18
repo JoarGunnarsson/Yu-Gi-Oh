@@ -81,8 +81,8 @@ def card_starting_location(card_type):
 
 
 def remove_on_external_clicks(obj, allowed_rect_list):
-    mouse_click_this_tick = environment.get_left_mouse_click_this_tick() or environment.get_left_mouse_click_this_tick()
-    mouse_click_last_tick = environment.get_left_mouse_click_last_tick() or environment.get_left_mouse_click_last_tick()
+    mouse_click_this_tick = environment.get_left_mouse_click_this_tick() or environment.get_right_mouse_click_this_tick()
+    mouse_click_last_tick = environment.get_left_mouse_click_last_tick() or environment.get_right_mouse_click_last_tick()
     if not mouse_click_this_tick or (mouse_click_this_tick and mouse_click_last_tick):
         return
 
