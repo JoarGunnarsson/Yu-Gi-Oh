@@ -58,6 +58,11 @@ class GameObject:
         for child in self.children:
             child.update_position()
 
+    def set_z(self, z):
+        self.z = z
+        for child in self.children:
+            child.set_z(self.z)
+
     def set_pos(self, x, y):
         self.set_x(x)
         self.set_y(y)
@@ -144,8 +149,7 @@ class GameObject:
 
     def add_child(self, child):
         self.children.append(child)
-        if child.parent is None:
-            child.set_parent(self)
+        child.set_parent(self)
 
     def set_parent(self, parent):
         self.parent = parent
@@ -188,6 +192,7 @@ class GameObject:
             if hasattr(child, "get_displayable_objects"):
                 displayable_objects.extend(child.get_displayable_objects())
 
+        displayable_objects.sort(key=lambda x: x.z)
         return displayable_objects
 
 
@@ -300,7 +305,7 @@ class Box(GameObject):
 
 
 class Border(GameObject):
-    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
+    def __init__(self, x=0, y=0, z=1, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
                  name=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=False, alpha=alpha, name=name)
 
@@ -308,17 +313,19 @@ class Border(GameObject):
         self.thickness = thickness
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha,
+        top_box = Box(x=self.x, y=self.y, z=z, width=self.width, height=self.thickness, color=self.color,
+                      alpha=self.alpha,
                       parent=self, static=False)
 
-        bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
+        bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, z=z, width=self.width,
+                         height=self.thickness,
                          color=self.color, alpha=self.alpha, parent=self, static=False)
 
-        left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness,
+        left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness, z=z,
                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
                        static=False)
 
-        right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, width=self.thickness,
+        right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, z=z, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
                         static=False)
 
@@ -374,7 +381,7 @@ class Border(GameObject):
 
 class Button(Box):
     # TODO: Change left_click_args etc to args and kwargs.
-    def __init__(self, x=0, y=0, z=0, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
                  right_trigger_keys=None,
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
@@ -446,7 +453,7 @@ class Button(Box):
 
         self.click_detector = ClickDetector(self.get_rect())
 
-        border = Border(x=self.x, y=self.y, z=z, width=self.width, height=self.height, parent=self,
+        border = Border(x=self.x, y=self.y, width=self.width, height=self.height, parent=self,
                         name="btn_border")
         self.add_child(border)
 
@@ -662,7 +669,7 @@ class ClickDetector:
 
 
 class MobileButton(Button):
-    def __init__(self, x=0, y=0, z=0, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
                  image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
@@ -704,7 +711,7 @@ class MobileButton(Button):
 
 
 class Overlay(GameObject):
-    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
+    def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=static,
@@ -715,16 +722,20 @@ class Overlay(GameObject):
             self.external_process_arguments = external_process_arguments
         self.external_process_function = external_process_function
 
-        box = Box(x=self.x, y=self.y, z=self.z + 1, width=self.width, height=self.height, color=background_color,
+        box = Box(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=background_color,
                   alpha=self.alpha, name="overlay_box")
         self.add_child(box)
+
+        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=BLACK, parent=self,
+                        name="overlay_border")
+        self.add_child(border)
 
         self.parent = parent
 
         self.close_btn_size = close_btn_size
         self.close_btn_offset = close_btn_offset
         close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                           y=self.y + close_btn_offset, width=close_btn_size, height=close_btn_size,
+                           y=self.y + close_btn_offset, z=self.z, width=close_btn_size, height=close_btn_size,
                            image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
                            left_click_function=self.destroy, left_trigger_keys=["escape"],
                            name="close_btn")

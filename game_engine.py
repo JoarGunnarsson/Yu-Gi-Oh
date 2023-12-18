@@ -435,6 +435,7 @@ class Scene:
         for obj in self.objects:
             if hasattr(obj, "get_displayable_objects"):
                 self.display_order.extend(obj.get_displayable_objects())
+        self.display_order.sort(key=lambda x: x.z)
 
         # Display objects.
         for obj in self.display_order:

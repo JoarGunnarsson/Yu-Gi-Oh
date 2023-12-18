@@ -110,7 +110,7 @@ class Card(assets.MobileButton):
 
         card_img_id = game_engine.get_surface_manager().create_image(card_image_location + '{}.jpg'.format(card_id))
         card_image = game_engine.get_surface_manager().fetch_image(card_img_id)
-        super().__init__(x=x, y=y, z=-1, width=standard_card_width, height=standard_card_height, image=card_image,
+        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image=card_image,
                          name=card_id, static=False,
                          right_click_function=self.create_card_overlay)
 
@@ -271,6 +271,7 @@ class Card(assets.MobileButton):
         self.set_left_click_function(self.start_movement)
         self.set_left_hold_function(self.move)
         self.set_size(standard_card_width, standard_card_height)
+        self.set_z(1)
 
     def create_card_overlay(self):
         # TODO: Change names
@@ -298,7 +299,7 @@ class Card(assets.MobileButton):
         button_height = total_height // number_of_buttons
         button_width = overlay_width - 2 * button_space
 
-        overlay = assets.Overlay(x=self.x + self.width, y=self.y, width=overlay_width, height=overlay_height,
+        overlay = assets.Overlay(x=self.x + self.width, y=self.y, z=self.z, width=overlay_width, height=overlay_height,
                                  name="card_overlay",
                                  close_btn_size=overlay_close_button_size, parent=self, static=False,
                                  external_process_function=utils.remove_on_external_clicks)
@@ -318,9 +319,7 @@ class Card(assets.MobileButton):
         large_card_btn.set_external_process_arguments([large_card_btn_arg, large_card_btn_allowed_rect_list])
 
         remove_btn_height = int(overlay_height - button_space * 4 - overlay_close_button_size)
-        remove_btn = assets.Button(x=overlay.x + button_space,
-                                   y=overlay.y + overlay_close_button_size + 2 * button_space,
-                                   width=button_width, height=remove_btn_height, text="Remove", font_size=15,
+        remove_btn = assets.Button(width=button_width, height=remove_btn_height, text="Remove", font_size=15,
                                    parent=overlay, name="token_remove_btn",
                                    left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
 
@@ -391,6 +390,7 @@ class Card(assets.MobileButton):
         extra_button_height = extra_height // len(location_buttons)
         for btn in location_buttons:
             btn.set_pos_relative_to_parent(button_space, y)
+            btn.set_z(overlay.z)
             btn.set_height_relative(extra_button_height)
             y += btn.height + button_space
 
@@ -419,6 +419,7 @@ class Card(assets.MobileButton):
         large_card_offset = (left_side_box.width - large_card_width) // 2
 
         large_card_btn = assets.Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
+                                       z=self.z-0.1,
                                        width=large_card_width,
                                        height=int(large_card_width * card_aspect_ratio),
                                        image=game_engine.get_surface_manager().fetch_image(self.source_image_id),
@@ -446,7 +447,7 @@ class Card(assets.MobileButton):
 
 
 class CardOverlay(assets.Overlay):
-    def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
+    def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, external_process_function=None,
                  external_process_arguments=None, card_list_function=None):
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, static=static, name=name,
@@ -471,6 +472,7 @@ class CardOverlay(assets.Overlay):
         card.set_parent(self)
         x, y, card_width, card_height = self.get_card_info(i)
         card.set_pos(x, y)
+        card.set_z(self.z)
         card.set_size(card_width, card_height)
         card.set_left_click_function(card.make_large_card_button)
         card.set_left_hold_function(None)
@@ -596,7 +598,7 @@ class LargeCardOverlay(assets.Overlay):
 
 class Board:
     def __init__(self, card_ids=None, name="", scene=None):
-        self.z = 1
+        self.z = 2
         if card_ids is None:
             card_ids = []
 
@@ -885,6 +887,7 @@ def create_main_menu():
     x_offset = (environment.get_width() - number_of_buttons * width) // (number_of_buttons + 1)
     for i, btn in enumerate(buttons):
         btn.set_pos((i + 1) * x_offset + i * width, btn.y)
+        btn.set_z(1)
         scene.add_object(btn)
 
     return scene
@@ -1080,14 +1083,14 @@ def create_large_card_overlay(card):
 def create_deck_selection_scene():
     scene = Scene(name="deck_selection")
 
-    deck_selection_overlay = assets.Overlay(width=environment.get_width(), height=environment.get_height(),
+    deck_selection_overlay = assets.Overlay(z=1, width=environment.get_width(), height=environment.get_height(),
                                             background_color=WHITE)
 
     close_btn = utils.find_object_from_name(deck_selection_overlay.get_buttons(), "close_btn")
     deck_selection_overlay.destroy_child(close_btn)
 
     for i, deck in enumerate(DECKS):
-        deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, width=large_card_width,
+        deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, z=1, width=large_card_width,
                                  height=large_card_height,
                                  left_click_function=create_confirmation_overlay,
                                  left_click_args=[(i * large_card_width, 500), choose_deck, [deck]])
@@ -1225,8 +1228,10 @@ def create_confirmation_overlay(position, func, args):
     existing_confirmation_overlay = utils.find_object_from_name(scene_overlays, "confirmation_overlay")
     if existing_confirmation_overlay is not None:
         return
+    # TODO: Perhaps remove the above.
     x, y = position
-    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
+    overlay_z = 10
+    overlay = assets.Overlay(x=x, y=y, z=overlay_z, width=300, height=150, name="confirmation_overlay",
                              external_process_function=utils.remove_on_external_clicks)  # ,
     # parent=game_engine.get_scene_manager().get_current_scene())
     # overlay.set_parent(game_engine.get_scene_manager().get_current_scene())
@@ -1237,13 +1242,10 @@ def create_confirmation_overlay(position, func, args):
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     overlay.destroy_child(close_btn)
 
-    overlay_border = assets.Border(x=overlay.x, y=overlay.y, width=overlay.width, height=overlay.height, color=BLACK,
-                                   parent=overlay, name="overlay_border")
-    overlay.add_child(overlay_border)
     button_size = 50
     offset = 7
     font_size = 30
-    text_box = assets.Box(y=y + offset, text="Are you sure?")
+    text_box = assets.Box(y=y + offset, z=overlay.z, text="Are you sure?")
     text_box.hug_text(offset)
     text_box.set_pos(x + (overlay.width - text_box.width) // 2, text_box.y)
     overlay.add_child(text_box)
@@ -1261,6 +1263,7 @@ def create_confirmation_overlay(position, func, args):
     number_of_buttons = len(buttons)
     x_offset = (overlay.width - number_of_buttons * button_size) // (number_of_buttons + 1)
     for i, btn in enumerate(buttons):
+        btn.set_z(overlay.z)
         overlay.add_child(btn)
         btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
 
