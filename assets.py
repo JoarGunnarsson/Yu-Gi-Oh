@@ -610,7 +610,7 @@ class ClickDetector:
     def _left_clicked(self):
         """Detects left clicks. Returns true if the related rectangle is left-clicked, and false otherwise.
                 A click requires the mouse button not having been pressed before the check."""
-        left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
+        left_mouse_down = environment.get_left_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         if left_mouse_down and mouse_above_rect and not environment.get_left_mouse_click_last_tick():
             return True
@@ -621,7 +621,7 @@ class ClickDetector:
         """Detects long left clicks. Returns true if the related rectangle is long left-clicked, and false otherwise.
                 A long click requires the mouse button continually depressed."""
 
-        left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
+        left_mouse_down = environment.get_left_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.left_clicked or self.left_clicked_long)
 
@@ -633,7 +633,7 @@ class ClickDetector:
     def _right_clicked(self):
         """Detects right clicks. Returns true if the related rectangle is left-clicked, and false otherwise.
                 A click requires the mouse button not having been pressed before the check."""
-        right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
+        right_mouse_down = environment.get_right_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         if right_mouse_down and mouse_above_rect and not environment.get_right_mouse_click_last_tick():
             return True
@@ -644,7 +644,7 @@ class ClickDetector:
         """Detects long right clicks. Returns true if the related rectangle is long right-clicked, and false otherwise.
                 A long click requires the mouse button continually depressed."""
 
-        right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
+        right_mouse_down = environment.get_right_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.right_clicked or self.right_clicked_long)
 
