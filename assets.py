@@ -48,11 +48,15 @@ class GameObject:
         self.x = x
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
+        for child in self.children:
+            child.update_position()
 
     def set_y(self, y):
         self.y = y
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
+        for child in self.children:
+            child.update_position()
 
     def set_pos(self, x, y):
         self.set_x(x)
@@ -94,7 +98,7 @@ class GameObject:
             self.update_pos_relative_to_parent()
 
     def update_pos_relative_to_parent(self):
-        if self.static:
+        if self.static or self.parent is None:
             return
 
         self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
@@ -305,28 +309,23 @@ class Border(GameObject):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
         top_box = Box(x=self.x, y=self.y, width=self.width, height=self.thickness, color=self.color, alpha=self.alpha,
-                      parent=self)
+                      parent=self, static=False)
 
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, width=self.width, height=self.thickness,
-                         color=self.color, alpha=self.alpha, parent=self)
+                         color=self.color, alpha=self.alpha, parent=self, static=False)
 
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness,
-                       height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self)
+                       height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
+                       static=False)
 
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, width=self.thickness,
-                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self)
+                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
+                        static=False)
 
         side_boxes = [top_box, bottom_box, left_box, right_box]
 
         for box in side_boxes:
-            box.static = True
-
-        self.children.extend(side_boxes)
-
-    def set_pos(self, x, y):
-        for box in self.get_side_boxes():
-            box.set_pos(x=box.x + (x - self.x), y=box.y + (y - self.y))
-        super().set_pos(x, y)
+            self.add_child(box)
 
     def set_width(self, width):
         width_difference = width - self.width
@@ -453,12 +452,6 @@ class Button(Box):
 
     def get_border(self):
         return utils.find_object_from_name(self.children, "btn_border")
-
-    def set_pos(self, x, y):
-        super().set_pos(x, y)
-
-        for child in self.children:
-            child.update_position()
 
     def set_width(self, width):
         super().set_width(width)
@@ -605,8 +598,6 @@ class Button(Box):
 class ClickDetector:
     def __init__(self, rect):
         self.rect = rect
-        self.left_mouse_down_last_update = pygame.mouse.get_pressed(num_buttons=3)[0]
-        self.right_mouse_down_last_update = pygame.mouse.get_pressed(num_buttons=3)[2]
 
         self.left_clicked = False
         self.left_clicked_long = False
@@ -621,7 +612,7 @@ class ClickDetector:
                 A click requires the mouse button not having been pressed before the check."""
         left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if left_mouse_down and mouse_above_rect and not self.left_mouse_down_last_update:
+        if left_mouse_down and mouse_above_rect and not environment.get_left_mouse_click_last_tick():
             return True
 
         return False
@@ -644,7 +635,7 @@ class ClickDetector:
                 A click requires the mouse button not having been pressed before the check."""
         right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if right_mouse_down and mouse_above_rect and not self.right_mouse_down_last_update:
+        if right_mouse_down and mouse_above_rect and not environment.get_right_mouse_click_last_tick():
             return True
 
         return False
@@ -665,13 +656,9 @@ class ClickDetector:
     def update(self):
         self.left_clicked = self._left_clicked()
         self.left_clicked_long = self._left_clicked_long()
-        left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
-        self.left_mouse_down_last_update = left_mouse_down
 
         self.right_clicked_long = self._right_clicked_long()
         self.right_clicked = self._right_clicked()
-        right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
-        self.right_mouse_down_last_update = right_mouse_down
 
 
 class MobileButton(Button):
@@ -751,13 +738,6 @@ class Overlay(GameObject):
 
     def get_buttons(self):
         return utils.find_objects_from_type(self.children, Button)
-
-    def set_pos(self, x, y):
-        self.x = x
-        self.y = y
-        self.get_box().set_pos(x, y)
-        for btn in self.get_buttons():
-            btn.update_pos_relative_to_parent()
 
     def set_background_color(self, color):
         self.get_box().set_color(color)

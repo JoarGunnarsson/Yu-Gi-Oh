@@ -15,20 +15,29 @@ import pygame
 
 
 # TODO: Create a "help" button?
+
 # TODO: Implement text fields, dice, etc? For randomness, life points etc.
+
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
+
 # TODO: Fix comments, code, documentation.
+
 # TODO: Find a way to highlight buttons even when they use images.
 # could work with always highlighting a border around the button, or using a transparent white layer above the button.
+
 # TODO: Fix classes, functions etc so that things work without knowing how everything works in detail.
 # That is, fix the api, so that you can create a new scene easily.
+
 # TODO: Overlay exit button only looks good on white overlays. Make buttons transparent?
+
 # TODO: Make small_card_overlay into a sub-class of Overlay?
+
 # TODO: Make button colors easier to use. Specify one main color, and then the highlighting is done either by
 # opacity or increasing (or decreasing) the brightness by a certain amount.
+
 # TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
+
 # TODO: Fix the deck selection scene
-# TODO: Enable the possibility for checking a new button click.
 
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
@@ -36,6 +45,8 @@ import pygame
 # to be sent to the extra_deck.
 
 # TODO: Move scenes etc to another file. Create a standard file with the game loop etc.
+
+
 class Deck:
     """
     A class representing a Yu-Gi-Oh! deck.
@@ -427,8 +438,7 @@ class Card(assets.MobileButton):
             allowed_rect_list.append(card_overlay.get_rect())
         large_card_btn.external_process_arguments = [large_card_btn, allowed_rect_list]
 
-        self.children.insert(0, large_card_btn)
-        large_card_btn.set_parent(self)
+        self.add_child(large_card_btn)
         return large_card_btn
 
     def remove_large_card_button(self):
@@ -1125,6 +1135,7 @@ def generate_token():
     token.static = True
     x, y = scene.get_default_position()  # TODO: Change this to something else?
     token.set_pos(x, y)
+    token.location = "field"
     board.field.append(token)
     board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
 
