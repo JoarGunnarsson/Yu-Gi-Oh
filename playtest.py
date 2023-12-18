@@ -31,7 +31,6 @@ import pygame
 # TODO: Rotating a card on the edge of the field doesnt immediately clamp it, looks weird.
 # TODO: Enable the possibility for checking a new button click.
 
-# TODO: Remove possibility to add extra_deck_card to the hand
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
 # this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
@@ -305,15 +304,12 @@ class Card(assets.MobileButton):
         large_card_btn_allowed_rect_list.append(overlay.get_rect())
         large_card_btn.set_external_process_arguments([large_card_btn_arg, large_card_btn_allowed_rect_list])
 
-        if self.card_type == "token":
-            remove_btn_height = int(overlay_height - button_space * 4 - overlay_close_button_size)
-            remove_btn = assets.Button(x=overlay.x + button_space,
-                                       y=overlay.y + overlay_close_button_size + 2 * button_space,
-                                       width=button_width, height=remove_btn_height, text="Remove", font_size=15,
-                                       parent=overlay, name="token_remove_btn",
-                                       left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
-            overlay.add_child(remove_btn)
-            return
+        remove_btn_height = int(overlay_height - button_space * 4 - overlay_close_button_size)
+        remove_btn = assets.Button(x=overlay.x + button_space,
+                                   y=overlay.y + overlay_close_button_size + 2 * button_space,
+                                   width=button_width, height=remove_btn_height, text="Remove", font_size=15,
+                                   parent=overlay, name="token_remove_btn",
+                                   left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
 
         gy_btn = assets.Button(width=button_width, height=button_height, text="Graveyard", name="gy_btn", font_size=15,
                                parent=overlay, left_trigger_keys=["g"], left_click_function=board.send_to_gy,
@@ -337,40 +333,52 @@ class Card(assets.MobileButton):
                                   left_trigger_keys=["f"], left_click_function=board.move_to_field,
                                   left_click_args=[self, card_location])
 
-        if starting_location == "main_deck":
-            deck_btn = assets.Button(width=button_width,
-                                     height=button_height, font_size=15, text="Deck", name="send_to_deck_btn",
-                                     parent=overlay,
-                                     left_trigger_keys=["d"], left_click_function=board.add_to_the_deck,
-                                     left_click_args=[self, card_location])
+        main_deck_btn = assets.Button(width=button_width,
+                                      height=button_height, font_size=15, text="Deck", name="send_to_deck_btn",
+                                      parent=overlay,
+                                      left_trigger_keys=["d"], left_click_function=board.add_to_the_deck,
+                                      left_click_args=[self, card_location])
+
+        extra_deck_btn = assets.Button(width=button_width, height=button_height, font_size=15, text="Extra Deck",
+                                       name="send_to_extra_deck_btn", parent=overlay,
+                                       left_trigger_keys=["d"], left_click_function=board.add_to_the_extra_deck,
+                                       left_click_args=[self, card_location])
+
+        if self.card_type == "token":
+            location_button_dict = {
+                "": remove_btn
+            }
+
+        elif starting_location == "extra_deck":
+            location_button_dict = {
+                "extra_deck": extra_deck_btn,
+                "gy": gy_btn,
+                "banished": banish_btn,
+                "field": field_btn,
+            }
         else:
-            deck_btn = assets.Button(width=button_width, height=button_height, font_size=15, text="Extra Deck",
-                                     name="send_to_extra_deck_btn", parent=overlay,
-                                     left_trigger_keys=["d"], left_click_function=board.add_to_the_extra_deck,
-                                     left_click_args=[self, card_location])
+            location_button_dict = {
+                "main_deck": main_deck_btn,
+                "gy": gy_btn,
+                "banished": banish_btn,
+                "field": field_btn,
+                "hand": hand_btn
+            }
 
-        if self.location == "main_deck" or self.location == "extra_deck":
-            location_buttons = [gy_btn, banish_btn, hand_btn, field_btn]
-
-        elif self.location == "gy":
-            location_buttons = [hand_btn, banish_btn, deck_btn, field_btn]
-
-        elif self.location == "banished":
-            location_buttons = [gy_btn, hand_btn, deck_btn, field_btn]
-
-        elif self.location == "field":
-            location_buttons = [gy_btn, banish_btn, deck_btn, hand_btn]
-
-        elif self.location == "hand":
-            location_buttons = [gy_btn, banish_btn, deck_btn, field_btn]
-
-        else:
-            location_buttons = [gy_btn, banish_btn, deck_btn, hand_btn]
+        location_buttons = []
+        for location in location_button_dict.keys():
+            if location != self.location:
+                location_buttons.append(location_button_dict[location])
 
         y = overlay_close_button_size + 2 * button_space
-
+        location_button_space = sum([button.height + button_space for button in location_buttons])
+        close_button_space = 2 * button_space + overlay_close_button_size
+        used_space = location_button_space + close_button_space
+        extra_height = overlay.height - used_space
+        extra_button_height = extra_height // len(location_buttons)
         for btn in location_buttons:
             btn.set_pos_relative_to_parent(button_space, y)
+            btn.set_height_relative(extra_button_height)
             y += btn.height + button_space
 
         overlay.add_multiple_children(location_buttons)
@@ -380,7 +388,6 @@ class Card(assets.MobileButton):
         if card_overlay is None:
             return
         card_overlay.destroy()
-        ### ?
 
     def update_card_overlay_anchor(self):
         card_overlay = utils.find_object_from_name(self.children, "card_overlay")
