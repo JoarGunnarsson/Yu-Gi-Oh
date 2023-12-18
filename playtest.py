@@ -13,9 +13,6 @@ from constants import *
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-
-# TODO: Create a "help" button?
-
 # TODO: Implement text fields, dice, etc? For randomness, life points etc.
 
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
@@ -1222,7 +1219,6 @@ def create_location_overlay(location_name, card_list_function):
 
 
 def create_confirmation_overlay(position, func, args):
-    # TODO: Add remove_on_external_clicks?
     # TODO: Make this into a sub-class of Overlay?
     scene_objects = game_engine.get_scene_manager().get_current_scene().get_objects()
     scene_overlays = utils.find_objects_from_type(scene_objects, assets.Overlay)
@@ -1230,9 +1226,13 @@ def create_confirmation_overlay(position, func, args):
     if existing_confirmation_overlay is not None:
         return
     x, y = position
-    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay")  # ,
+    overlay = assets.Overlay(x=x, y=y, width=300, height=150, name="confirmation_overlay",
+                             external_process_function=utils.remove_on_external_clicks)  # ,
     # parent=game_engine.get_scene_manager().get_current_scene())
     # overlay.set_parent(game_engine.get_scene_manager().get_current_scene())
+
+    allowed_click_rects = [overlay, [overlay.get_rect()]]
+    overlay.external_process_arguments = allowed_click_rects
 
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     overlay.destroy_child(close_btn)

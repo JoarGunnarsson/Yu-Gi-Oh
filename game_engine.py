@@ -6,9 +6,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 
-# TODO: Add get_current_scene() function
-
-
 class Environment:
     def __init__(self):
         self.scale_factor = 1
@@ -124,7 +121,7 @@ class Placeholder:
 
 
 class SurfaceManager:
-    # TODO: Need some way to remove surfaces that are no longer used. Could do this for scene changes?
+    # TODO: Need some way to remove surfaces that are no longer used.
     def __init__(self):
         self.current_max_id = 0
         self.fonts = {}
@@ -236,7 +233,6 @@ class SurfaceManager:
         self.set_surface(image, alpha=255, surface_id=image_id, surface_type="image")
 
     def restore_surface(self, surface_id):
-        # TODO: This probably doesn't work for rotated, scaled, images etc.
         width, height, alpha = self.surface_size_dict[surface_id]
         self.create_surface(width, height, alpha, surface_id)
 
@@ -295,8 +291,6 @@ class SceneManager:
     def __init__(self):
         self.scenes = {}
         self.current_scene = None
-        # TODO: Implement scene switching. For example, tag a scene as persistent or temporary, and clear it only if
-        # it is temporary.
 
     def get_current_scene(self):
         return self.current_scene
