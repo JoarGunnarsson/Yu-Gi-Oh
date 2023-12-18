@@ -81,12 +81,9 @@ def card_starting_location(card_type):
 
 
 def remove_on_external_clicks(obj, allowed_rect_list):
-    # TODO: Make this into a method for the assets?
-    left_mouse_click = pygame.mouse.get_pressed(num_buttons=3)[0]
-    right_mouse_click = pygame.mouse.get_pressed(num_buttons=3)[2]
-    mouse_click = left_mouse_click or right_mouse_click
-
-    if not mouse_click:
+    mouse_click_this_tick = environment.get_left_mouse_click_this_tick() or environment.get_left_mouse_click_this_tick()
+    mouse_click_last_tick = environment.get_left_mouse_click_last_tick() or environment.get_left_mouse_click_last_tick()
+    if not mouse_click_this_tick or (mouse_click_this_tick and mouse_click_last_tick):
         return
 
     mouse_position = environment.get_mouse_position()

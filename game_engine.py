@@ -1,8 +1,11 @@
 from constants import *
 import os
 import pickle
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
+
+
 # TODO: Add get_current_scene() function
 
 
@@ -18,10 +21,8 @@ class Environment:
         self.screen.set_alpha(255)
         self.clock = pygame.time.Clock()
         self.standard_offset = 15
-        self.start_of_tick_functions = []
-        self.start_of_tick_arguments = []
-        self.end_of_tick_functions = []
-        self.end_of_tick_arguments = []
+        self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
+        self.events_this_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
 
     def get_height(self):
         return self.height
@@ -39,6 +40,36 @@ class Environment:
         scale_y = self.screen.get_height() / window_height
         return x * scale_x, y * scale_y
 
+    def set_events_this_tick(self, events):
+        self.events_this_tick = events
+
+    def set_events_last_tick(self, events):
+        self.events_last_tick = events
+
+    def get_events_this_tick(self):
+        return self.events_this_tick
+
+    def get_events_last_tick(self):
+        return self.events_last_tick
+
+    def get_left_mouse_click_this_tick(self):
+        return self.events_this_tick["left_mouse_button"]
+
+    def get_right_mouse_click_this_tick(self):
+        return self.events_this_tick["right_mouse_button"]
+
+    def get_left_mouse_click_last_tick(self):
+        return self.events_last_tick["left_mouse_button"]
+
+    def get_right_mouse_click_last_tick(self):
+        return self.events_last_tick["right_mouse_button"]
+
+    def get_key_press_this_tick(self):
+        return self.events_last_tick["key_press"]
+
+    def get_key_press_last_tick(self):
+        return self.events_last_tick["key_press"]
+
     def handle_events(self):
         """Checks if the user tries to close the program window, or resize the window."""
         is_running = True
@@ -46,8 +77,13 @@ class Environment:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
-            elif event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN and self.key_press is None:
                 self.key_press = pygame.key.name(event.key)
+
+        left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
+        right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
+        self.set_events_this_tick({"left_mouse_button": left_mouse_down, "right_mouse_button": right_mouse_down,
+                                   "key_press": self.key_press})
         return is_running
 
     def draw_screen(self):
@@ -460,6 +496,9 @@ def end_tick():
                                game_state.placeholder.end_of_tick_arguments)
     game_state.placeholder.end_of_tick_functions = []
     game_state.placeholder.end_of_tick_arguments = []
+
+    environment.set_events_last_tick(environment.events_this_tick)
+    environment.set_events_this_tick({"left_mouse_button": False, "right_mouse_button": False, "key_press": None})
 
 
 def create_scene(scene_function, scene_name, scene_arguments):
