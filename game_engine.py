@@ -277,7 +277,7 @@ class SurfaceManager:
         self.current_max_id = loaded_game_state.current_max_id
         self.surfaces = {}
         self.fonts = {}
-        for surface_id in self.surface_type_dict.keys():
+        for surface_id in self.surface_type_dict:
             surface_type = self.surface_type_dict[surface_id]
             if surface_type == "surface":
                 self.restore_surface(surface_id)

@@ -59,7 +59,7 @@ def find_objects_from_type(obj_list, match_type):
 def closest_color(color_dict, color):
     min_distance = 3 * 255 ** 2
     card_type = None
-    for key in color_dict.keys():
+    for key in color_dict:
         color_distance = 0
         for i in range(3):
             color_distance += (color_dict[key][i] - color[i]) ** 2

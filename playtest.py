@@ -378,7 +378,7 @@ class Card(assets.MobileButton):
             }
 
         location_buttons = []
-        for location in location_button_dict.keys():
+        for location in location_button_dict:
             if location != self.location:
                 location_buttons.append(location_button_dict[location])
 
