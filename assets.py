@@ -7,16 +7,13 @@ from game_engine import environment
 import game_engine
 import utility_functions as utils
 
+# TODO: Change external_process_function functionality into a GameScript object instead.
+
 
 class GameScript:
     """
     Represents a game script.
-
-    Methods:
-    - __init__(self): Initializes a new instance of the GameScript class.
-    - process(self): Placeholder method for processing game logic.
     """
-
     def __init__(self):
         pass
 
@@ -49,7 +46,6 @@ class GameObject:
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
 
    """
-
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
         """
@@ -69,7 +65,6 @@ class GameObject:
             opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
                 being clicked.
         """
-
         self.x = x
         self.y = y
         self.z = z
@@ -224,7 +219,6 @@ class GameObject:
 
     def update_relative_position(self):
         """Updates the relative position attributes of the game object relative to its parent."""
-
         if self.static or self.parent is None:
             return
         self.set_relative_x(self.x - self.parent.x)
@@ -752,6 +746,37 @@ class Border(GameObject):
 
 
 class Button(Box):
+    """A customizable button with various interactive features, such as click and hover events.
+
+    Attributes:
+        x (int): X-coordinate of the box.
+        y (int): Y-coordinate of the box.
+        z (float): Z-coordinate of the box.
+        width (int): Width of the box.
+        height (int): Height of the box.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        name (str): Name of the box.
+        destroyed (bool): Indicates whether the box has been destroyed.
+        parent: Parent object to which this box is attached.
+        static (bool): Indicates whether the box is static (does not move together with its parent).
+        displayable (bool): Indicates whether the box is visible.
+        opaque (bool): Indicates whether the box blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rect (pygame.Rect): Rectangular area occupied by the object.
+        rotation_angle (int): Rotation angle of the box in degrees.
+        relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
+        text (str): The string to be displayed on the box
+        text_color (tuple): The color of the text.
+        font_size (int): The font size of the text.
+        text_surface_id (int): The id corresponding to the text surface of the box.
+        update_text_func (func): The function responsible for updating the box text.
+        surface_id (int): The id corresponding to the surface of the box.
+        left_click_function (func):
+        right_click_function (func):
+    """
+
     # TODO: Change left_click_args etc to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
@@ -759,7 +784,38 @@ class Button(Box):
                  left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
-        """Creates a new button. X and y refers to the upper left corner of the button"""
+        """Creates a new button.
+
+        Args:
+            x (int): The x-coordinate of the button.
+            y (int): The y-coordinate of the button.
+            z (float): The z-coordinate of the button.
+            width (int): The width of the button.
+            height (int): The height of the button.
+            colors (dict): Dictionary containing color information for different button states.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+            image (Pygame.image): The image used for the button (default is None).
+            text (str): The text displayed on the button (default is an empty string).
+            font_size (int): The font size of the text (default is 40).
+            text_color: The color of the text (default is BLACK).
+            name (str): The name of the button (default is None).
+            parent: The parent object (default is None).
+            static (bool): Indicates whether the object is static (does not move together with its parent).
+            left_trigger_keys (list): List of keys triggering left-click events (default is None).
+            right_trigger_keys (list): List of keys triggering right-click events (default is None).
+            left_click_function (func): The function to be called on left-click (default is None).
+            left_click_args: The arguments for the left-click function (default is None).
+            left_hold_function (func): The function to be called while left-click is held (default is None).
+            left_hold_args: The arguments for the left-hold function (default is None).
+            right_click_function (func): The function to be called on right-click (default is None).
+            right_click_args: The arguments for the right-click function (default is None).
+            right_hold_function: The function to be called while right-click is held (default is None).
+            right_hold_args: The arguments for the right-hold function (default is None).
+            key_functions (dict): Dictionary mapping keys to functions and their arguments (default is None).
+            external_process_function (func): External function to be called during the button's processing
+                (default is None).
+            external_process_arguments: Arguments for the external process function (default is None).
+        """
 
         # TODO: Perhaps change the format for the colors, use a list or something.
 
@@ -830,62 +886,138 @@ class Button(Box):
         self.add_child(border)
 
     def get_border(self):
+        """Gets the border object associated with the button.
+
+        Returns:
+            Border: The border object of the button.
+        """
         return utils.find_object_from_name(self.children, "btn_border")
 
     def set_width(self, width):
+        """Sets the width of the button and its associated Border.
+
+        Args:
+            width (int): The new width of the button.
+        """
         super().set_width(width)
         self.get_border().set_width(width)
 
     def set_height(self, height):
+        """Sets the height of the button and its associated Border.
+
+        Args:
+            height (int): The new height of the button.
+        """
         super().set_height(height)
         self.get_border().set_height(height)
 
     def set_rotation(self, angle):
+        """Sets the rotation angle of the button and rotates its associated Border.
+
+        Args:
+            angle (int): The new rotation angle in degrees.
+        """
         super().set_rotation(angle)
         self.get_border().set_rotation(angle)
 
-    def get_displayable_objects(self):
-        # TODO: Remove this?
-        displayable_objects = [self]
-        displayable_objects.extend(self.get_border().get_displayable_objects())
-        displayable_objects.extend(super().get_displayable_objects())
-        return displayable_objects
-
     def set_colors(self, colors):
+        """Sets the colors of the button for the different states.
+
+        Args:
+            colors (dict): Dictionary containing color information for the different button states.
+        """
         super().set_color(self.colors[self.status])
         self.colors = colors
 
     def set_left_click_function(self, new_function, new_arguments=None):
+        """Sets the function to be called when the button is left-clicked.
+
+        Args:
+            new_function: The new left-click function.
+            new_arguments: The new arguments for the left-click function.
+        """
         if new_arguments is None:
             new_arguments = []
         self.left_click_function = new_function
         self.left_click_args = new_arguments
 
     def set_left_hold_function(self, new_function, new_arguments=None):
+        """Sets the function to be called when the button is left-held.
+
+        Args:
+            new_function (func): The new left-hold function.
+            new_arguments: The new arguments for the left-hold function.
+        """
         if new_arguments is None:
             new_arguments = []
         self.left_hold_function = new_function
         self.left_hold_args = new_arguments
 
     def set_right_click_function(self, new_function, new_arguments=None):
+        """Sets the function to be called when the button is right-clicked.
+
+        Args:
+            new_function (func): The new right-clicked function.
+            new_arguments: The new arguments for the right-clicked function.
+        """
         if new_arguments is None:
             new_arguments = []
         self.right_click_function = new_function
         self.right_click_args = new_arguments
 
     def set_right_hold_function(self, new_function, new_arguments=None):
+        """Sets the function to be called when the button is right-held.
+
+        Args:
+            new_function (func): The new right-hold function.
+            new_arguments: The new arguments for the right-hold function.
+        """
         if new_arguments is None:
             new_arguments = []
         self.right_hold_function = new_function
         self.right_hold_args = new_arguments
 
+    def get_external_process_function(self):
+        """Gets the external process function.
+
+        Returns:
+            func: The external process function.
+        """
+        return self.external_process_function
+
+    def set_external_process_function(self, new_function):
+        """Sets a new external process function.
+
+        Returns:
+            new_function (func): The new external process function.
+        """
+        self.external_process_function = new_function
+
     def get_external_process_arguments(self):
+        """Gets the arguments for the external process function.
+
+        Returns:
+            list: List of arguments for the external process function.
+        """
         return self.external_process_arguments
 
     def set_external_process_arguments(self, args):
+        """Set the arguments for the external process function.
+
+        Args:
+            args (list): List of arguments for the external process function.
+        """
         self.external_process_arguments = args
 
     def click_blocked(self, click_position):
+        """Checks if the button click is blocked by other objects.
+
+        Args:
+            click_position: The position of the click.
+
+        Returns:
+            bool: True if the click is blocked, False otherwise.
+        """
         blocking_objects_list = game_engine.get_scene_manager().current_scene.get_object_mask(self)
         for obj in blocking_objects_list:
             if obj.get_rect().collidepoint(click_position):
@@ -893,9 +1025,16 @@ class Button(Box):
         return False
 
     def set_require_continuous_hovering(self, boolean):
+        """Sets whether the button requires the mouse to be on it for button interaction.
+
+        Args:
+            boolean (bool): True if continuous hovering is required, False otherwise.
+        """
         self.click_detector.require_continuous_hovering = boolean
 
     def check_button_presses(self):
+        """Check for button presses/key presses and executes corresponding functions. Can execute any combination of
+        different click events in the same tick."""
         mouse_position = environment.get_mouse_position()
 
         if not self.click_blocked(mouse_position):
@@ -917,7 +1056,7 @@ class Button(Box):
 
         self.status = "normal"
 
-        key_function, key_args = None, None
+        key_function, key_args = None, []
         for key in self.key_functions:
             if environment.key_press == key:
                 key_function = self.key_functions[key][0]
@@ -963,6 +1102,7 @@ class Button(Box):
             self.status = "hover"
 
     def process(self):
+        """Process the button, updating its click_detector checking for click-events  and updating it's color."""
         super().process()
 
         self.click_detector.update()
@@ -976,7 +1116,22 @@ class Button(Box):
 
 
 class ClickDetector:
+    """A class dedicated to detecting clicks for buttons
+
+    Attributes:
+        rect (Pygame.rect): The rect inside which the click detector detects clicks.
+        left_clicked (bool):
+        left_clicked_long (bool):
+        right_clicked (bool):
+        right_clicked_long (bool):
+        require_continuous_hovering (bool):
+    """
     def __init__(self, rect):
+        """Initialize the ClickDetector with the specified rectangle.
+
+        Args:
+            rect (pygame.Rect): The rect inside which the click detector detects clicks.
+        """
         self.rect = rect
 
         self.left_clicked = False
@@ -988,8 +1143,11 @@ class ClickDetector:
         self.require_continuous_hovering = True
 
     def _left_clicked(self):
-        """Detects left clicks. Returns true if the related rectangle is left-clicked, and false otherwise.
-                A click requires the mouse button not having been pressed before the check."""
+        """Detects new left clicks.
+
+        Returns:
+            bool: True if the related rectangle is left-clicked, False otherwise.
+        """
         left_mouse_down = environment.get_left_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         if left_mouse_down and mouse_above_rect and not environment.get_left_mouse_click_last_tick():
@@ -998,9 +1156,11 @@ class ClickDetector:
         return False
 
     def _left_clicked_long(self):
-        """Detects long left clicks. Returns true if the related rectangle is long left-clicked, and false otherwise.
-                A long click requires the mouse button continually depressed."""
+        """Detects long left clicks, that is if the mouse button continually being pressed.
 
+        Returns:
+            bool: True if the related rectangle is long left-clicked, False otherwise.
+        """
         left_mouse_down = environment.get_left_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.left_clicked or self.left_clicked_long)
@@ -1011,8 +1171,11 @@ class ClickDetector:
         return False
 
     def _right_clicked(self):
-        """Detects right clicks. Returns true if the related rectangle is left-clicked, and false otherwise.
-                A click requires the mouse button not having been pressed before the check."""
+        """Detects new right clicks.
+
+        Returns:
+            bool: True if the related rectangle is right-clicked, False otherwise.
+        """
         right_mouse_down = environment.get_right_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         if right_mouse_down and mouse_above_rect and not environment.get_right_mouse_click_last_tick():
@@ -1021,9 +1184,11 @@ class ClickDetector:
         return False
 
     def _right_clicked_long(self):
-        """Detects long right clicks. Returns true if the related rectangle is long right-clicked, and false otherwise.
-                A long click requires the mouse button continually depressed."""
+        """Detects long right clicks, that is if the mouse button continually being pressed.
 
+        Returns:
+            bool: True if the related rectangle is long right-clicked, False otherwise.
+        """
         right_mouse_down = environment.get_right_mouse_click_this_tick()
         mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.right_clicked or self.right_clicked_long)
@@ -1034,6 +1199,7 @@ class ClickDetector:
         return False
 
     def update(self):
+        """Updates the click detector's attributes based on the current mouse click events."""
         self.left_clicked = self._left_clicked()
         self.left_clicked_long = self._left_clicked_long()
 
@@ -1042,15 +1208,75 @@ class ClickDetector:
 
 
 class MobileButton(Button):
+    """A class for button that can be moved using the mouse.
+
+    Attributes:
+        x (int): X-coordinate of the button.
+        y (int): Y-coordinate of the button.
+        z (float): Z-coordinate of the button.
+        width (int): Width of the button.
+        height (int): Height of the button.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        name (str): Name of the button.
+        destroyed (bool): Indicates whether the button has been destroyed.
+        parent: Parent object to which this button is attached.
+        static (bool): Indicates whether the button is static (does not move together with its parent).
+        displayable (bool): Indicates whether the button is visible.
+        opaque (bool): Indicates whether the button blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rect (pygame.Rect): Rectangular area occupied by the object.
+        rotation_angle (int): Rotation angle of the button in degrees.
+        relative_x (int): The x-coordinate of the button in relation to its parent, if applicable.
+        relative_y (int): The y-coordinate of the button in relation to its parent, if applicable.
+        text (str): The string to be displayed on the button.
+        text_color (tuple): The color of the text.
+        font_size (int): The font size of the text.
+        text_surface_id (int): The id corresponding to the text surface of the button.
+        update_text_func (func): The function responsible for updating the button text.
+        surface_id (int): The id corresponding to the surface of the button.
+        left_click_function (func): Function to be called on left-click.
+        right_click_function (func): Function to be called on right-click.
+        moving (bool): Indicates whether the button is currently moving.
+        click_x (int): The x-coordinate of the mouse click in the button's coordinate system.
+        click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
+    """
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
                  image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
+        """Creates a new mobile button with movement support.
+
+        Args:
+            x (int): The x-coordinate of the button.
+            y (int): The y-coordinate of the button.
+            z (float): The z-coordinate of the button.
+            width (int): The width of the button.
+            height (int): The height of the button.
+            color (tuple): The color of the button.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+            static (bool): Indicates whether the button is static (does not move together with its parent).
+            image (Pygame.image): The image used for the button (default is None).
+            text (str): The text displayed on the button (default is an empty string).
+            font_size (int): The font size of the text (default is 40).
+            text_color: The color of the text (default is BLACK).
+            name (str): The name of the button (default is None).
+            parent: The parent object (default is None).
+            left_trigger_keys (list): List of keys triggering left-click events (default is None).
+            right_trigger_keys (list): List of keys triggering right-click events (default is None).
+            right_click_function (func): The function to be called on right-click (default is None).
+            right_click_args: The arguments for the right-click function (default is None).
+            right_hold_function: The function to be called while right-click is held (default is None).
+            right_hold_args: The arguments for the right-hold function (default is None).
+            key_functions (dict): Dictionary mapping keys to functions and their arguments (default is None).
+            external_process_function (func): External function to be called during the button's processing
+                (default is None).
+            external_process_arguments: Arguments for the external process function (default is None).
+        """
 
         colors = {"normal": color, "hover": color, "pressed": color}
         self.moving = False
-        self.is_movable = True
         self.click_x = None
         self.click_y = None
         super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image=image, text=text,
@@ -1062,9 +1288,12 @@ class MobileButton(Button):
                          key_functions=key_functions, external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
         super().set_require_continuous_hovering(False)
-        self.static = False
 
     def process(self):
+        """Processes the mobile button, resetting the attributes related to movement if the button is not being
+         left-held.
+         """
+
         if not self.click_detector.left_clicked_long:
             self.moving = False
             self.click_x, self.click_y = None, None
@@ -1078,6 +1307,7 @@ class MobileButton(Button):
         self.set_pos(mouse_position[0] - self.click_x, mouse_position[1] - self.click_y)
 
     def start_movement(self):
+        """Starts the movement of the mobile button."""
         mouse_position = environment.get_mouse_position()
         self.moving = True
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
