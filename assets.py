@@ -9,6 +9,13 @@ import utility_functions as utils
 
 
 class GameScript:
+    """
+    Represents a game script.
+
+    Methods:
+    - __init__(self): Initializes a new instance of the GameScript class.
+    - process(self): Placeholder method for processing game logic.
+    """
     def __init__(self):
         pass
 
@@ -17,9 +24,51 @@ class GameScript:
 
 
 class GameObject:
-    def __init__(self, x=0, y=0, z=0, alpha=255, width=0, height=0, parent=None, static=True, opaque=True,
-                 displayable=False,
-                 blocks_clicks=True, name=""):
+    """
+    A Class for representing a GameObject.
+
+    Attributes:
+        x (int): X-coordinate of the object.
+        y (int): Y-coordinate of the object.
+        z (float): Z-coordinate of the object.
+        width (int): Width of the object.
+        height (int): Height of the object.
+        alpha (int): Transparency (0-255) of the object.
+        name (str): Name of the object.
+        destroyed (bool): Indicates whether the object has been destroyed.
+        parent (GameObject): Parent object to which this object is attached.
+        static (bool): Indicates whether the object is static (does not move together with its parent).
+        displayable (bool): Indicates whether the object is visible.
+        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rect (pygame.Rect): Rectangular area occupied by the object.
+        rotation_angle (int): Rotation angle of the object in degrees.
+        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+
+   """
+    def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
+                 displayable=False, name=""):
+        """
+        Initializes a GameObject.
+
+        Args:
+            x (int): X-coordinate of the object.
+            y (int): Y-coordinate of the object.
+            z (float): Z-coordinate of the object.
+            width (int): Width of the object.
+            height (int): Height of the object.
+            alpha (int): Transparency (0-255) of the object.
+            name (str): Name of the object.
+            parent (GameObject): Parent object to which this object is attached.
+            static (bool): Indicates whether the object is static (does not move together with its parent).
+            displayable (bool): Indicates whether the object is visible.
+            opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
+                being clicked.
+
+        """
+
         self.x = x
         self.y = y
         self.z = z
@@ -35,23 +84,43 @@ class GameObject:
         self.rotation_angle = 0
         self.alpha = alpha
         self.opaque = opaque
-        self.blocks_clicks = blocks_clicks
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
             self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
     def get_rect(self):
+        """
+        Get rect
+
+        Returns:
+            - Pygame.rect: The value of the object's rect attribute
+        """
         return self.rect
 
     def set_x(self, x):
+        """
+        Sets the x-coordinate of the object and updates its position relative to it's parent (if applicable), as well
+        as updates the position of its children.
+
+        Args:
+            x (int): The new x-coordinate of the object.
+        """
         self.x = x
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
         for child in self.children:
-            child.update_position()
+            if hasattr(child, "update_position"):
+                child.update_position()
 
     def set_y(self, y):
+        """
+        Sets the x-coordinate of the game object and updates its position relative to it's parent (if applicable),
+        as well as updates the position of its children.
+
+        Args:
+            y (int): The new y-coordinate of the object.
+        """
         self.y = y
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
@@ -59,87 +128,186 @@ class GameObject:
             child.update_position()
 
     def set_z(self, z):
+        """
+        Sets the z-coordinate of the game object and sets the z-coordinate of its children to the same value.
+
+        Args:
+            z (int): The new z-coordinate of the object
+        """
         self.z = z
         for child in self.children:
             child.set_z(self.z)
 
     def set_pos(self, x, y):
+        """
+        Sets the x and y coordinates of the game object.
+
+        Args:
+            x (int): The new x-coordinate.
+            y (int): The new y-coordinate.
+        """
         self.set_x(x)
         self.set_y(y)
 
     def shift_x(self, delta_x):
+        """
+        Shift the game object's x-coordinate by a given amount.
+
+        Args:
+            delta_x (int): The amount to shift the x-coordinate.
+        """
         self.set_x(self.x + delta_x)
 
     def shift_y(self, delta_y):
+        """
+        Shift the game object's x-coordinate by a given amount.
+
+        Args:
+            delta_y (int): The amount to shift the y-coordinate.
+        """
         self.set_y(self.y + delta_y)
 
     def shift_pos(self, delta_x, delta_y):
+        """Shift the game object's position by a given amount in both x and y directions.
+
+        Args:
+            delta_x (int): The amount to shift the x-coordinate.
+            delta_y (int): The amount to shift the y-coordinate.
+        """
         self.shift_x(delta_x)
         self.shift_y(delta_y)
 
     def set_relative_x(self, x):
+        """Sets the relative x-coordinate of the game object relative to its parent.
+
+         Args:
+             x (int): The relative x-coordinate.
+         """
         self.relative_x = x
 
     def set_relative_y(self, y):
+        """Sets the relative y-coordinate of the game object relative to its parent.
+
+         Args:
+             y (int): The relative x-coordinate.
+         """
         self.relative_y = y
 
     def set_pos_relative_to_parent(self, x, y):
-        """Sets the relative position of the button in relation to the parent. The coordinates (x,y) refer to the
-        coordinates of the button in the coordinate system where the parents position is the origin."""
+        """Sets the relative position of the game object in relation to the parent.
+
+        The coordinates (x, y) refer to the position in the parent's coordinate system.
+
+        Args:
+            x (int): The relative x-coordinate.
+            y (int): The relative y-coordinate.
+        """
         if self.static:
             return
 
-        self.relative_x, self.relative_y = x, y
-        self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
+        self.set_relative_x(x)
+        self.set_relative_y(y)
+        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
 
     def update_relative_position(self):
+        """Updates the relative position attributes of the game object relative to its parent."""
+
         if self.static or self.parent is None:
             return
         self.set_relative_x(self.x - self.parent.x)
         self.set_relative_y(self.y - self.parent.y)
 
     def update_position(self):
+        """Updates the position of the game object."""
         if self.parent is not None:
             self.update_pos_relative_to_parent()
 
     def update_pos_relative_to_parent(self):
+        """Updates the position of the game object relative to its parent."""
         if self.static or self.parent is None:
             return
 
         self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
 
     def set_width(self, width):
+        """Sets the width of the game object.
+
+        Args:
+            width (int): The new width.
+        """
         self.width = width
 
     def set_height(self, height):
+        """Sets the height of the game object.
+
+        Args:
+            height (int): The new width.
+        """
         self.height = height
 
     def set_size(self, width, height):
+        """Sets the width and height of the game object.
+
+        Args:
+            width (int): The new height.
+            height (int): The new width.
+        """
         self.set_width(width)
         self.set_height(height)
 
     def set_width_relative(self, delta_w):
+        """Change the width of the game object by a given amount.
+
+        Args:
+            delta_w (int): The change to the width.
+        """
         self.set_width(self.width + delta_w)
 
     def set_height_relative(self, delta_h):
+        """Change the height of the game object by a given amount.
+
+        Args:
+            delta_h (int): The change to the height.
+        """
         self.set_height(self.height + delta_h)
 
     def get_rotation(self):
+        """Gets the rotation angle of the game object.
+
+        Returns:
+            int: The rotation angle in degrees.
+        """
         return self.rotation_angle
 
     def set_rotation(self, angle):
+        """Sets the rotation angle of the game object, and changes the size of the game object if necessary.
+
+        Args:
+            angle (int): The new rotation angle in degrees.
+        """
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.width, self.height = self.height, self.width
+            self.get_rect().update(self.x, self.y, self.width, self.height)
         self.rotation_angle = angle
-        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def rotate(self, angle):
+        """Rotate the game object by a given angle.
+
+         Args:
+             angle (int): The change to the rotation angle in degrees.
+         """
         self.set_rotation(self.rotation_angle + angle)
 
     def set_alpha(self, alpha):
+        """Sets the alpha value of the game object.
+
+         Args:
+             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+         """
         self.alpha = alpha
 
     def destroy(self):
+        """Destroy the game object, hiding it in the current scene and notifying its parent if applicable."""
         if self.destroyed:
             return
         self.destroyed = True
@@ -148,26 +316,53 @@ class GameObject:
             self.parent.destroy_child(self)
 
     def add_child(self, child):
+        """Adds a child game object to this game object's children, and notifies the child object of its new parent.
+
+        Args:
+            child (GameObject): The new child game object.
+        """
         self.children.append(child)
         child.set_parent(self)
 
     def set_parent(self, parent):
+        """Sets the parent of the game object and updates relative position attributes if applicable.
+
+        Args:
+            parent (GameObject): The parent game object.
+        """
         self.parent = parent
         if not self.static and self.parent is not None:
-            self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
+            self.set_relative_x(self.x - self.parent.x)
+            self.set_relative_y(self.y - self.parent.y)
 
     def add_multiple_children(self, children):
+        """Adds multiple child game objects to this game object's children.
+
+        Args:
+            children (list): List of game object's to add as children.
+        """
         for child in children:
             self.add_child(child)
 
     def destroy_child(self, child):
+        """Destroys a specific child game object.
+
+        Args:
+            child (GameObject): The child game object to destroy.
+        """
         if child in self.children:
             self.children.remove(child)
 
     def clear_children(self):
+        """Removes all child game objects."""
         self.children = []
 
     def schedule_processing(self):
+        """Schedules the game object and its children for processing in the game loop.
+
+        Returns:
+            list: List of game objects to be processed in the game loop.
+        """
         items_to_be_processed = []
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
@@ -176,11 +371,16 @@ class GameObject:
         return items_to_be_processed
 
     def process(self):
+        """Process the game object, updating its position relative to its parent if applicable."""
         if self.parent is not None and not self.static:
             self.update_pos_relative_to_parent()
 
     def get_displayable_objects(self):
-        # TODO: Perhaps sort displayable_objects by their z-value?
+        """Gets a list of displayable game objects corresponding to the game object itself or it's children.
+
+        Returns:
+            list: List of displayable game objects.
+        """
         displayable_objects = []
         if self.destroyed:
             return displayable_objects
@@ -192,7 +392,6 @@ class GameObject:
             if hasattr(child, "get_displayable_objects"):
                 displayable_objects.extend(child.get_displayable_objects())
 
-        displayable_objects.sort(key=lambda x: x.z)
         return displayable_objects
 
 
