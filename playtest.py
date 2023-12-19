@@ -302,7 +302,7 @@ class Card(assets.MobileButton):
         overlay = assets.Overlay(x=self.x + self.width, y=self.y, z=self.z, width=overlay_width, height=overlay_height,
                                  name="card_overlay",
                                  close_btn_size=overlay_close_button_size, parent=self, static=False,
-                                 external_process_function=utils.remove_on_external_clicks)
+                                 external_process_function=utils.destroy_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
         self.add_child(overlay)
         board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
@@ -428,7 +428,7 @@ class Card(assets.MobileButton):
                                        key_functions={"r": [self.rotate, []]})
 
         large_card_btn.set_require_continuous_hovering(False)
-        large_card_btn.set_external_process_function(utils.remove_on_external_clicks)
+        large_card_btn.set_external_process_function(utils.destroy_on_external_clicks)
         large_card_btn.static = True
         allowed_rect_list = [self.get_rect(), large_card_btn.get_rect()]
         card_overlay = utils.find_object_from_name(self.children, "card_overlay")
@@ -808,7 +808,6 @@ class Board:
         self.remove_card(child)
 
     def get_displayable_objects(self):
-        # TODO: Use card_processing_order somehow.
         displayable_objects = []
         for card in self.card_processing_order:
             if card in self.field:
@@ -917,7 +916,7 @@ def create_test_scene():
     movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
     follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False, name="follow_mobile")
-    # TODO: Perhaps process children before self, fixes issue with follow_mobile at least
+
     movable_btn.add_child(follow_mobile)
 
     scene.add_object(movable_btn)
@@ -1081,7 +1080,7 @@ def create_large_card_overlay(card):
     large_card_box.set_parent(overlay)
 
     allowed_rect_list = [overlay.get_box().get_rect(), large_card_btn.get_rect()]
-    overlay.external_process_function = utils.remove_on_external_clicks
+    overlay.external_process_function = utils.destroy_on_external_clicks
     overlay.external_process_arguments = [overlay, allowed_rect_list]
 
     large_card_btn.external_process_arguments[1].append(overlay.get_rect())
@@ -1245,7 +1244,7 @@ def create_confirmation_overlay(position, func, args):
     x, y = position
     overlay_z = 10
     overlay = assets.Overlay(x=x, y=y, z=overlay_z, width=300, height=150, name="confirmation_overlay",
-                             external_process_function=utils.remove_on_external_clicks)  # ,
+                             external_process_function=utils.destroy_on_external_clicks)  # ,
     # parent=game_engine.get_scene_manager().get_current_scene())
     # overlay.set_parent(game_engine.get_scene_manager().get_current_scene())
 
