@@ -372,11 +372,10 @@ class GameObject:
         Returns:
             list: List of game objects to be processed in the game loop.
         """
-        items_to_be_processed = []
+        items_to_be_processed = [self]
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
 
-        items_to_be_processed.append(self)
         return items_to_be_processed
 
     def process(self):
@@ -646,7 +645,8 @@ class Border(GameObject):
             parent: The parent object to which this object is attached.
             name (str): The name of the Border.
         """
-        super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=False, alpha=alpha, name=name)
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=False,
+                         opaque=False, name=name)
 
         self.color = color
         self.thickness = thickness
