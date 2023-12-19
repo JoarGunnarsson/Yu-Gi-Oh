@@ -81,7 +81,7 @@ class GameObject:
         self.static = static
         self.displayable = displayable
         self.children = []
-        self.rect = None
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.rotation_angle = 0
         self.alpha = alpha
         self.opaque = opaque
@@ -249,6 +249,7 @@ class GameObject:
             width (int): The new width.
         """
         self.width = width
+        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_height(self, height):
         """Sets the height of the game object.
@@ -256,8 +257,8 @@ class GameObject:
         Args:
             height (int): The new width.
         """
-        # TODO: Include rect here
         self.height = height
+        self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_size(self, width, height):
         """Sets the width and height of the game object.
@@ -300,8 +301,9 @@ class GameObject:
             angle (int): The new rotation angle in degrees.
         """
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
-            self.width, self.height = self.height, self.width
+            self.height, self.width = self.width, self.height
             self.get_rect().update(self.x, self.y, self.width, self.height)
+
         self.rotation_angle = angle
 
     def rotate(self, angle):
@@ -484,7 +486,6 @@ class Box(GameObject):
 
         self.update_text_func = update_text_func
 
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
         self.set_alpha(self.alpha)
 
@@ -656,7 +657,6 @@ class Border(GameObject):
 
         self.color = color
         self.thickness = thickness
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
         top_box = Box(x=self.x, y=self.y, z=z, width=self.width, height=self.thickness, color=self.color,
                       alpha=self.alpha,

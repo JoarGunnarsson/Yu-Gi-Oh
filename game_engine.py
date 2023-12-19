@@ -200,8 +200,8 @@ class SurfaceManager:
             image_id = new_id
         else:
             image_id = self.get_new_id()
-        scaled_image = pygame.transform.rotate(image, theta)
-        self.set_image(scaled_image, image_id)
+        rotated_image = pygame.transform.rotate(image, theta)
+        self.set_image(rotated_image, image_id)
         return image_id
 
     def scale_surface(self, surface_id, size, new_id=None):
@@ -224,8 +224,8 @@ class SurfaceManager:
             surface_id = new_id
         else:
             surface_id = self.get_new_id()
-        scaled_surface = pygame.transform.rotate(surface, theta)
-        self.set_surface(scaled_surface, alpha=255, surface_id=surface_id)
+        rotated_surface = pygame.transform.rotate(surface, theta)
+        self.set_surface(rotated_surface, alpha=255, surface_id=surface_id)
         return surface_id
 
     def restore_image(self, image_id):
