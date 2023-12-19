@@ -34,7 +34,7 @@ class GameObject:
         z (float): Z-coordinate of the object.
         width (int): Width of the object.
         height (int): Height of the object.
-        alpha (int): Transparency (0-255) of the object.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
         name (str): Name of the object.
         destroyed (bool): Indicates whether the object has been destroyed.
         parent: Parent object to which this object is attached.
@@ -61,7 +61,7 @@ class GameObject:
             z (float): The z-coordinate of the object.
             width (int): The width of the object.
             height (int): The height of the object.
-            alpha (int): The transparency (0-255) of the object.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             name (str): The name of the object.
             parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
@@ -414,13 +414,30 @@ class Box(GameObject):
     A class representing boxes, inheriting from the base class GameObject.
 
     Attributes:
-        text (str):
-        text_color (tuple):
-        font_size (int):
-        text_surface_id (int):
-        update_text_func (func):
-        rect (Pygame.rect):
-        surface_id (int):
+        x (int): X-coordinate of the box.
+        y (int): Y-coordinate of the box.
+        z (float): Z-coordinate of the box.
+        width (int): Width of the box.
+        height (int): Height of the box.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        name (str): Name of the box.
+        destroyed (bool): Indicates whether the box has been destroyed.
+        parent: Parent object to which this box is attached.
+        static (bool): Indicates whether the box is static (does not move together with its parent).
+        displayable (bool): Indicates whether the box is visible.
+        opaque (bool): Indicates whether the box blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rect (pygame.Rect): Rectangular area occupied by the object.
+        rotation_angle (int): Rotation angle of the box in degrees.
+        relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
+        text (str): The string to be displayed on the box
+        text_color (tuple): The color of the text.
+        font_size (int): The font size of the text.
+        text_surface_id (int): The id corresponding to the text surface of the box.
+        update_text_func (func): The function responsible for updating the box text.
+        surface_id (int): The id corresponding to the surface of the box.
     """
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
@@ -435,7 +452,7 @@ class Box(GameObject):
             width (int): The width of the box.
             height (int): The Height of the box.
             color (tuple): The color of the box
-            alpha (int): The transparency (0-255) of the box.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             source_image (Pygame.image): The source image of the box.
             text (str): The string to be displayed on the box
             text_color (tuple): The color of the text.
@@ -596,8 +613,45 @@ class Box(GameObject):
 
 
 class Border(GameObject):
+    """A class for displaying a rectangular border.
+
+    Attributes:
+        x (int): X-coordinate of the object.
+        y (int): Y-coordinate of the object.
+        z (float): Z-coordinate of the object.
+        width (int): Width of the object.
+        height (int): Height of the object.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        name (str): Name of the object.
+        destroyed (bool): Indicates whether the object has been destroyed.
+        parent: Parent object to which this object is attached.
+        static (bool): Indicates whether the object is static (does not move together with its parent).
+        displayable (bool): Indicates whether the object is visible.
+        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rect (pygame.Rect): Rectangular area occupied by the object.
+        rotation_angle (int): Rotation angle of the object in degrees.
+        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        thickness (int): The thickness of the border.
+    """
     def __init__(self, x=0, y=0, z=1, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
                  name=None):
+        """Initialize a Border object.
+
+        Args:
+            x (int): The x-coordinate of the Border.
+            y (int): The y-coordinate of the Border.
+            z (float): The z-coordinate of the Border.
+            width (int): The width of the Border.
+            height (int): The height of the Border.
+            color (tuple): The color of the Border (default is BLACK).
+            thickness (int): The thickness of the Border.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+            parent: The parent object to which this object is attached.
+            name (str): The name of the Border.
+        """
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=False, alpha=alpha, name=name)
 
         self.color = color
@@ -626,6 +680,11 @@ class Border(GameObject):
             self.add_child(box)
 
     def set_width(self, width):
+        """Sets the width of the Border and updates the side boxes to match.
+
+        Args:
+            width (int): The new width of the Border.
+        """
         width_difference = width - self.width
         side_boxes = self.get_side_boxes()
         side_boxes[3].shift_x(width_difference)
@@ -635,6 +694,11 @@ class Border(GameObject):
         super().set_width(width)
 
     def set_height(self, height):
+        """Sets the height of the Border and updates the side boxes to match.
+
+        Args:
+            height (int): The new height of the Border.
+        """
         height_difference = height - self.height
         side_boxes = self.get_side_boxes()
         side_boxes[1].shift_y(height_difference)
@@ -644,29 +708,46 @@ class Border(GameObject):
         super().set_height(height)
 
     def set_rotation(self, angle):
+        """Sets the rotation angle of the Border and updates the size of the Border.
+
+        Args:
+            angle (int): The new rotation angle in degrees.
+        """
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.set_size(width=self.height, height=self.width)
+            self.get_rect().update(self.x, self.y, self.width, self.height)
 
         self.rotation_angle = angle
 
-        self.get_rect().update(self.x, self.y, self.width, self.height)
-
     def set_color(self, color):
+        """Sets the color of the Border.
+
+        Args:
+            color (tuple): The new color for the Border.
+        """
         self.color = color
 
     def set_alpha(self, alpha):
+        """Sets the alpha value of the Border.
+
+        Args:
+            alpha (int): The new alpha value.
+        """
         self.alpha = alpha
         for box in self.get_side_boxes():
             box.set_alpha(self.alpha)
 
     def get_side_boxes(self):
+        """Gets a list of side boxes that make up the Border.
+
+        Returns:
+            list: List of side boxes.
+        """
         side_boxes = [x for x in self.children if isinstance(x, Box)]
         return side_boxes
 
-    def get_displayable_objects(self):
-        return self.get_side_boxes()
-
     def process(self):
+        """Processes the Border, updating its position relative to its parent if applicable."""
         self.update_pos_relative_to_parent()
 
 
