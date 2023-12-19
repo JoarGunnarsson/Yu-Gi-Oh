@@ -16,6 +16,7 @@ class GameScript:
     - __init__(self): Initializes a new instance of the GameScript class.
     - process(self): Placeholder method for processing game logic.
     """
+
     def __init__(self):
         pass
 
@@ -48,25 +49,25 @@ class GameObject:
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
 
    """
+
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
         """
         Initializes a GameObject.
 
         Args:
-            x (int): X-coordinate of the object.
-            y (int): Y-coordinate of the object.
-            z (float): Z-coordinate of the object.
-            width (int): Width of the object.
-            height (int): Height of the object.
-            alpha (int): Transparency (0-255) of the object.
-            name (str): Name of the object.
-            parent (GameObject): Parent object to which this object is attached.
+            x (int): The x-coordinate of the object.
+            y (int): The y-coordinate of the object.
+            z (float): The z-coordinate of the object.
+            width (int): The width of the object.
+            height (int): The height of the object.
+            alpha (int): The transparency (0-255) of the object.
+            name (str): The name of the object.
+            parent (GameObject): The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
             opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
                 being clicked.
-
         """
 
         self.x = x
@@ -243,6 +244,7 @@ class GameObject:
         Args:
             height (int): The new width.
         """
+        # TODO: Include rect here
         self.height = height
 
     def set_size(self, width, height):
@@ -396,8 +398,41 @@ class GameObject:
 
 
 class Box(GameObject):
+    """
+    A class representing boxes, inheriting from the base class GameObject.
+
+    Attributes:
+        text (str):
+        text_color (tuple):
+        font_size (int):
+        text_surface_id (int):
+        update_text_func (func):
+        rect (Pygame.rect):
+        surface_id (int):
+    """
+
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
+        """
+        Initializes a Box object.
+
+        Args:
+            x (int): The x-coordinate of the box.
+            y (int): The y-coordinate of the box.
+            z (float): The z-coordinate of the box.
+            width (int): The width of the box.
+            height (int): The Height of the box.
+            color (tuple): The color of the box
+            alpha (int): The transparency (0-255) of the box.
+            source_image (Pygame.image): The source image of the box.
+            text (str): The string to be displayed on the box
+            text_color (tuple): The color of the text.
+            font_size (int): The font size of the text
+            update_text_func (func): The function responsible for updating the box text.
+            parent (GameObject): The parent object to which this object is attached.
+            static (bool): Indicates whether the object is static (does not move together with its parent).
+            name (str): The name of the object.
+        """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
                          displayable=True, name=name)
         self.color = color
@@ -422,11 +457,15 @@ class Box(GameObject):
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
-        self.rotation_angle = 0
         self.set_alpha(self.alpha)
 
     def set_width(self, width):
-        self.width = width
+        """Sets the width of the Box and updates the Box's image and surface.
+
+        Args:
+            width (int): The new width of the Box.
+        """
+        super().set_width(width)
         self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image_id is not None:
             game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
@@ -437,7 +476,12 @@ class Box(GameObject):
                                                         new_id=self.surface_id)
 
     def set_height(self, height):
-        self.height = height
+        """Sets the height of the Box and updates the Box's image and surface.
+
+        Args:
+            height (int): The new height of the Box.
+        """
+        super().set_height(height)
         self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image_id is not None:
             game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
@@ -448,40 +492,76 @@ class Box(GameObject):
                                                         new_id=self.surface_id)
 
     def set_rotation(self, angle):
+        """Sets the rotation angle of the Box and updates the Box's image and surface.
+
+        Args:
+            angle (int): The new rotation angle in degrees.
+        """
         theta = angle - self.rotation_angle
+        super().set_rotation(angle)
 
         if self.image_id is not None:
             game_engine.get_surface_manager().rotate_image(self.image_id, theta, new_id=self.image_id)
 
         game_engine.get_surface_manager().rotate_surface(self.surface_id, theta, new_id=self.surface_id)
 
-        super().set_rotation(angle)
-
     def set_image(self, image):
+        """Sets the image of the Box by updating the source_image_id attribute, then rotates and scales the image.
+
+         Args:
+             image (Pygame.image): The new image for the Box.
+         """
         self.source_image_id = game_engine.get_surface_manager().set_image(image, self.source_image_id)
-        self.image_id = game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
+
+        self.image_id = game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle,
+                                                                       self.image_id)
+        self.image_id = game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height),
                                                                       self.image_id)
 
     def set_text(self, new_text):
+        """Sets the text of the Box and updates the text surface id.
+
+        Args:
+            new_text (str): The new text for the Box.
+        """
         self.text = new_text
-        game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
-                                                              self.text_surface_id)
+        self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
+                                                                                     self.font_size,
+                                                                                     self.text_surface_id)
 
     def set_color(self, color):
+        """Sets the color of the Box.
+
+        Args:
+            color (tuple): The new color for the Box.
+        """
         self.color = color
 
     def set_alpha(self, alpha):
+        """Sets the alpha value of the Box, and sets the alpha of the Box's surface to the same value.
+
+        Args:
+            alpha (int): The new alpha value.
+        """
         self.alpha = alpha
         game_engine.get_surface_manager().fetch_surface(self.surface_id).set_alpha(self.alpha)
 
     def hug_text(self, offset):
+        """Adjusts the size of the Box to fit the text with an additional offset.
+
+        Args:
+            offset (int): The additional offset to apply.
+        """
         text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
         self.set_width(text_surface.get_width() + 2 * offset)
         self.set_height(text_surface.get_height() + 2 * offset)
 
     def get_display_surface(self):
-        """Returns a tuple, where the first element is the surface to be displayed, and the second element
-         being the object's rect."""
+        """Return a tuple containing the surface to be displayed and the object's rect.
+
+        Returns:
+            tuple: The first element is the surface to be displayed, and the second element is the object's rect.
+        """
         if self.image_id is not None:
             image = game_engine.get_surface_manager().fetch_image(self.image_id)
             game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(image, (0, 0))
