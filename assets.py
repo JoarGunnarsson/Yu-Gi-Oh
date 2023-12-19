@@ -1211,22 +1211,22 @@ class MobileButton(Button):
     """A class for button that can be moved using the mouse.
 
     Attributes:
-        x (int): X-coordinate of the button.
-        y (int): Y-coordinate of the button.
-        z (float): Z-coordinate of the button.
-        width (int): Width of the button.
-        height (int): Height of the button.
+        x (int): The x-coordinate of the button.
+        y (int): The y-coordinate of the button.
+        z (float): The z-coordinate of the button.
+        width (int): The width of the button.
+        height (int): The height of the button.
         alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): Name of the button.
+        name (str): The name of the button.
         destroyed (bool): Indicates whether the button has been destroyed.
-        parent: Parent object to which this button is attached.
+        parent: The parent object to which this button is attached.
         static (bool): Indicates whether the button is static (does not move together with its parent).
         displayable (bool): Indicates whether the button is visible.
         opaque (bool): Indicates whether the button blocks objects earlier in the processing order from
             being clicked.
         children (list): List of child objects.
-        rect (pygame.Rect): Rectangular area occupied by the object.
-        rotation_angle (int): Rotation angle of the button in degrees.
+        rect (pygame.Rect): The rectangular area occupied by the object.
+        rotation_angle (int): The rotation angle of the button in degrees.
         relative_x (int): The x-coordinate of the button in relation to its parent, if applicable.
         relative_y (int): The y-coordinate of the button in relation to its parent, if applicable.
         text (str): The string to be displayed on the button.
@@ -1314,9 +1314,45 @@ class MobileButton(Button):
 
 
 class Overlay(GameObject):
+    """A graphical overlay with a customizable appearance and optional close button.
+
+    Attributes:
+        x (int): The x-coordinate of the overlay.
+        y (int): The y-coordinate of the overlay.
+        z (float): The z-coordinate of the overlay.
+        width (int): The width of the overlay.
+        height (int): The height of the overlay.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        static (bool): Indicates whether the overlay is static (does not move together with its parent).
+        name (str): The name of the overlay.
+        close_btn_size (int): Size of the close button on the overlay.
+        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
+        parent: Parent object to which this overlay is attached.
+        external_process_function (func): External function to be called during the overlay's processing.
+        external_process_arguments: Arguments for the external process function.
+    """
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
+        """Creates a new overlay with an optional close button.
+
+         Args:
+             x (int): The x-coordinate of the overlay.
+             y (int): The y-coordinate of the overlay.
+             z (float): The z-coordinate of the overlay.
+             width (int): The width of the overlay.
+             height (int): The height of the overlay.
+             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+             static (bool): Indicates whether the overlay is static (does not move together with its parent).
+             name (str): The name of the overlay.
+             background_color (tuple): The color of the overlay background.
+             close_btn_size (int): Size of the close button on the overlay.
+             close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
+             parent: The parent object to which this overlay is attached.
+             external_process_function (func): External function to be called during the overlay's processing.
+             external_process_arguments: Arguments for the external process function.
+         """
+
         super().__init__(x=x, y=y, z=z, width=width, height=height, parent=parent, static=static,
                          alpha=alpha, opaque=False, name=name)
         if external_process_arguments is None:
@@ -1345,18 +1381,44 @@ class Overlay(GameObject):
         self.add_child(close_btn)
 
     def get_rect(self):
+        """Gets the rectangular area occupied by the overlay.
+
+         Returns:
+             pygame.Rect: The rectangular area of the overlay.
+         """
         return self.get_box().get_rect()
 
     def get_box(self):
+        """Gets the underlying box object of the overlay.
+
+        Returns:
+            Box: The box object of the overlay.
+        """
         return utils.find_object_from_name(self.children, "overlay_box")
 
     def get_buttons(self):
+        """Gets a list of button objects present in the overlay.
+
+        Returns:
+            list: List of Button objects in the overlay.
+        """
         return utils.find_objects_from_type(self.children, Button)
 
     def set_background_color(self, color):
+        """Sets the background color of the overlay.
+
+        Args:
+            color (tuple): The color to set as the background color.
+        """
         self.get_box().set_color(color)
 
     def schedule_processing(self):
+        """Schedules items to be processed, including the overlay itself, its box, and its children.
+
+        Returns:
+            list: List of items to be processed.
+        """
+        # TODO: Is this necessary?
         items_to_be_processed = [self]
         items_to_be_processed.extend(self.get_box().schedule_processing())
 
@@ -1366,6 +1428,8 @@ class Overlay(GameObject):
         return items_to_be_processed
 
     def process(self):
+        """Processes the overlay, including external processing and the standard processing routine."""
+
         if self.external_process_function is not None:
             self.external_process_function(*self.external_process_arguments)
 
