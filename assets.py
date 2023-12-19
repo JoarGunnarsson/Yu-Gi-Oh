@@ -44,7 +44,6 @@ class GameObject:
         rotation_angle (int): Rotation angle of the object in degrees.
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
-
    """
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
@@ -1325,11 +1324,19 @@ class Overlay(GameObject):
         alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
         static (bool): Indicates whether the overlay is static (does not move together with its parent).
         name (str): The name of the overlay.
+        destroyed (bool): Indicates whether the object has been destroyed.
+        parent: Parent object to which this overlay is attached.
         close_btn_size (int): Size of the close button on the overlay.
         close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        parent: Parent object to which this overlay is attached.
         external_process_function (func): External function to be called during the overlay's processing.
         external_process_arguments: Arguments for the external process function.
+        displayable (bool): Indicates whether the object is visible.
+        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rotation_angle (int): Rotation angle of the object in degrees.
+        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
     """
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None,
@@ -1411,21 +1418,6 @@ class Overlay(GameObject):
             color (tuple): The color to set as the background color.
         """
         self.get_box().set_color(color)
-
-    def schedule_processing(self):
-        """Schedules items to be processed, including the overlay itself, its box, and its children.
-
-        Returns:
-            list: List of items to be processed.
-        """
-        # TODO: Is this necessary?
-        items_to_be_processed = [self]
-        items_to_be_processed.extend(self.get_box().schedule_processing())
-
-        for obj in self.children:
-            items_to_be_processed.extend(obj.schedule_processing())
-
-        return items_to_be_processed
 
     def process(self):
         """Processes the overlay, including external processing and the standard processing routine."""
