@@ -1011,7 +1011,7 @@ def create_play_testing():
     # left_click_function=create_hand_overlay)
     small_button_size = 50
 
-    hand_index_button_offset = (hand_box.height - button_height / 2) // 2
+    hand_index_button_offset = int((hand_box.height - button_height / 2) // 2)
     hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset,
                                              y=hand_box.y + hand_index_button_offset,
                                              height=small_button_size,

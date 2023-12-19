@@ -37,7 +37,7 @@ class GameObject:
         alpha (int): Transparency (0-255) of the object.
         name (str): Name of the object.
         destroyed (bool): Indicates whether the object has been destroyed.
-        parent (GameObject): Parent object to which this object is attached.
+        parent: Parent object to which this object is attached.
         static (bool): Indicates whether the object is static (does not move together with its parent).
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
@@ -63,7 +63,7 @@ class GameObject:
             height (int): The height of the object.
             alpha (int): The transparency (0-255) of the object.
             name (str): The name of the object.
-            parent (GameObject): The parent object to which this object is attached.
+            parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
             opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
@@ -133,7 +133,7 @@ class GameObject:
         Sets the z-coordinate of the game object and sets the z-coordinate of its children to the same value.
 
         Args:
-            z (int): The new z-coordinate of the object
+            z (float): The new z-coordinate of the object
         """
         self.z = z
         for child in self.children:
@@ -330,7 +330,7 @@ class GameObject:
         """Sets the parent of the game object and updates relative position attributes if applicable.
 
         Args:
-            parent (GameObject): The parent game object.
+            parent: The game object's new parent
         """
         self.parent = parent
         if not self.static and self.parent is not None:
@@ -429,7 +429,7 @@ class Box(GameObject):
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
             update_text_func (func): The function responsible for updating the box text.
-            parent (GameObject): The parent object to which this object is attached.
+            parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             name (str): The name of the object.
         """
