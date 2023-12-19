@@ -376,6 +376,7 @@ class GameObject:
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
 
+        items_to_be_processed.sort(key=lambda x: x.z)
         return items_to_be_processed
 
     def process(self):
