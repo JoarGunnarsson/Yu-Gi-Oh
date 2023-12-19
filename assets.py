@@ -764,6 +764,7 @@ class Button(Box):
         self.get_border().set_rotation(angle)
 
     def get_displayable_objects(self):
+        # TODO: Remove this?
         displayable_objects = [self]
         displayable_objects.extend(self.get_border().get_displayable_objects())
         displayable_objects.extend(super().get_displayable_objects())
@@ -1043,13 +1044,6 @@ class Overlay(GameObject):
 
     def set_background_color(self, color):
         self.get_box().set_color(color)
-
-    def get_displayable_objects(self):
-        displayable_objects = [self.get_box()]
-        for obj in self.children:
-            displayable_objects.extend(obj.get_displayable_objects())
-
-        return displayable_objects
 
     def schedule_processing(self):
         items_to_be_processed = [self]

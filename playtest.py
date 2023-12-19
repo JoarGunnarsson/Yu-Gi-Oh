@@ -558,12 +558,12 @@ class CardOverlay(assets.Overlay):
         self.update_card_positions()
 
     def get_displayable_objects(self):
-        if self.destroyed:
-            return []
         displayable_objects = []
-        for child in self.children:
-            if isinstance(child, Card) and hasattr(child, "get_displayable_objects"):
-                displayable_objects.extend(child.get_displayable_objects())
+
+        if self.destroyed:
+            return displayable_objects
+
+        displayable_objects.extend(super().get_displayable_objects())
 
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
@@ -1210,6 +1210,7 @@ def create_location_overlay(location_name, card_list_function):
     close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
     scroll_up_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
                                   y=overlay.y + 2 * y_offset + close_btn.height,
+                                  z=overlay.z,
                                   width=small_button_width, height=small_button_height,
                                   image=pygame.image.load("Images/up_arrow.png"), name="scroll_up_btn",
                                   left_trigger_keys=["up"],
@@ -1218,6 +1219,7 @@ def create_location_overlay(location_name, card_list_function):
 
     scroll_down_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
                                     y=overlay.y + overlay_height - small_button_height - y_offset,
+                                    z=overlay.z,
                                     width=small_button_width, height=small_button_height,
                                     image=pygame.image.load("Images/down_arrow.png"), name="scroll_down_btn",
                                     left_trigger_keys=["down"],
