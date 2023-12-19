@@ -303,7 +303,7 @@ class SceneManager:
         if scene_name in self.scenes and self.scenes[scene_name].persistent:
             return self.change_scene_by_name(scene_name)
 
-        if type(scene_arguments) is dict:
+        if isinstance(scene_arguments, dict):
             scene = scene_function(**scene_arguments)
         else:
             scene = scene_function(*scene_arguments)
@@ -531,7 +531,7 @@ def _load(save_number):
 
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):
-        if type(argument_list[i]) is dict:
+        if isinstance(argument_list[i], dict):
             function(**argument_list[i])
         else:
             function(*argument_list[i])

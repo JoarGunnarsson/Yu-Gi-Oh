@@ -562,7 +562,7 @@ class CardOverlay(assets.Overlay):
             return []
         displayable_objects = []
         for child in self.children:
-            if type(child) != Card and hasattr(child, "get_displayable_objects"):
+            if isinstance(child, Card) and hasattr(child, "get_displayable_objects"):
                 displayable_objects.extend(child.get_displayable_objects())
 
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
@@ -819,8 +819,15 @@ class Board:
             card.set_pos(x, y)
 
         visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+        moving_card = None
         for card in reversed(visible_hand):
+            if card.moving:
+                moving_card = card
+                continue
             displayable_objects.extend(card.get_displayable_objects())
+
+        if moving_card is not None:
+            displayable_objects.extend(moving_card.get_displayable_objects())
 
         return displayable_objects
 
@@ -1179,7 +1186,7 @@ def create_location_overlay(location_name, card_list_function):
     scene = game_engine.get_scene_manager().get_current_scene()
     while True:
         same_location_overlay = utils.find_object_from_name(scene.get_objects(), location_name)
-        overlays = [obj for obj in scene.get_objects() if type(obj) == CardOverlay and not obj.destroyed]
+        overlays = [obj for obj in scene.get_objects() if isinstance(obj, CardOverlay) and not obj.destroyed]
         number_of_overlays = len(overlays)
         if number_of_overlays == 0:
             break
@@ -1297,7 +1304,7 @@ if __name__ == "__main__":
                         "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
                         "9486959"]
 
-    thin_cards = ["14517422"] * 100
+    thin_cards = ["14517422"] * 1
 
     DECKS = [Deck(name="Spellcaster", cards=spellcaster_cards, main_card_id="1003840"),
              Deck(name="Darklord", cards=darklord_cards, main_card_id="14517422"),

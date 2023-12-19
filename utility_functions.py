@@ -35,7 +35,7 @@ def card_type_int(card):
 
 def execute_multiple_functions(functions, argument_list):
     for i, function in enumerate(functions):
-        if type(argument_list[i]) is dict:
+        if isinstance(argument_list[i], dict):
             function(**argument_list[i])
         else:
             function(*argument_list[i])
@@ -51,7 +51,7 @@ def find_object_from_name(obj_list, name):
 def find_objects_from_type(obj_list, match_type):
     found_objects = []
     for obj in obj_list:
-        if hasattr(obj, "name") and type(obj) == match_type:
+        if hasattr(obj, "name") and isinstance(obj, match_type):
             found_objects.append(obj)
     return found_objects
 

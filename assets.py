@@ -126,18 +126,21 @@ class GameObject:
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
         for child in self.children:
-            child.update_position()
+            if hasattr(child, "update_position"):
+                child.update_position()
 
     def set_z(self, z):
         """
-        Sets the z-coordinate of the game object and sets the z-coordinate of its children to the same value.
+        Sets the z-coordinate of the game object and shifts the z-coordinate of its children by the change in the
+        z-coordinate.
 
         Args:
             z (float): The new z-coordinate of the object
         """
+        delta_z = self.z - z
         self.z = z
         for child in self.children:
-            child.set_z(self.z)
+            child.shift_z(delta_z)
 
     def set_pos(self, x, y):
         """
@@ -155,7 +158,7 @@ class GameObject:
         Shift the game object's x-coordinate by a given amount.
 
         Args:
-            delta_x (int): The amount to shift the x-coordinate.
+            delta_x (int): The change in the x-coordinate of the object.
         """
         self.set_x(self.x + delta_x)
 
@@ -164,9 +167,18 @@ class GameObject:
         Shift the game object's x-coordinate by a given amount.
 
         Args:
-            delta_y (int): The amount to shift the y-coordinate.
+            delta_y (int): The change in the y-coordinate of the object.
         """
         self.set_y(self.y + delta_y)
+
+    def shift_z(self, delta_z):
+        """
+        Shifts the game object's z-coordinate by a given amount.
+
+        Args:
+            delta_z (float): The change in the z-coordinate of the object.
+        """
+        self.set_z(self.z + delta_z)
 
     def shift_pos(self, delta_x, delta_y):
         """Shift the game object's position by a given amount in both x and y directions.
@@ -648,7 +660,7 @@ class Border(GameObject):
             box.set_alpha(self.alpha)
 
     def get_side_boxes(self):
-        side_boxes = [x for x in self.children if type(x) == Box]
+        side_boxes = [x for x in self.children if isinstance(x, Box)]
         return side_boxes
 
     def get_displayable_objects(self):
@@ -732,7 +744,7 @@ class Button(Box):
 
         self.click_detector = ClickDetector(self.get_rect())
 
-        border = Border(x=self.x, y=self.y, width=self.width, height=self.height, parent=self,
+        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
                         name="btn_border")
         self.add_child(border)
 
@@ -832,14 +844,14 @@ class Button(Box):
 
         if button_left_clicked and self.left_click_function is not None:
             self.status = "pressed"
-            if type(self.left_click_args) is dict:
+            if isinstance(self.left_click_args, dict):
                 self.left_click_function(**self.left_click_args)
             else:
                 self.left_click_function(*self.left_click_args)
 
         if button_left_held and self.left_hold_function is not None:
             self.status = "pressed"
-            if type(self.left_hold_args) is dict:
+            if isinstance(self.left_hold_args, dict):
                 self.left_hold_function(**self.left_hold_args)
             else:
                 self.left_hold_function(*self.left_hold_args)
@@ -847,20 +859,20 @@ class Button(Box):
         if button_right_clicked and self.right_click_function is not None:
             self.status = "pressed"
 
-            if type(self.right_click_args) is dict:
+            if isinstance(self.right_click_args, dict):
                 self.right_click_function(**self.right_click_args)
             else:
                 self.right_click_function(*self.right_click_args)
 
         if button_right_held and self.right_hold_function is not None:
             self.status = "pressed"
-            if type(self.right_hold_args) is dict:
+            if isinstance(self.right_hold_args, dict):
                 self.right_hold_function(**self.right_hold_args)
             else:
                 self.right_hold_function(*self.right_hold_args)
 
         if key_function is not None:
-            if type(key_args) is dict:
+            if isinstance(key_args, dict):
                 key_function(**key_args)
             else:
                 key_function(*key_args)
