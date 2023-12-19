@@ -428,13 +428,13 @@ class Card(assets.MobileButton):
                                        key_functions={"r": [self.rotate, []]})
 
         large_card_btn.set_require_continuous_hovering(False)
-        large_card_btn.external_process_function = utils.remove_on_external_clicks
+        large_card_btn.set_external_process_function(utils.remove_on_external_clicks)
         large_card_btn.static = True
         allowed_rect_list = [self.get_rect(), large_card_btn.get_rect()]
         card_overlay = utils.find_object_from_name(self.children, "card_overlay")
         if card_overlay is not None:
             allowed_rect_list.append(card_overlay.get_rect())
-        large_card_btn.external_process_arguments = [large_card_btn, allowed_rect_list]
+        large_card_btn.set_external_process_arguments([large_card_btn, allowed_rect_list])
 
         self.add_child(large_card_btn)
         return large_card_btn
@@ -592,7 +592,9 @@ class LargeCardOverlay(assets.Overlay):
 
     def destroy(self):
         large_card_btn = utils.find_object_from_name(self.card.children, "large_card_btn")
-        large_card_btn.external_process_arguments[1].remove(self.get_rect())
+        allowed_rects = large_card_btn.get_external_process_arguments()
+        allowed_rects[1].remove(self.get_rect())
+        large_card_btn.set_external_process_arguments(allowed_rects)
         super().destroy()
 
 
@@ -912,10 +914,11 @@ def create_test_scene():
                            left_click_args=[(700, 700), test_button, []],
                            colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175)
     button.hug_text(15)
-    movable_btn = assets.MobileButton(x=100, y=100, name="mobile_btn")
+    movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
-    follow_box = assets.Box(x=200, y=125, parent=movable_btn, static=False, name="follow_box")
-    movable_btn.add_child(follow_box)
+    follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False, name="follow_mobile")
+    # TODO: Perhaps process children before self, fixes issue with follow_mobile at least
+    movable_btn.add_child(follow_mobile)
 
     scene.add_object(movable_btn)
     scene.add_object(button)
@@ -1071,6 +1074,7 @@ def create_large_card_overlay(card):
 
     large_card_box = assets.Box(x=overlay.x + offset,
                                 y=close_btn.y + offset + close_btn.height,
+                                z=overlay.z,
                                 width=card_width,
                                 height=card_height,
                                 source_image=game_engine.get_surface_manager().fetch_image(card.source_image_id))
