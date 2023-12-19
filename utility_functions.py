@@ -4,6 +4,16 @@ from constants import *
 
 
 def clamp(x, lower, upper):
+    """Clamps a value 'x' to the range ['lower', 'upper'].
+
+     Args:
+         x: The value to be clamped.
+         lower: The lower bound of the range.
+         upper: The upper bound of the range.
+
+     Returns:
+         The clamped value within the specified range.
+     """
     if x < lower:
         return lower
     elif x > upper:
@@ -12,7 +22,11 @@ def clamp(x, lower, upper):
 
 
 def card_sort_card_type(cards):
-    """An in-place sorting algorithm that uses insertion sort to sort cards based on the card type."""
+    """Sorts a list of cards in-place based on their card type using insertion sort.
+
+    Args:
+        cards (list): The list of cards to be sorted.
+    """
     i = 1
     while i < len(cards):
         temp_card = cards[i]
@@ -25,6 +39,17 @@ def card_sort_card_type(cards):
 
 
 def card_type_int(card):
+    """Converts a card type string to an integer for sorting purposes.
+
+    Args:
+        card: The card object.
+
+    Returns:
+        int: The integer value representing the card type.
+
+    Raises:
+        ValueError: If the card type is not valid.
+    """
     card_type = card.get_card_type()
     card_type_order = ["normal", "effect", "spell",  "trap", "ritual", "xyz", "synchro", "fusion", "link", "token"]
     for i, element in enumerate(card_type_order):
@@ -34,6 +59,12 @@ def card_type_int(card):
 
 
 def execute_multiple_functions(functions, argument_list):
+    """Executes multiple functions with corresponding argument lists.
+
+    Args:
+        functions (list): List of functions to be executed.
+        argument_list (list): List of argument lists corresponding to the functions.
+    """
     for i, function in enumerate(functions):
         if isinstance(argument_list[i], dict):
             function(**argument_list[i])
@@ -42,6 +73,15 @@ def execute_multiple_functions(functions, argument_list):
 
 
 def find_object_from_name(obj_list, name):
+    """Finds an object with a specific name in a list.
+
+    Args:
+        obj_list (list): The list of objects to search.
+        name (str): The name of the object to find.
+
+    Returns:
+        The first object with the specified name, or None if not found.
+    """
     for obj in obj_list:
         if hasattr(obj, "name") and obj.name == name:
             return obj
@@ -49,6 +89,15 @@ def find_object_from_name(obj_list, name):
 
 
 def find_objects_from_type(obj_list, match_type):
+    """Finds objects of a specific type in a list.
+
+    Args:
+        obj_list (list): The list of objects to search.
+        match_type (type): The type of objects to find.
+
+    Returns:
+        list: List of objects with the specified type found in the list.
+    """
     found_objects = []
     for obj in obj_list:
         if hasattr(obj, "name") and isinstance(obj, match_type):
@@ -57,6 +106,18 @@ def find_objects_from_type(obj_list, match_type):
 
 
 def closest_color(color_dict, color):
+    """Finds the closest color in a dictionary to a given color.
+
+    Args:
+        color_dict (dict): The dictionary mapping color names to RGB values.
+        color (tuple): The RGB values of the color to match.
+
+    Returns:
+        str: The name of the color with the closest match in the dictionary.
+
+    Raises:
+        ValueError: If no good match for the color is found.
+    """
     min_distance = 3 * 255 ** 2
     card_type = None
     for key in color_dict:
@@ -73,6 +134,14 @@ def closest_color(color_dict, color):
 
 
 def card_starting_location(card_type):
+    """Determines the starting location of a card based on its type.
+
+    Args:
+        card_type (str): The type of the card.
+
+    Returns:
+        str: The starting location of the card (e.g., "main_deck" or "extra_deck").
+    """
     if card_type in ["normal", "effect", "ritual", "spell", "trap"]:
         return "main_deck"
     elif card_type in ["fusion", "synchro", "xyz", "link"]:
@@ -80,7 +149,13 @@ def card_starting_location(card_type):
     return None
 
 
-def remove_on_external_clicks(obj, allowed_rect_list):
+def destroy_on_external_clicks(obj, allowed_rect_list):
+    """Destroys an object if a mouse click occurs outside a list of allowed rectangles.
+
+    Args:
+        obj: The object to be destroyed.
+        allowed_rect_list (list): List of pygame.Rect objects representing allowed areas.
+    """
     mouse_click_this_tick = environment.get_left_mouse_click_this_tick() or environment.get_right_mouse_click_this_tick()
     mouse_click_last_tick = environment.get_left_mouse_click_last_tick() or environment.get_right_mouse_click_last_tick()
     if not mouse_click_this_tick or (mouse_click_this_tick and mouse_click_last_tick):
