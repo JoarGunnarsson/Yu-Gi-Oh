@@ -5,6 +5,13 @@ import pickle
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
+# TODO: Surface_manager should handle all images.
+# Instead of doing Pygame.image.load(), call a surface_manager method that loads the image.
+# This method can then check if the image corresponding to the image path has been loaded before, reducing the
+# required number of images that need to be stored.
+# Also, when an object is destroyed, the game_engine should remove it's associated surfaces.
+# Scene.clear should destroy all objects in the scene too.
+
 
 class Environment:
     def __init__(self):

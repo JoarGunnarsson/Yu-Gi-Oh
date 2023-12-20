@@ -47,7 +47,6 @@ class GameObject:
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
    """
-
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
         """
@@ -322,6 +321,7 @@ class GameObject:
 
     def destroy(self):
         """Destroy the game object, hiding it in the current scene and notifying its parent if applicable."""
+        # TODO: This should destroy all child objects too.
         if self.destroyed:
             return
         self.destroyed = True
@@ -439,7 +439,9 @@ class Box(GameObject):
         update_text_func (func): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
-
+    # TODO: Perhaps remove the changing of images from rotate, set width etc, and instead to that
+    # before blitting the image. This is slow if images don't change often, so perhaps create a variable
+    # that indicates if the image has changed since the last update.
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
         """
