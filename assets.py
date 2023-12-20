@@ -101,6 +101,7 @@ class GameObject:
         Args:
             x (int): The new x-coordinate of the object.
         """
+        # TODO: Fix code_repetition here
         self.x = x
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
@@ -116,6 +117,7 @@ class GameObject:
         Args:
             y (int): The new y-coordinate of the object.
         """
+        # TODO: Fix code_repetition here
         self.y = y
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
@@ -214,7 +216,7 @@ class GameObject:
 
         self.set_relative_x(x)
         self.set_relative_y(y)
-        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
+        self.update_pos_relative_to_parent()
 
     def update_relative_position(self):
         """Updates the relative position attributes of the game object relative to its parent."""
@@ -233,7 +235,7 @@ class GameObject:
         if self.static or self.parent is None:
             return
 
-        self.set_pos(x=self.relative_x + self.parent.x, y=self.relative_y + self.parent.y)
+        self.set_pos(x=self.parent.x + self.relative_x, y=self.parent.y + self.relative_y)
 
     def set_width(self, width):
         """Sets the width of the game object.
@@ -488,8 +490,8 @@ class Box(GameObject):
         Args:
             width (int): The new width of the Box.
         """
+        # TODO: Fix code_repetition here
         super().set_width(width)
-        self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image_id is not None:
             game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
                                                           new_id=self.image_id)
@@ -504,8 +506,8 @@ class Box(GameObject):
         Args:
             height (int): The new height of the Box.
         """
+        # TODO: Fix code_repetition here
         super().set_height(height)
-        self.get_rect().update(self.x, self.y, self.width, self.height)
         if self.source_image_id is not None:
             game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
                                                           new_id=self.image_id)
@@ -534,6 +536,7 @@ class Box(GameObject):
          Args:
              image (Pygame.image): The new image for the Box.
          """
+        # TODO: Test this for rotated images etc.
         self.source_image_id = game_engine.get_surface_manager().set_image(image, self.source_image_id)
 
         self.image_id = game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle,
@@ -709,7 +712,6 @@ class Border(GameObject):
         """
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.set_size(width=self.height, height=self.width)
-            self.get_rect().update(self.x, self.y, self.width, self.height)
 
         self.rotation_angle = angle
 
