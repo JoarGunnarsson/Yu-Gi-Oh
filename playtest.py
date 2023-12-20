@@ -75,16 +75,16 @@ class Deck:
             main_card_id = cards[0]
 
         self.name = name
-        self.image_id = game_engine.get_surface_manager().create_image(card_image_location + main_card_id + ".jpg")
+        self.image_id = game_engine.load_image(card_image_location + main_card_id + ".jpg")
 
-    def get_image(self):
+    def get_image_id(self):
         """
+        Gets the image id of the deck image.
 
-        Returns
-        -------
-        The image corresponding to the image_id attribute
+        Returns:
+            The id of the deck image
         """
-        return game_engine.get_surface_manager().fetch_image(self.image_id)
+        return self.image_id
 
 
 class DeckManager:
@@ -108,9 +108,9 @@ class Card(assets.MobileButton):
 
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
 
-        card_img_id = game_engine.get_surface_manager().create_image(card_image_location + f'{card_id}.jpg')
-        card_image = game_engine.get_surface_manager().fetch_image(card_img_id)
-        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image=card_image,
+        card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
+        print(card_image_id)
+        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image_id=card_image_id,
                          name=card_id, static=False,
                          right_click_function=self.create_card_overlay)
 
@@ -422,7 +422,7 @@ class Card(assets.MobileButton):
                                        z=self.z-0.1,
                                        width=large_card_width,
                                        height=int(large_card_width * card_aspect_ratio),
-                                       image=game_engine.get_surface_manager().fetch_image(self.source_image_id),
+                                       image_id=self.source_image_id,
                                        name="large_card_btn",
                                        left_click_function=create_large_card_overlay, left_click_args=[self],
                                        key_functions={"r": [self.rotate, []]})
@@ -956,7 +956,9 @@ def create_test_scene():
     button.hug_text(15)
     movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
-    follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False, name="follow_mobile")
+    follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
+                                        image_id=game_engine.load_image("./Images/card_back.png"),
+                                        name="follow_mobile")
 
     movable_btn.add_child(follow_mobile)
 
@@ -1009,7 +1011,7 @@ def create_play_testing():
 
     draw_btn = assets.Button(x=environment.get_width() - button_width - offset,
                              y=environment.get_height() - deck_height - offset,
-                             width=deck_width, height=deck_height, image=pygame.image.load("Images/card_back.png"),
+                             width=deck_width, height=deck_height, image_id=game_engine.load_image("Images/card_back.png"),
                              name="draw_btn", left_click_function=board.draw)
 
     deck_text_box = assets.Box(text=cards_in_deck_string(scene), font_size=25, color=LIGHT_GREY,
@@ -1020,26 +1022,26 @@ def create_play_testing():
                           y=draw_btn.y - deck_text_box.height - offset)
 
     show_deck_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - button_height - offset, width=button_width // 2,
-                                  height=button_height, image=pygame.image.load("Images/millennium_eye.png"),
+                                  height=button_height, image_id=game_engine.load_image("Images/millennium_eye.png"),
                                   name="show_deck_btn", left_click_function=create_deck_overlay)
 
     show_extra_deck_btn = assets.Button(x=left_side_box.x + offset, y=environment.get_height() - deck_height - offset,
                                         width=deck_width, height=deck_height,
-                                        image=pygame.image.load("Images/card_back.png"),
+                                        image_id=game_engine.load_image("Images/card_back.png"),
                                         name="show_extra_deck_btn", left_click_function=create_extra_deck_overlay)
 
     shuffle_deck_btn = assets.Button(x=draw_btn.x + button_width // 2, y=deck_text_box.y - button_height - offset,
                                      width=button_width // 2, height=button_height,
-                                     image=pygame.image.load("Images/shuffle.png"), name="shuffle_deck_btn",
+                                     image_id=game_engine.load_image("Images/shuffle.png"), name="shuffle_deck_btn",
                                      left_click_function=board.shuffle_the_deck)
 
     show_gy_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - 2 * button_height - offset, width=button_width // 2,
-                                height=button_height, image=pygame.image.load("Images/gy_icon.png"),
+                                height=button_height, image_id=game_engine.load_image("Images/gy_icon.png"),
                                 name="show_gy_btn", left_click_function=create_gy_overlay)
 
     show_banished_btn = assets.Button(x=draw_btn.x + button_width // 2, y=deck_text_box.y - 2 * button_height - offset,
                                       width=button_width // 2,
-                                      height=button_height, image=pygame.image.load("Images/banished_icon.png"),
+                                      height=button_height, image_id=game_engine.load_image("Images/banished_icon.png"),
                                       name="show_banished_btn", left_click_function=create_banished_overlay)
 
     main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
@@ -1127,7 +1129,7 @@ def create_large_card_overlay(card):
                                 z=overlay.z,
                                 width=card_width,
                                 height=card_height,
-                                source_image=game_engine.get_surface_manager().fetch_image(card.source_image_id))
+                                source_image_id=card.source_image_id)
     large_card_box.set_parent(overlay)
 
     allowed_rect_list = [overlay.get_box().get_rect(), large_card_btn.get_rect()]
@@ -1160,7 +1162,7 @@ def create_deck_selection_scene():
                                  height=large_card_height,
                                  left_click_function=create_confirmation_overlay,
                                  left_click_args=[(i * large_card_width, 500), choose_deck, [deck]])
-        deck_btn.set_image(deck.get_image())
+        deck_btn.set_image(deck.get_image_id())
         deck_selection_overlay.add_child(deck_btn)
 
     # deck_selection_overlay.parent = scene
@@ -1305,7 +1307,7 @@ def create_location_overlay(location_name, card_list_function):
                                   y=overlay.y + 2 * y_offset + close_btn.height,
                                   z=overlay.z,
                                   width=small_button_width, height=small_button_height,
-                                  image=pygame.image.load("Images/up_arrow.png"), name="scroll_up_btn",
+                                  image_id=game_engine.load_image("Images/up_arrow.png"), name="scroll_up_btn",
                                   left_trigger_keys=["up"],
                                   left_click_function=change_overlay_limits,
                                   left_click_args=[overlay, -overlay.cards_per_row])
@@ -1314,7 +1316,7 @@ def create_location_overlay(location_name, card_list_function):
                                     y=overlay.y + overlay_height - small_button_height - y_offset,
                                     z=overlay.z,
                                     width=small_button_width, height=small_button_height,
-                                    image=pygame.image.load("Images/down_arrow.png"), name="scroll_down_btn",
+                                    image_id=game_engine.load_image("Images/down_arrow.png"), name="scroll_down_btn",
                                     left_trigger_keys=["down"],
                                     left_click_function=change_overlay_limits,
                                     left_click_args=[overlay, overlay.cards_per_row])

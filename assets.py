@@ -416,7 +416,7 @@ class Box(GameObject):
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the box in degrees.
-        changed_recently (bool): Indicates if the box has changed size or been rotaten since the last time it was
+        changed_recently (bool): Indicates if the box has changed size or been rotated since the last time it was
             displayed.
         relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
@@ -427,7 +427,7 @@ class Box(GameObject):
         update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
-    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
+    def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
         """Initializes a Box object.
 
@@ -439,7 +439,7 @@ class Box(GameObject):
             height (int): The Height of the box.
             color (tuple): The color of the box
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-            source_image (Pygame.image): The source image of the box.
+            source_image_id (int): The id of the source image of the box.
             text (str): The string to be displayed on the box
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
@@ -452,10 +452,8 @@ class Box(GameObject):
                          displayable=True, name=name)
         self.color = color
         self.image_id = None
-        if source_image is None:
-            self.source_image_id = None
-        else:
-            self.source_image_id = game_engine.get_surface_manager().set_image(source_image)
+        self.source_image_id = source_image_id
+        if source_image_id is not None:
             self.image_id = game_engine.get_surface_manager().scale_image(self.source_image_id,
                                                                           (self.width, self.height))
 
@@ -501,19 +499,15 @@ class Box(GameObject):
         super().set_rotation(angle)
         self.changed_recently = True
 
-    def set_image(self, image):
+    def set_image(self, new_source_image_id):
         """Sets the image of the Box by updating the source_image_id attribute, then rotates and scales the image.
 
          Args:
-             image (Pygame.image): The new image for the Box.
+             new_source_image_id (int): The id of the new source image for the Box.
          """
         # TODO: Test this for rotated images etc.
-        self.source_image_id = game_engine.get_surface_manager().set_image(image, self.source_image_id)
-
-        self.image_id = game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle,
-                                                                       self.image_id)
-        self.image_id = game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height),
-                                                                      self.image_id)
+        self.source_image_id = new_source_image_id
+        self.update_image()
 
     def set_text(self, new_text):
         """Sets the text of the Box and updates the text surface id.
@@ -554,13 +548,20 @@ class Box(GameObject):
         self.set_height(text_surface.get_height() + 2 * offset)
 
     def update_surfaces(self):
+        """Updates the surfaces of the box. First updates the image, and then the surface."""
+        # TODO: This rotates the source image, which is not very good.
         if self.image_id is not None:
-            game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle, self.image_id)
-            game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
+            self.update_image()
 
         game_engine.get_surface_manager().rotate_surface(self.surface_id, self.rotation_angle, self.surface_id)
         game_engine.get_surface_manager().scale_surface(self.surface_id, (self.width, self.height), self.surface_id)
         self.changed_recently = False
+
+    def update_image(self):
+        """Updates the image for the box, first by rotating the source image, and then scaling it."""
+        self.image_id = game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle,
+                                                                       self.image_id)
+        game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
 
     def get_display_surface(self):
         """Return a tuple containing the surface to be displayed and the object's rect.
@@ -753,12 +754,12 @@ class Button(Box):
     """
 
     # TODO: Change left_click_args etc to args and kwargs.
-    def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image=None, text="", font_size=40,
-                 text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
-                 right_trigger_keys=None,
-                 left_click_function=None, left_click_args=None, left_hold_function=None, left_hold_args=None,
-                 right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
-                 key_functions=None, external_process_function=None, external_process_arguments=None):
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image_id=None, text="",
+                 font_size=40, text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
+                 right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
+                 left_hold_args=None, right_click_function=None, right_click_args=None, right_hold_function=None,
+                 right_hold_args=None, key_functions=None, external_process_function=None,
+                 external_process_arguments=None):
         """Creates a new button.
 
         Args:
@@ -769,7 +770,7 @@ class Button(Box):
             height (int): The height of the button.
             colors (dict): Dictionary containing color information for different button states.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-            image (Pygame.image): The image used for the button (default is None).
+            image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
@@ -793,7 +794,6 @@ class Button(Box):
         """
 
         # TODO: Perhaps change the format for the colors, use a list or something.
-
         standard_colors = {"normal": (100, 100, 100), "hover": (150, 150, 150), "pressed": (200, 200, 200)}
         if colors is None:
             colors = standard_colors
@@ -837,9 +837,8 @@ class Button(Box):
             self.key_functions = {}
         else:
             self.key_functions = key_functions
-
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors["normal"], alpha=alpha,
-                         source_image=image, text=text, font_size=font_size, text_color=text_color, parent=parent,
+                         source_image_id=image_id, text=text, font_size=font_size, text_color=text_color, parent=parent,
                          static=static, name=name)
 
         self.left_click_function = left_click_function
@@ -1211,7 +1210,7 @@ class MobileButton(Button):
     """
 
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
-                 image=None, text="", font_size=40,
+                 image_id=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
@@ -1226,7 +1225,7 @@ class MobileButton(Button):
             color (tuple): The color of the button.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             static (bool): Indicates whether the button is static (does not move together with its parent).
-            image (Pygame.image): The image used for the button (default is None).
+            image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
@@ -1248,8 +1247,8 @@ class MobileButton(Button):
         self.moving = False
         self.click_x = None
         self.click_y = None
-        super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image=image, text=text,
-                         font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
+        super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image_id=image_id,
+                         text=text, font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=self.move,
                          right_click_function=right_click_function, right_click_args=right_click_args,
@@ -1353,7 +1352,7 @@ class Overlay(GameObject):
         self.close_btn_offset = close_btn_offset
         close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
                            y=self.y + close_btn_offset, z=self.z, width=close_btn_size, height=close_btn_size,
-                           image=pygame.image.load("Images/close_button.png"), font_size=15, parent=self,
+                           image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
                            left_click_function=self.destroy, left_trigger_keys=["escape"],
                            name="close_btn")
         self.add_child(close_btn)

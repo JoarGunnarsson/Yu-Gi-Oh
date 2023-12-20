@@ -6,9 +6,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # TODO: Surface_manager should handle all images.
-# Instead of doing Pygame.image.load(), call a surface_manager method that loads the image.
-# This method can then check if the image corresponding to the image path has been loaded before, reducing the
-# required number of images that need to be stored.
 # Also, when an object is destroyed, the game_engine should remove it's associated surfaces.
 # Scene.clear should destroy all objects in the scene too.
 
@@ -259,6 +256,7 @@ class SurfaceManager:
         self.surface_image_dict = {}
         self.surface_font_dict = {}
         self.surface_type_dict = {}
+        self.image_path_id_dict = {}
 
     def get_new_id(self):
         new_id = self.current_max_id + 1
@@ -330,6 +328,24 @@ class SurfaceManager:
             image_id = self.get_new_id()
         rotated_image = pygame.transform.rotate(image, theta)
         self.set_image(rotated_image, image_id)
+        return image_id
+
+    def load_image(self, image_path):
+        """Loads the image with the specified image path and returns it.
+
+        Args:
+            image_path (str): The image path of the image to be laoded.
+
+        Returns:
+            int: The id of the image.
+        """
+        if image_path in self.image_path_id_dict:
+            return self.image_path_id_dict[image_path]
+
+        image = pygame.image.load(image_path)
+        image_id = self.set_image(image)
+        self.image_path_id_dict[image_path] = image_id
+        self.set_image(image, image_id)
         return image_id
 
     def scale_surface(self, surface_id, size, new_id=None):
@@ -865,6 +881,10 @@ def execute_multiple_functions(functions, argument_list):
             function(**argument_list[i])
         else:
             function(*argument_list[i])
+
+
+def load_image(image_path):
+    return get_surface_manager().load_image(image_path)
 
 
 environment = Environment()
