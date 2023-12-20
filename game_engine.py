@@ -1,13 +1,10 @@
+import assets
 from constants import *
 import os
 import pickle
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-
-# TODO: Surface_manager should handle all images.
-# Also, when an object is destroyed, the game_engine should remove it's associated surfaces.
-# Scene.clear should destroy all objects in the scene too.
 
 
 class Environment:
@@ -69,9 +66,9 @@ class Environment:
         x, y = pygame.mouse.get_pos()
         window_width = pygame.display.Info().current_w
         window_height = pygame.display.Info().current_h
-        scale_x = int(self.screen.get_width() / window_width)
-        scale_y = int(self.screen.get_height() / window_height)
-        return x * scale_x, y * scale_y
+        scale_x = self.screen.get_width() / window_width
+        scale_y = self.screen.get_height() / window_height
+        return int(x * scale_x), int(y * scale_y)
 
     def set_events_this_tick(self, events):
         """Sets the recorded events for the current tick.
@@ -643,8 +640,11 @@ class Scene:
         Args:
             obj: The object to process.
         """
-        if not hasattr(obj, "process") or obj not in self.processing_order:
+        cant_be_processed = not hasattr(obj, "process") or obj not in self.processing_order
+        obj_destroyed = hasattr(obj, "destroyed") and obj.destroyed
+        if cant_be_processed or obj_destroyed:
             return
+
         obj.process()
 
     def process(self):

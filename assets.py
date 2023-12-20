@@ -96,13 +96,8 @@ class GameObject:
         Args:
             x (int): The new x-coordinate of the object.
         """
-        # TODO: Fix code_repetition here
         self.x = x
-        self.get_rect().update(self.x, self.y, self.width, self.height)
-        self.update_relative_position()
-        for child in self.children:
-            if hasattr(child, "update_position"):
-                child.update_position()
+        self.update_position()
 
     def set_y(self, y):
         """Sets the x-coordinate of the game object and updates its position relative to it's parent (if applicable),
@@ -111,13 +106,17 @@ class GameObject:
         Args:
             y (int): The new y-coordinate of the object.
         """
-        # TODO: Fix code_repetition here
         self.y = y
+        self.update_position()
+
+    def update_position(self):
+        """Updates the position of the game object its related attributes, as well as its children's positions,
+        after either it's x or y coordinate has changed."""
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
         for child in self.children:
-            if hasattr(child, "update_position"):
-                child.update_position()
+            if hasattr(child, "update_position_relative_to_parent"):
+                child.update_position_relative_to_parent()
 
     def set_z(self, z):
         """Sets the z-coordinate of the game object and shifts the z-coordinate of its children by the change in the
@@ -130,6 +129,14 @@ class GameObject:
         self.z = z
         for child in self.children:
             child.shift_z(delta_z)
+
+    def propagate_new_position(self):
+        """Updates the position of the game object."""
+        self.get_rect().update(self.x, self.y, self.width, self.height)
+        self.update_relative_position()
+        for child in self.children:
+            if hasattr(child, "update_position_relative_to_parent"):
+                child.update_position_relative_to_parent()
 
     def set_pos(self, x, y):
         """Sets the x and y coordinates of the game object.
@@ -205,7 +212,7 @@ class GameObject:
 
         self.set_relative_x(x)
         self.set_relative_y(y)
-        self.update_pos_relative_to_parent()
+        self.update_position_relative_to_parent()
 
     def update_relative_position(self):
         """Updates the relative position attributes of the game object relative to its parent."""
@@ -214,12 +221,7 @@ class GameObject:
         self.set_relative_x(self.x - self.parent.x)
         self.set_relative_y(self.y - self.parent.y)
 
-    def update_position(self):
-        """Updates the position of the game object."""
-        if self.parent is not None:
-            self.update_pos_relative_to_parent()
-
-    def update_pos_relative_to_parent(self):
+    def update_position_relative_to_parent(self):
         """Updates the position of the game object relative to its parent."""
         if self.static or self.parent is None:
             return
@@ -307,7 +309,6 @@ class GameObject:
 
     def destroy(self):
         """Destroy the game object, hiding it in the current scene and notifying its parent if applicable."""
-        # TODO: This should destroy all child objects too.
         if self.destroyed:
             return
         self.destroyed = True
@@ -362,17 +363,18 @@ class GameObject:
         Returns:
             list: List of game objects to be processed in the game loop.
         """
-        items_to_be_processed = [self]
+        items_to_be_processed = []
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
 
+        items_to_be_processed.append(self)
         items_to_be_processed.sort(key=lambda x: x.z)
         return items_to_be_processed
 
     def process(self):
         """Process the game object, updating its position relative to its parent if applicable."""
         if self.parent is not None and not self.static:
-            self.update_pos_relative_to_parent()
+            self.update_position_relative_to_parent()
 
     def get_displayable_objects(self):
         """Gets a list of displayable game objects corresponding to the game object itself or it's children.
@@ -504,7 +506,6 @@ class Box(GameObject):
          Args:
              new_source_image_id (int): The id of the new source image for the Box.
          """
-        # TODO: Test this for rotated images etc.
         self.source_image_id = new_source_image_id
         self.update_image()
 
@@ -548,7 +549,6 @@ class Box(GameObject):
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
-        # TODO: This rotates the source image, which is not very good.
         if self.image_id is not None:
             self.update_image()
 
@@ -717,7 +717,7 @@ class Border(GameObject):
 
     def process(self):
         """Processes the Border, updating its position relative to its parent if applicable."""
-        self.update_pos_relative_to_parent()
+        self.update_position_relative_to_parent()
 
 
 class Button(Box):
@@ -982,7 +982,7 @@ class Button(Box):
         Returns:
             bool: True if the click is blocked, False otherwise.
         """
-        blocking_objects_list = game_engine.get_scene_manager().current_scene.get_object_mask(self)
+        blocking_objects_list = game_engine.get_scene_manager().get_current_scene().get_object_mask(self)
         for obj in blocking_objects_list:
             if obj.get_rect().collidepoint(click_position):
                 return True
@@ -1067,15 +1067,15 @@ class Button(Box):
             self.status = "hover"
 
     def process(self):
-        """Process the button, updating its click_detector checking for click-events  and updating it's color."""
+        """Process the button, updating its click_detector checking for click-events and updating it's color."""
+        if self.external_process_function is not None:
+            self.external_process_function(*self.external_process_arguments)
+
         super().process()
 
         self.click_detector.update()
 
         self.check_button_presses()
-
-        if self.external_process_function is not None:
-            self.external_process_function(*self.external_process_arguments)
 
         self.set_color(self.colors[self.status])
 
@@ -1210,7 +1210,8 @@ class MobileButton(Button):
 
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
                  image_id=None, text="", font_size=40,
-                 text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
+                 text_color=BLACK, name=None, parent=None, left_trigger_keys=None, left_hold_function=None,
+                 left_hold_args=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
         """Creates a new mobile button with movement support.
@@ -1232,6 +1233,8 @@ class MobileButton(Button):
             parent: The parent object (default is None).
             left_trigger_keys (list): List of keys triggering left-click events (default is None).
             right_trigger_keys (list): List of keys triggering right-click events (default is None).
+            left_hold_function: The function to be called while left-click is held (default is None).
+            left_hold_args: The arguments for the left-hold function (default is None).
             right_click_function (callable): The function to be called on right-click (default is None).
             right_click_args: The arguments for the right-click function (default is None).
             right_hold_function: The function to be called while right-click is held (default is None).
@@ -1249,7 +1252,8 @@ class MobileButton(Button):
         super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image_id=image_id,
                          text=text, font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
-                         left_click_function=self.start_movement, left_hold_function=self.move,
+                         left_click_function=self.start_movement, left_hold_function=left_hold_function,
+                         left_hold_args=left_hold_args,
                          right_click_function=right_click_function, right_click_args=right_click_args,
                          right_hold_function=right_hold_function, right_hold_args=right_hold_args,
                          key_functions=key_functions, external_process_function=external_process_function,
@@ -1258,12 +1262,12 @@ class MobileButton(Button):
 
     def process(self):
         """Processes the mobile button, resetting the attributes related to movement if the button is not being
-         left-held.
-         """
-
+         left-held."""
         if not self.click_detector.left_clicked_long:
             self.moving = False
             self.click_x, self.click_y = None, None
+        else:
+            self.move()
         super().process()
 
     def move(self):
@@ -1390,7 +1394,6 @@ class Overlay(GameObject):
 
     def process(self):
         """Processes the overlay, including external processing and the standard processing routine."""
-
         if self.external_process_function is not None:
             self.external_process_function(*self.external_process_arguments)
 

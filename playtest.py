@@ -233,9 +233,7 @@ class Card(assets.MobileButton):
         self.has_been_processed = True
 
     def start_movement(self):
-        card_overlay = utils.find_object_from_name(self.children, "card_overlay")
-        if card_overlay is not None:
-            card_overlay.destroy()
+        self.remove_card_overlay()
         board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         if board is not None:
             board.bump(self)
@@ -250,21 +248,15 @@ class Card(assets.MobileButton):
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        if location in ["hand", "field"]:
-            self.set_alpha(255)
-            if self.parent is not None:
-                self.parent.cards.remove(self)  # TODO: Use a method here instead?
-            self.set_parent(None)
-            self.change_to_movable_card()
-            if previous_location not in ["hand", "field"]:
-                self.remove_large_card_button()
-
-        elif location in ["main_deck", "extra_deck", "gy", "banished"]:
-            if self.parent is not None:
-                self.parent.cards.remove(self)  # TODO: Use a method here instead?
+        visible_before_and_after = location in ["hand", "field"] and previous_location in ["hand", "field"]
+        if not visible_before_and_after:
             self.remove_large_card_button()
-            self.remove_card_overlay()
-            self.set_alpha(255)
+        if self.parent is not None:
+            self.parent.cards.remove(self)  # TODO: Use a method here instead?
+            self.set_parent(None)
+
+        if location in ["hand", "field"]:
+            self.change_to_movable_card()
 
     def change_to_movable_card(self):
         self.set_left_click_function(self.start_movement)
@@ -763,6 +755,7 @@ class Board:
             self.card_processing_order.remove(card)
 
     def schedule_processing(self):
+        items_to_be_processed = []
         for i, card in enumerate(self.hand):
             if card.moving:
                 continue
@@ -775,7 +768,6 @@ class Board:
             else:
                 self.stop_processing(card)
 
-        items_to_be_processed = [self]
         moving_card = None
         for card in self.card_processing_order:
             if card.moving:
@@ -784,6 +776,7 @@ class Board:
             items_to_be_processed.extend(card.schedule_processing())
         if moving_card is not None:
             items_to_be_processed.extend(moving_card.schedule_processing())
+        items_to_be_processed.append(self)
         return items_to_be_processed
 
     def process(self):
@@ -887,7 +880,8 @@ def change_overlay_limits(overlay, change_in_limits):
         backward.
     """
     new_start_index = overlay.start_index + change_in_limits
-    new_index_out_of_bounds = new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1
+    new_stop_index = new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1
+    new_index_out_of_bounds = new_stop_index > len(overlay.cards)
     if new_index_out_of_bounds and change_in_limits > 0:
         return
 
