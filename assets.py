@@ -12,14 +12,7 @@ import utility_functions as utils
 
 
 class GameScript:
-<<<<<<< HEAD
-    """
-    Represents a game script.
-    """
-
-=======
     """Represents a game script."""
->>>>>>> documentation_fix
     def __init__(self):
         pass
 
