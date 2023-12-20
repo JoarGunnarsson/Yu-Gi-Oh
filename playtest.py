@@ -1274,7 +1274,7 @@ def create_location_overlay(location_name, card_list_function):
 
     Args:
         location_name (str): The name of the location to display.
-        card_list_function (function): A function returning the list of cards to be displayed.
+        card_list_function (callable): A function returning the list of cards to be displayed.
     """
     scene = game_engine.get_scene_manager().get_current_scene()
     while True:
@@ -1406,7 +1406,7 @@ if __name__ == "__main__":
                         "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
                         "9486959"]
 
-    thin_cards = ["14517422"] * 40
+    thin_cards = ["14517422"] * 1
 
     DECKS = [Deck(name="Spellcaster", cards=spellcaster_cards, main_card_id="1003840"),
              Deck(name="Darklord", cards=darklord_cards, main_card_id="14517422"),

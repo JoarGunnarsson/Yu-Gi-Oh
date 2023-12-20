@@ -11,9 +11,7 @@ import utility_functions as utils
 
 
 class GameScript:
-    """
-    Represents a game script.
-    """
+    """Represents a game script."""
     def __init__(self):
         pass
 
@@ -22,8 +20,7 @@ class GameScript:
 
 
 class GameObject:
-    """
-    A Class for representing a GameObject.
+    """A Class for representing a GameObject.
 
     Attributes:
         x (int): X-coordinate of the object.
@@ -47,8 +44,7 @@ class GameObject:
    """
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
-        """
-        Initializes a GameObject.
+        """Initializes a GameObject.
 
         Args:
             x (int): The x-coordinate of the object.
@@ -85,8 +81,7 @@ class GameObject:
             self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
     def get_rect(self):
-        """
-        Get rect
+        """Get rect
 
         Returns:
             - Pygame.rect: The value of the object's rect attribute
@@ -94,8 +89,7 @@ class GameObject:
         return self.rect
 
     def set_x(self, x):
-        """
-        Sets the x-coordinate of the object and updates its position relative to it's parent (if applicable), as well
+        """Sets the x-coordinate of the object and updates its position relative to it's parent (if applicable), as well
         as updates the position of its children.
 
         Args:
@@ -110,8 +104,7 @@ class GameObject:
                 child.update_position()
 
     def set_y(self, y):
-        """
-        Sets the x-coordinate of the game object and updates its position relative to it's parent (if applicable),
+        """Sets the x-coordinate of the game object and updates its position relative to it's parent (if applicable),
         as well as updates the position of its children.
 
         Args:
@@ -126,8 +119,7 @@ class GameObject:
                 child.update_position()
 
     def set_z(self, z):
-        """
-        Sets the z-coordinate of the game object and shifts the z-coordinate of its children by the change in the
+        """Sets the z-coordinate of the game object and shifts the z-coordinate of its children by the change in the
         z-coordinate.
 
         Args:
@@ -139,8 +131,7 @@ class GameObject:
             child.shift_z(delta_z)
 
     def set_pos(self, x, y):
-        """
-        Sets the x and y coordinates of the game object.
+        """Sets the x and y coordinates of the game object.
 
         Args:
             x (int): The new x-coordinate.
@@ -150,8 +141,7 @@ class GameObject:
         self.set_y(y)
 
     def shift_x(self, delta_x):
-        """
-        Shift the game object's x-coordinate by a given amount.
+        """Shift the game object's x-coordinate by a given amount.
 
         Args:
             delta_x (int): The change in the x-coordinate of the object.
@@ -159,8 +149,7 @@ class GameObject:
         self.set_x(self.x + delta_x)
 
     def shift_y(self, delta_y):
-        """
-        Shift the game object's x-coordinate by a given amount.
+        """Shift the game object's x-coordinate by a given amount.
 
         Args:
             delta_y (int): The change in the y-coordinate of the object.
@@ -168,8 +157,7 @@ class GameObject:
         self.set_y(self.y + delta_y)
 
     def shift_z(self, delta_z):
-        """
-        Shifts the game object's z-coordinate by a given amount.
+        """Shifts the game object's z-coordinate by a given amount.
 
         Args:
             delta_z (float): The change in the z-coordinate of the object.
@@ -433,14 +421,13 @@ class Box(GameObject):
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
         text_surface_id (int): The id corresponding to the text surface of the box.
-        update_text_func (func): The function responsible for updating the box text.
+        update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
-        """
-        Initializes a Box object.
+        """Initializes a Box object.
 
         Args:
             x (int): The x-coordinate of the box.
@@ -454,7 +441,7 @@ class Box(GameObject):
             text (str): The string to be displayed on the box
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
-            update_text_func (func): The function responsible for updating the box text.
+            update_text_func (callable): The function responsible for updating the box text.
             parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             name (str): The name of the object.
@@ -773,10 +760,10 @@ class Button(Box):
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
         text_surface_id (int): The id corresponding to the text surface of the box.
-        update_text_func (func): The function responsible for updating the box text.
+        update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
-        left_click_function (func):
-        right_click_function (func):
+        left_click_function (callable):
+        right_click_function (callable):
     """
 
     # TODO: Change left_click_args etc to args and kwargs.
@@ -805,16 +792,16 @@ class Button(Box):
             static (bool): Indicates whether the object is static (does not move together with its parent).
             left_trigger_keys (list): List of keys triggering left-click events (default is None).
             right_trigger_keys (list): List of keys triggering right-click events (default is None).
-            left_click_function (func): The function to be called on left-click (default is None).
+            left_click_function (callable): The function to be called on left-click (default is None).
             left_click_args: The arguments for the left-click function (default is None).
-            left_hold_function (func): The function to be called while left-click is held (default is None).
+            left_hold_function (callable): The function to be called while left-click is held (default is None).
             left_hold_args: The arguments for the left-hold function (default is None).
-            right_click_function (func): The function to be called on right-click (default is None).
+            right_click_function (callable): The function to be called on right-click (default is None).
             right_click_args: The arguments for the right-click function (default is None).
             right_hold_function: The function to be called while right-click is held (default is None).
             right_hold_args: The arguments for the right-hold function (default is None).
             key_functions (dict): Dictionary mapping keys to functions and their arguments (default is None).
-            external_process_function (func): External function to be called during the button's processing
+            external_process_function (callable): External function to be called during the button's processing
                 (default is None).
             external_process_arguments: Arguments for the external process function (default is None).
         """
@@ -947,7 +934,7 @@ class Button(Box):
         """Sets the function to be called when the button is left-held.
 
         Args:
-            new_function (func): The new left-hold function.
+            new_function (callable): The new left-hold function.
             new_arguments: The new arguments for the left-hold function.
         """
         if new_arguments is None:
@@ -959,7 +946,7 @@ class Button(Box):
         """Sets the function to be called when the button is right-clicked.
 
         Args:
-            new_function (func): The new right-clicked function.
+            new_function (callable): The new right-clicked function.
             new_arguments: The new arguments for the right-clicked function.
         """
         if new_arguments is None:
@@ -971,7 +958,7 @@ class Button(Box):
         """Sets the function to be called when the button is right-held.
 
         Args:
-            new_function (func): The new right-hold function.
+            new_function (callable): The new right-hold function.
             new_arguments: The new arguments for the right-hold function.
         """
         if new_arguments is None:
@@ -991,7 +978,7 @@ class Button(Box):
         """Sets a new external process function.
 
         Returns:
-            new_function (func): The new external process function.
+            new_function (callable): The new external process function.
         """
         self.external_process_function = new_function
 
@@ -1038,6 +1025,7 @@ class Button(Box):
         """Check for button presses/key presses and executes corresponding functions. Can execute any combination of
         different click events in the same tick."""
         mouse_position = environment.get_mouse_position()
+        mouse_over_rect = self.get_rect().collidepoint(mouse_position) ###
 
         if not self.click_blocked(mouse_position):
             button_left_clicked = self.click_detector.left_clicked or environment.key_press in self.left_trigger_keys
@@ -1047,7 +1035,7 @@ class Button(Box):
             button_right_held = self.click_detector.right_clicked_long
 
             hovering = (not self.click_detector.left_clicked and not self.click_detector.right_clicked and
-                        self.get_rect().collidepoint(mouse_position))
+                        mouse_over_rect)
 
         else:
             button_left_clicked = False
@@ -1151,8 +1139,8 @@ class ClickDetector:
             bool: True if the related rectangle is left-clicked, False otherwise.
         """
         left_mouse_down = environment.get_left_mouse_click_this_tick()
-        mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if left_mouse_down and mouse_above_rect and not environment.get_left_mouse_click_last_tick():
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        if left_mouse_down and mouse_over_rect and not environment.get_left_mouse_click_last_tick():
             return True
 
         return False
@@ -1164,10 +1152,10 @@ class ClickDetector:
             bool: True if the related rectangle is long left-clicked, False otherwise.
         """
         left_mouse_down = environment.get_left_mouse_click_this_tick()
-        mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.left_clicked or self.left_clicked_long)
 
-        if left_mouse_down and (mouse_above_rect or excuse_non_hovering):
+        if left_mouse_down and (mouse_over_rect or excuse_non_hovering):
             return True
 
         return False
@@ -1179,8 +1167,8 @@ class ClickDetector:
             bool: True if the related rectangle is right-clicked, False otherwise.
         """
         right_mouse_down = environment.get_right_mouse_click_this_tick()
-        mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if right_mouse_down and mouse_above_rect and not environment.get_right_mouse_click_last_tick():
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        if right_mouse_down and mouse_over_rect and not environment.get_right_mouse_click_last_tick():
             return True
 
         return False
@@ -1192,10 +1180,10 @@ class ClickDetector:
             bool: True if the related rectangle is long right-clicked, False otherwise.
         """
         right_mouse_down = environment.get_right_mouse_click_this_tick()
-        mouse_above_rect = self.rect.collidepoint(environment.get_mouse_position())
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
         excuse_non_hovering = not self.require_continuous_hovering and (self.right_clicked or self.right_clicked_long)
 
-        if right_mouse_down and (mouse_above_rect or excuse_non_hovering):
+        if right_mouse_down and (mouse_over_rect or excuse_non_hovering):
             return True
 
         return False
@@ -1235,10 +1223,10 @@ class MobileButton(Button):
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
         text_surface_id (int): The id corresponding to the text surface of the button.
-        update_text_func (func): The function responsible for updating the button text.
+        update_text_func (callable): The function responsible for updating the button text.
         surface_id (int): The id corresponding to the surface of the button.
-        left_click_function (func): Function to be called on left-click.
-        right_click_function (func): Function to be called on right-click.
+        left_click_function (callable): Function to be called on left-click.
+        right_click_function (callable): Function to be called on right-click.
         moving (bool): Indicates whether the button is currently moving.
         click_x (int): The x-coordinate of the mouse click in the button's coordinate system.
         click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
@@ -1267,12 +1255,12 @@ class MobileButton(Button):
             parent: The parent object (default is None).
             left_trigger_keys (list): List of keys triggering left-click events (default is None).
             right_trigger_keys (list): List of keys triggering right-click events (default is None).
-            right_click_function (func): The function to be called on right-click (default is None).
+            right_click_function (callable): The function to be called on right-click (default is None).
             right_click_args: The arguments for the right-click function (default is None).
             right_hold_function: The function to be called while right-click is held (default is None).
             right_hold_args: The arguments for the right-hold function (default is None).
             key_functions (dict): Dictionary mapping keys to functions and their arguments (default is None).
-            external_process_function (func): External function to be called during the button's processing
+            external_process_function (callable): External function to be called during the button's processing
                 (default is None).
             external_process_arguments: Arguments for the external process function (default is None).
         """
@@ -1331,7 +1319,7 @@ class Overlay(GameObject):
         parent: Parent object to which this overlay is attached.
         close_btn_size (int): Size of the close button on the overlay.
         close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        external_process_function (func): External function to be called during the overlay's processing.
+        external_process_function (callable): External function to be called during the overlay's processing.
         external_process_arguments: Arguments for the external process function.
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
@@ -1359,7 +1347,7 @@ class Overlay(GameObject):
              close_btn_size (int): Size of the close button on the overlay.
              close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
              parent: The parent object to which this overlay is attached.
-             external_process_function (func): External function to be called during the overlay's processing.
+             external_process_function (callable): External function to be called during the overlay's processing.
              external_process_arguments: Arguments for the external process function.
          """
 
