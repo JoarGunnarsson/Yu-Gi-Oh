@@ -55,7 +55,7 @@ def card_type_int(card):
     for i, element in enumerate(card_type_order):
         if card_type == element:
             return i
-    raise ValueError("{} is not a valid card type".format(type))
+    raise ValueError(f"{card_type} is not a valid card type")
 
 
 def execute_multiple_functions(functions, argument_list):

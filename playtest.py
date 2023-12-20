@@ -1329,53 +1329,9 @@ def create_confirmation_overlay(position, func, args):
      Args:
          position (tuple): The (x, y) position to place the overlay.
          func (callable): The function to execute if the "Yes" button is clicked.
-         args (list): The arguments to pass to the function.
+         args: The arguments to pass to the function.
      """
-    # TODO: Make this into a sub-class of Overlay?
-    scene_objects = game_engine.get_scene_manager().get_current_scene().get_objects()
-    scene_overlays = utils.find_objects_from_type(scene_objects, assets.Overlay)
-    existing_confirmation_overlay = utils.find_object_from_name(scene_overlays, "confirmation_overlay")
-    if existing_confirmation_overlay is not None:
-        return
-    # TODO: Perhaps remove the above.
-    x, y = position
-    overlay_z = 10
-    overlay = assets.Overlay(x=x, y=y, z=overlay_z, width=300, height=150, name="confirmation_overlay",
-                             external_process_function=utils.destroy_on_external_clicks)  # ,
-    # parent=game_engine.get_scene_manager().get_current_scene())
-    # overlay.set_parent(game_engine.get_scene_manager().get_current_scene())
-
-    allowed_click_rects = [overlay, [overlay.get_rect()]]
-    overlay.external_process_arguments = allowed_click_rects
-
-    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
-    overlay.destroy_child(close_btn)
-
-    button_size = 50
-    offset = 7
-    font_size = 30
-    text_box = assets.Box(y=y + offset, z=overlay.z, text="Are you sure?")
-    text_box.hug_text(offset)
-    text_box.set_pos(x + (overlay.width - text_box.width) // 2, text_box.y)
-    overlay.add_child(text_box)
-    yes_btn = assets.Button(x=x, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
-                            text="Yes", font_size=font_size,
-                            left_click_function=utils.execute_multiple_functions,
-                            left_click_args=[[overlay.destroy, func], [[], args]], name="overlay_yes_btn")
-    yes_btn.hug_text(offset)
-    no_btn = assets.Button(x=x + 50, y=y + overlay.height - offset - button_size, width=button_size, height=button_size,
-                           text="No", font_size=font_size,
-                           left_click_function=overlay.destroy, left_trigger_keys=["escape"], name="overlay_no_btn")
-    no_btn.hug_text(offset)
-
-    buttons = [yes_btn, no_btn]
-    number_of_buttons = len(buttons)
-    x_offset = (overlay.width - number_of_buttons * button_size) // (number_of_buttons + 1)
-    for i, btn in enumerate(buttons):
-        btn.set_z(overlay.z)
-        overlay.add_child(btn)
-        btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
-
+    overlay = assets.ConfirmationOverlay(position[0], position[1], func, args)
     game_engine.get_scene_manager().get_current_scene().add_object(overlay)
 
 

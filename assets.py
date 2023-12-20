@@ -7,6 +7,7 @@ from game_engine import environment
 import game_engine
 import utility_functions as utils
 
+
 # TODO: Change external_process_function functionality into a GameScript object instead.
 
 
@@ -14,6 +15,7 @@ class GameScript:
     """
     Represents a game script.
     """
+
     def __init__(self):
         pass
 
@@ -45,6 +47,7 @@ class GameObject:
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
    """
+
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  displayable=False, name=""):
         """
@@ -633,6 +636,7 @@ class Border(GameObject):
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
         thickness (int): The thickness of the border.
     """
+
     def __init__(self, x=0, y=0, z=1, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
                  name=None):
         """Initialize a Border object.
@@ -1128,6 +1132,7 @@ class ClickDetector:
         right_clicked_long (bool):
         require_continuous_hovering (bool):
     """
+
     def __init__(self, rect):
         """Initialize the ClickDetector with the specified rectangle.
 
@@ -1243,6 +1248,7 @@ class MobileButton(Button):
         click_x (int): The x-coordinate of the mouse click in the button's coordinate system.
         click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
     """
+
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
                  image=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, right_trigger_keys=None,
@@ -1341,6 +1347,7 @@ class Overlay(GameObject):
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
     """
+
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None,
                  external_process_function=None, external_process_arguments=None):
@@ -1429,3 +1436,74 @@ class Overlay(GameObject):
             self.external_process_function(*self.external_process_arguments)
 
         super().process()
+
+
+class ConfirmationOverlay(Overlay):
+    """A graphical overlay with Yes and No buttons.
+
+    Attributes:
+        x (int): The x-coordinate of the overlay.
+        y (int): The y-coordinate of the overlay.
+        z (float): The z-coordinate of the overlay.
+        width (int): The width of the overlay.
+        height (int): The height of the overlay.
+        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+        static (bool): Indicates whether the overlay is static (does not move together with its parent).
+        name (str): The name of the overlay.
+        destroyed (bool): Indicates whether the object has been destroyed.
+        parent: Parent object to which this overlay is attached.
+        close_btn_size (int): Size of the close button on the overlay.
+        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
+        external_process_function (func): External function to be called during the overlay's processing.
+        external_process_arguments: Arguments for the external process function.
+        displayable (bool): Indicates whether the object is visible.
+        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
+            being clicked.
+        children (list): List of child objects.
+        rotation_angle (int): Rotation angle of the object in degrees.
+        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+    """
+    def __init__(self, x=0, y=0, yes_button_function=None, args=None):
+        """
+        Creates the Confirmation Overlay object.
+        Args:
+            x (int): The x-coordinate of the overlay.
+            y (int): The y-coordinate of the overlay.
+            yes_button_function (func): The function to be executed when the yes-button is pressed.
+            args: The arguments to pass to the function.
+        """
+        z = 10
+        super().__init__(x=x, y=y, z=z, width=300, height=150, name="confirmation_overlay",
+                         external_process_function=utils.destroy_on_external_clicks)
+        allowed_click_rects = [self, [self.get_rect()]]
+        self.external_process_arguments = allowed_click_rects
+
+        close_btn = utils.find_object_from_name(self.get_buttons(), "close_btn")
+        self.destroy_child(close_btn)
+
+        button_size = 50
+        offset = 7
+        font_size = 30
+        text_box = Box(y=y + offset, z=self.z, text="Are you sure?")
+        text_box.hug_text(offset)
+        text_box.set_pos(x + (self.width - text_box.width) // 2, text_box.y)
+        self.add_child(text_box)
+        yes_btn = Button(x=x, y=y + self.height - offset - button_size, width=button_size, height=button_size,
+                         text="Yes", font_size=font_size,
+                         left_click_function=utils.execute_multiple_functions,
+                         left_click_args=[[self.destroy, yes_button_function], [[], args]], name="overlay_yes_btn")
+        yes_btn.hug_text(offset)
+        no_btn = Button(x=x + 50, y=y + self.height - offset - button_size, width=button_size,
+                        height=button_size,
+                        text="No", font_size=font_size,
+                        left_click_function=self.destroy, left_trigger_keys=["escape"], name="overlay_no_btn")
+        no_btn.hug_text(offset)
+
+        buttons = [yes_btn, no_btn]
+        number_of_buttons = len(buttons)
+        x_offset = (self.width - number_of_buttons * button_size) // (number_of_buttons + 1)
+        for i, btn in enumerate(buttons):
+            btn.set_z(self.z)
+            self.add_child(btn)
+            btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)

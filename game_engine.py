@@ -509,7 +509,7 @@ def save(save_number=0):
 
 
 def _save(save_number):
-    with open('save{}.txt'.format(save_number), 'wb') as save_file:
+    with open(f'save{save_number}.txt', 'wb') as save_file:
         game_state.load_from_surface_manager()
         surface_manager = get_surface_manager()
         set_surface_manager(None)
@@ -522,7 +522,7 @@ def load(save_number=0):
 
 
 def _load(save_number):
-    with open('save{}.txt'.format(save_number), 'rb') as save_file:
+    with open(f'save{save_number}.txt', 'rb') as save_file:
         loaded_game_state = pickle.load(save_file)
         get_surface_manager().load_surfaces(loaded_game_state)
         set_scene_manager(loaded_game_state.scene_manager)
