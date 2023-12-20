@@ -108,7 +108,7 @@ class Card(assets.MobileButton):
 
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
 
-        card_img_id = game_engine.get_surface_manager().create_image(card_image_location + '{}.jpg'.format(card_id))
+        card_img_id = game_engine.get_surface_manager().create_image(card_image_location + f'{card_id}.jpg')
         card_image = game_engine.get_surface_manager().fetch_image(card_img_id)
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image=card_image,
                          name=card_id, static=False,
@@ -834,6 +834,14 @@ class Board:
 
 
 def generate_board(scene):
+    """Generates a game board for the specified scene.
+
+    Args:
+        scene: The scene to which the board will be added.
+
+    Returns:
+        Board: The newly generated game board.
+    """
     existing_board = utils.find_object_from_name(scene.get_objects(), "board")
     if existing_board is not None:
         scene.remove_object(existing_board)
@@ -844,18 +852,41 @@ def generate_board(scene):
 
 
 def cards_in_deck_string(scene=None):
+    """Generates a string indicating the number of cards in the deck for the specified scene.
+
+    Args:
+        scene: The scene containing the board with the deck (default is the current scene).
+
+    Returns:
+        str: A string in the format "Cards: {number_of_cards}".
+    """
     if scene is None:
         scene = game_engine.get_scene_manager().get_current_scene()
     board = utils.find_object_from_name(scene.get_objects(), "board")
-    return "Cards: {}".format(len(board.deck))
+    return f"Cards: {len(board.deck)}"
 
 
 def choose_deck(deck):
+    """Chooses a deck for playtesting.
+
+    Sets the specified deck as the active deck using the deck manager and schedules a scene change to the playtesting
+    scene.
+
+    Args:
+        deck: The deck to be set as the active deck for playtesting.
+    """
     deck_manager.set_deck(deck)
     game_engine.schedule_scene_change(create_play_testing, scene_name="play_testing")
 
 
 def change_overlay_limits(overlay, change_in_limits):
+    """Changes the start index of an overlay within specified limits.
+
+    Args:
+        overlay: The overlay object whose start index needs to be modified.
+        change_in_limits (int): The change in start index. A positive value moves forward, and a negative value moves
+        backward.
+    """
     new_start_index = overlay.start_index + change_in_limits
     if new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1 > len(overlay.card_list):
         return
@@ -868,6 +899,11 @@ def change_overlay_limits(overlay, change_in_limits):
 
 
 def create_main_menu():
+    """Creates the main menu scene.
+
+    Returns:
+        Scene: The main menu scene containing buttons for starting, loading, testing, and exiting the game.
+    """
     scene = Scene(name="main_menu")
     scene.persistent = True
     scene.background_color = WHITE
@@ -902,6 +938,11 @@ def create_main_menu():
 
 
 def create_test_scene():
+    """Creates a test scene for testing different functionality.
+
+    Returns:
+        Scene: The test scene.
+    """
     scene = Scene(name="test_scene")
     scene.background_color = SIENNA
     exit_btn = assets.Button(text="Main Menu", alpha=255,
@@ -925,6 +966,11 @@ def create_test_scene():
 
 
 def create_play_testing():
+    """Creates a playtesting scene for playtesting a Yu-Gi-Oh! deck.
+
+    Returns:
+        Scene: The playtesting scene.
+    """
     scene = Scene(name="play_testing")
 
     scene.background_color = GREY
@@ -1049,6 +1095,11 @@ def create_play_testing():
 
 
 def create_large_card_overlay(card):
+    """Creates a large card overlay for displaying a larger version of the card image for better readability.
+
+    Args:
+        card (Card): The card for which the overlay is created.
+    """
     scene = game_engine.get_scene_manager().get_current_scene()
     large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
     if large_card_overlay is not None:
@@ -1091,6 +1142,11 @@ def create_large_card_overlay(card):
 
 
 def create_deck_selection_scene():
+    """Creates a scene for deck selection.
+
+    Returns:
+        Scene: The scene with deck selection options.
+    """
     scene = Scene(name="deck_selection")
 
     deck_selection_overlay = assets.Overlay(z=1, width=environment.get_width(), height=environment.get_height(),
@@ -1113,31 +1169,57 @@ def create_deck_selection_scene():
 
 
 def cards_in_deck():
+    """Gets the cards in the current game board's deck.
+
+    Returns:
+        list: A list of the cards in the deck.
+    """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.deck
 
 
 def cards_in_extra_deck():
+    """Gets the cards in the current game board's extra deck.
+
+    Returns:
+        list: A list of the cards in the extra deck.
+    """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.extra_deck
 
 
 def cards_in_gy():
+    """Gets the cards in the current game board's graveyard.
+
+    Returns:
+        list: A list of the cards in the graveyard.
+    """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.gy
 
 
 def cards_in_banished():
+    """Gets the cards that are currently banished.
+
+    Returns:
+        list: A list of the cards that are banished.
+    """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.banished
 
 
 def cards_in_hand():
+    """Gets the cards in the hand.
+
+    Returns:
+        list: A list of the cards in the hand .
+    """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
     return board.hand
 
 
 def generate_token():
+    """Generates a token card and adds it to the game board."""
     scene = game_engine.get_scene_manager().get_current_scene()
     board = utils.find_object_from_name(scene.get_objects(), "board")
 
@@ -1151,41 +1233,49 @@ def generate_token():
 
 
 def create_deck_overlay():
+    """Creates an overlay displaying cards in the main deck."""
     create_location_overlay("main_deck", cards_in_deck)
 
 
 def create_extra_deck_overlay():
+    """Creates an overlay displaying cards in the extra deck."""
     create_location_overlay("extra_deck", cards_in_extra_deck)
 
 
 def create_gy_overlay():
+    """Creates an overlay displaying cards in the graveyard."""
     create_location_overlay("gy", cards_in_gy)
 
 
 def create_banished_overlay():
+    """Creates an overlay displaying cards that are banished."""
     create_location_overlay("banished", cards_in_banished)
 
 
 def create_hand_overlay():
+    """Creates an overlay displaying cards in the hand.
+
+    Does not currently work, since it moves the cards in the hand.
+    """
     create_location_overlay("hand", cards_in_hand)
 
 
 def test_button():
+    """Prints a test message with the current time.
+
+    This function serves as a test button action. It prints a message indicating the execution of the button test
+    along with the current timestamp.
+    """
     print("BUTTON TEST AT TIME:", time.time())
 
 
-def value_from_card_type(card_type):
-    type_value_dict = {
-        "pendulum": 0,
-        "fusion": 1,
-        "synchro": 2,
-        "xyz": 3,
-        "link": 4
-    }
-    return type_value_dict[card_type]
-
-
 def create_location_overlay(location_name, card_list_function):
+    """Create an overlay displaying cards from a specific location in the game.
+
+    Args:
+        location_name (str): The name of the location to display.
+        card_list_function (function): A function returning the list of cards to be displayed.
+    """
     scene = game_engine.get_scene_manager().get_current_scene()
     while True:
         same_location_overlay = utils.find_object_from_name(scene.get_objects(), location_name)
@@ -1234,6 +1324,13 @@ def create_location_overlay(location_name, card_list_function):
 
 
 def create_confirmation_overlay(position, func, args):
+    """Create a confirmation overlay with Yes and No buttons.
+
+     Args:
+         position (tuple): The (x, y) position to place the overlay.
+         func (callable): The function to execute if the "Yes" button is clicked.
+         args (list): The arguments to pass to the function.
+     """
     # TODO: Make this into a sub-class of Overlay?
     scene_objects = game_engine.get_scene_manager().get_current_scene().get_objects()
     scene_overlays = utils.find_objects_from_type(scene_objects, assets.Overlay)
@@ -1309,7 +1406,7 @@ if __name__ == "__main__":
                         "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
                         "9486959"]
 
-    thin_cards = ["14517422"] * 1
+    thin_cards = ["14517422"] * 40
 
     DECKS = [Deck(name="Spellcaster", cards=spellcaster_cards, main_card_id="1003840"),
              Deck(name="Darklord", cards=darklord_cards, main_card_id="14517422"),
