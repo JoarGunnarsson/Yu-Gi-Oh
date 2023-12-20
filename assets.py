@@ -285,8 +285,7 @@ class GameObject:
             angle (int): The new rotation angle in degrees.
         """
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
-            self.height, self.width = self.width, self.height
-            self.get_rect().update(self.x, self.y, self.width, self.height)
+            self.set_size(self.height, self.width)
 
         self.rotation_angle = angle
 
@@ -417,6 +416,8 @@ class Box(GameObject):
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the box in degrees.
+        changed_recently (bool): Indicates if the box has changed size or been rotaten since the last time it was
+            displayed.
         relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
         relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
         text (str): The string to be displayed on the box
@@ -426,9 +427,6 @@ class Box(GameObject):
         update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
-    # TODO: Perhaps remove the changing of images from rotate, set width etc, and instead to that
-    # before blitting the image. This is slow if images don't change often, so perhaps create a variable
-    # that indicates if the image has changed since the last update.
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
         """Initializes a Box object.
@@ -474,6 +472,7 @@ class Box(GameObject):
 
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
         self.set_alpha(self.alpha)
+        self.changed_recently = False
 
     def set_width(self, width):
         """Sets the width of the Box and updates the Box's image and surface.
@@ -481,15 +480,8 @@ class Box(GameObject):
         Args:
             width (int): The new width of the Box.
         """
-        # TODO: Fix code_repetition here
         super().set_width(width)
-        if self.source_image_id is not None:
-            game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
-                                                          new_id=self.image_id)
-
-        # Updates the surface corresponding to self.surface_id
-        game_engine.get_surface_manager().scale_surface(self.surface_id, (self.width, self.height),
-                                                        new_id=self.surface_id)
+        self.changed_recently = True
 
     def set_height(self, height):
         """Sets the height of the Box and updates the Box's image and surface.
@@ -497,15 +489,8 @@ class Box(GameObject):
         Args:
             height (int): The new height of the Box.
         """
-        # TODO: Fix code_repetition here
         super().set_height(height)
-        if self.source_image_id is not None:
-            game_engine.get_surface_manager().scale_image(self.source_image_id, (self.width, self.height),
-                                                          new_id=self.image_id)
-
-        # Updates the surface corresponding to self.surface_id
-        game_engine.get_surface_manager().scale_surface(self.surface_id, (self.width, self.height),
-                                                        new_id=self.surface_id)
+        self.changed_recently = True
 
     def set_rotation(self, angle):
         """Sets the rotation angle of the Box and updates the Box's image and surface.
@@ -513,13 +498,8 @@ class Box(GameObject):
         Args:
             angle (int): The new rotation angle in degrees.
         """
-        theta = angle - self.rotation_angle
         super().set_rotation(angle)
-
-        if self.image_id is not None:
-            game_engine.get_surface_manager().rotate_image(self.image_id, theta, new_id=self.image_id)
-
-        game_engine.get_surface_manager().rotate_surface(self.surface_id, theta, new_id=self.surface_id)
+        self.changed_recently = True
 
     def set_image(self, image):
         """Sets the image of the Box by updating the source_image_id attribute, then rotates and scales the image.
@@ -573,12 +553,24 @@ class Box(GameObject):
         self.set_width(text_surface.get_width() + 2 * offset)
         self.set_height(text_surface.get_height() + 2 * offset)
 
+    def update_surfaces(self):
+        if self.image_id is not None:
+            game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle, self.image_id)
+            game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
+
+        game_engine.get_surface_manager().rotate_surface(self.surface_id, self.rotation_angle, self.surface_id)
+        game_engine.get_surface_manager().scale_surface(self.surface_id, (self.width, self.height), self.surface_id)
+        self.changed_recently = False
+
     def get_display_surface(self):
         """Return a tuple containing the surface to be displayed and the object's rect.
 
         Returns:
             tuple: The first element is the surface to be displayed, and the second element is the object's rect.
         """
+        if self.changed_recently:
+            self.update_surfaces()
+
         if self.image_id is not None:
             image = game_engine.get_surface_manager().fetch_image(self.image_id)
             game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(image, (0, 0))
@@ -695,17 +687,6 @@ class Border(GameObject):
         side_boxes[3].set_height_relative(height_difference)
 
         super().set_height(height)
-
-    def set_rotation(self, angle):
-        """Sets the rotation angle of the Border and updates the size of the Border.
-
-        Args:
-            angle (int): The new rotation angle in degrees.
-        """
-        if ((self.rotation_angle - angle) // 90) % 2 == 1:
-            self.set_size(width=self.height, height=self.width)
-
-        self.rotation_angle = angle
 
     def set_color(self, color):
         """Sets the color of the Border.
@@ -904,15 +885,6 @@ class Button(Box):
         """
         super().set_height(height)
         self.get_border().set_height(height)
-
-    def set_rotation(self, angle):
-        """Sets the rotation angle of the button and rotates its associated Border.
-
-        Args:
-            angle (int): The new rotation angle in degrees.
-        """
-        super().set_rotation(angle)
-        self.get_border().set_rotation(angle)
 
     def set_colors(self, colors):
         """Sets the colors of the button for the different states.
