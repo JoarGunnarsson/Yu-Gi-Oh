@@ -537,7 +537,6 @@ class Scene:
         display_order (list): The order in which objects are displayed.
         background_color (tuple): The background color of the scene.
         persistent (bool): Whether the scene is persistent across scene changes.
-        hidden_objects (list): A list of objects hidden during processing.
     """
     def __init__(self, name=""):
         """Initialize a Scene object.
@@ -551,7 +550,6 @@ class Scene:
         self.display_order = []
         self.background_color = WHITE
         self.persistent = False
-        self.hidden_objects = []
 
     def get_objects(self):
         """Get the list of root objects in the scene.
@@ -648,51 +646,6 @@ class Scene:
         if not hasattr(obj, "process") or obj not in self.processing_order:
             return
         obj.process()
-
-    def hide_object(self, source_object):
-        """Hide an object during processing.
-
-        Args:
-            source_object: The object to hide.
-        """
-        self.remove_from_processing_order(source_object)
-        self.remove_from_display_order(source_object)
-
-    def remove_from_processing_order(self, source_object):
-        """Remove an object from the processing order.
-
-        Args:
-            source_object: The object to remove from the processing order.
-        """
-        self.hidden_objects.append(source_object)
-        if source_object in self.processing_order:
-            self.processing_order.remove(source_object)
-
-    def remove_from_display_order(self, source_object):
-        """Remove an object from the display order.
-
-        Args:
-            source_object: The object to remove from the display order.
-        """
-        if hasattr(source_object, "get_displayable_objects"):
-            objects_to_remove = source_object.get_displayable_objects()
-        else:
-            objects_to_remove = [source_object]
-        for obj in objects_to_remove:
-            if obj in self.display_order:
-                self.display_order.remove(obj)
-
-    def add_to_display_order(self, obj, index=-1):
-        """Add an object to the display order.
-
-        Args:
-            obj: The object to add to the display order.
-            index (int): The index at which to insert the object.
-        """
-        if index == -1:
-            self.display_order.append(obj)
-            return
-        self.display_order.insert(index, obj)
 
     def process(self):
         """Process and display objects in the scene."""

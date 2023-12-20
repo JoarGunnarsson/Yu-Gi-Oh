@@ -82,7 +82,7 @@ class GameObject:
             self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
     def get_rect(self):
-        """Get rect
+        """Get rect of the object
 
         Returns:
             - Pygame.rect: The value of the object's rect attribute
@@ -311,7 +311,6 @@ class GameObject:
         if self.destroyed:
             return
         self.destroyed = True
-        game_engine.get_scene_manager().current_scene.hide_object(self)
         if self.parent is not None and hasattr(self.parent, "destroy_child"):
             self.parent.destroy_child(self)
 

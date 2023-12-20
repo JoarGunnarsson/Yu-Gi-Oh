@@ -109,7 +109,6 @@ class Card(assets.MobileButton):
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
 
         card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
-        print(card_image_id)
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image_id=card_image_id,
                          name=card_id, static=False,
                          right_click_function=self.create_card_overlay)
@@ -888,7 +887,8 @@ def change_overlay_limits(overlay, change_in_limits):
         backward.
     """
     new_start_index = overlay.start_index + change_in_limits
-    if new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1 > len(overlay.card_list):
+    new_index_out_of_bounds = new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1
+    if new_index_out_of_bounds and change_in_limits > 0:
         return
 
     elif new_start_index < 0:
