@@ -454,9 +454,6 @@ class Box(GameObject):
         self.color = color
         self.image_id = None
         self.source_image_id = source_image_id
-        if source_image_id is not None:
-            self.image_id = game_engine.get_surface_manager().scale_image(self.source_image_id,
-                                                                          (self.width, self.height))
 
         self.text = text
         self.text_color = text_color
@@ -471,6 +468,7 @@ class Box(GameObject):
 
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
         self.set_alpha(self.alpha)
+        self.update_surfaces()
         self.changed_recently = False
 
     def set_width(self, width):
@@ -549,18 +547,18 @@ class Box(GameObject):
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
-        if self.image_id is not None:
+        if self.source_image_id is not None:
             self.update_image()
 
-        game_engine.get_surface_manager().rotate_surface(self.surface_id, self.rotation_angle, self.surface_id)
-        game_engine.get_surface_manager().scale_surface(self.surface_id, (self.width, self.height), self.surface_id)
+        game_engine.get_surface_manager().transform_surface(self.surface_id, (self.width, self.height),
+                                                            self.rotation_angle, self.surface_id)
         self.changed_recently = False
 
     def update_image(self):
         """Updates the image for the box, first by rotating the source image, and then scaling it."""
-        self.image_id = game_engine.get_surface_manager().rotate_image(self.source_image_id, self.rotation_angle,
-                                                                       self.image_id)
-        game_engine.get_surface_manager().scale_image(self.image_id, (self.width, self.height), self.image_id)
+        self.image_id = game_engine.get_surface_manager().transform_image(self.source_image_id,
+                                                                          (self.width, self.height),
+                                                                          self.rotation_angle, self.image_id)
 
     def get_display_surface(self):
         """Return a tuple containing the surface to be displayed and the object's rect.
@@ -752,7 +750,7 @@ class Button(Box):
         right_click_function (callable):
     """
 
-    # TODO: Change left_click_args etc to args and kwargs.
+    # TODO: Change left_click_args etc. to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image_id=None, text="",
                  font_size=40, text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
