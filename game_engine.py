@@ -212,7 +212,7 @@ class GameState:
         """Load surface-related attributes from the SurfaceManager."""
         self.current_max_id = self.surface_manager.current_max_id
         self.surface_objects = self.surface_manager.surface_objects
-        self.image_path_id_dict = self.surface_manager.image_path_id_dict = {}
+        self.image_path_id_dict = self.surface_manager.image_path_id_dict
 
     def get_savable_copy(self):
         new_game_state = GameState()
@@ -244,7 +244,7 @@ class TickManager:
 
 
 class SurfaceHelper:
-    def __init__(self, surface, surface_id=None, size=(0, 0), alpha=255, image_path="", image_string="",
+    def __init__(self, surface, surface_id=None, size=(0, 0), alpha=255, image_string="",
                  font_data=("", BLACK, 30),
                  surface_type="surface"):
 
@@ -255,7 +255,6 @@ class SurfaceHelper:
             self.surface_id = surface_id
         self.size = size[0], size[1]
         self.alpha = alpha
-        self.image_path = image_path
         self.image_string = image_string
         self.font_data = font_data
         self.surface_type = surface_type
@@ -273,9 +272,6 @@ class SurfaceHelper:
     def get_alpha(self):
         return self.alpha
 
-    def get_image_path(self):
-        return self.image_path
-
     def get_image_string(self):
         return self.image_string
 
@@ -288,16 +284,12 @@ class SurfaceHelper:
     def set_size(self, size):
         self.size = size
 
-    def set_image_path(self, image_path):
-        self.image_path = image_path
-
     def prepare_for_saving(self):
         self.surface = None
 
     def copy(self):
         new_surface_helper = SurfaceHelper(self.get_surface(), self.get_surface_id(), self.get_size(),
-                                           self.get_alpha(),
-                                           self.get_image_path(), self.get_image_string(), self.get_font_data(),
+                                           self.get_alpha(), self.get_image_string(), self.get_font_data(),
                                            self.get_surface_type())
 
         return new_surface_helper
@@ -316,11 +308,11 @@ class SurfaceManager:
         self.current_max_id += 1
         return new_id
 
-    def add_surface(self, surface, surface_id=None, alpha=255, image_path="", image_string="",
+    def add_surface(self, surface, surface_id=None, alpha=255, image_string="",
                     font_data=("", BLACK, 30),
                     surface_type="surface"):
         surface_object = SurfaceHelper(surface, surface_id=surface_id, size=surface.get_size(), alpha=alpha,
-                                       image_path=image_path, image_string=image_string,
+                                       image_string=image_string,
                                        font_data=font_data, surface_type=surface_type)
         self.surface_objects[surface_object.get_surface_id()] = surface_object
         return surface_object.get_surface_id()
@@ -366,11 +358,12 @@ class SurfaceManager:
         image = pygame.image.load(image_path)
         image.set_alpha(255)
         image_id = self.set_image(image, image_path)
+        self.image_path_id_dict[image_path] = image_id
         return image_id
 
-    def set_image(self, image, image_path, image_id=None):
+    def set_image(self, image, image_id=None):
         image_string = pygame.image.tostring(image, 'RGBA')
-        image_id = self.add_surface(image, alpha=image.get_alpha(), surface_id=image_id, image_path=image_path,
+        image_id = self.add_surface(image, alpha=image.get_alpha(), surface_id=image_id,
                                     image_string=image_string,
                                     surface_type="image")
         return image_id
@@ -387,14 +380,13 @@ class SurfaceManager:
         image = self.fetch_image(image_id)
         scaled_and_rotated_image = self._transform_surface(image, size, rotation_angle)
         surface_object = self.surface_objects[image_id]
-        new_id = self.set_image(scaled_and_rotated_image, surface_object.get_image_path(), image_id=new_id)
+        new_id = self.set_image(scaled_and_rotated_image, image_id=new_id)
         return new_id
 
     def restore_image(self, image_id):
         image = self.fetch_image(image_id)
         surface_object = self.surface_objects[image_id]
         self.add_surface(image, surface_id=image_id, alpha=image.get_alpha(),
-                         image_path=surface_object.get_image_path(),
                          image_string=surface_object.get_image_string(), surface_type="image")
 
     def create_font(self, size):
@@ -493,7 +485,6 @@ class SceneManager:
         Returns:
             Scene: The newly created scene.
         """
-        get_surface_manager().surfaces = {}
         if scene_name in self.scenes and self.scenes[scene_name].persistent:
             return self.change_scene_by_name(scene_name)
 
