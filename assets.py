@@ -44,6 +44,7 @@ class GameObject:
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
    """
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
+                 opaque_to_parent=False,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -58,8 +59,9 @@ class GameObject:
             parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
-            opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
-                being clicked.
+            opaque (bool): Indicates whether the object blocks objects below it from being clicked.
+            opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+                if the object is the GameObjects parent.
         """
         self.x = x
         self.y = y
@@ -76,6 +78,7 @@ class GameObject:
         self.rotation_angle = 0
         self.alpha = alpha
         self.opaque = opaque
+        self.opaque_to_parent = opaque_to_parent
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
@@ -412,8 +415,9 @@ class Box(GameObject):
         parent: Parent object to which this box is attached.
         static (bool): Indicates whether the box is static (does not move together with its parent).
         displayable (bool): Indicates whether the box is visible.
-        opaque (bool): Indicates whether the box blocks objects earlier in the processing order from
-            being clicked.
+        opaque (bool): Indicates whether the box blocks objects below it from being clicked.
+            opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+                if the object is the box' parent.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the box in degrees.
@@ -605,8 +609,9 @@ class Border(GameObject):
         parent: Parent object to which this object is attached.
         static (bool): Indicates whether the object is static (does not move together with its parent).
         displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
-            being clicked.
+        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
+        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is the GameObjects parent.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the object in degrees.
@@ -636,22 +641,21 @@ class Border(GameObject):
 
         self.color = color
         self.thickness = thickness
-
         top_box = Box(x=self.x, y=self.y, z=z, width=self.width, height=self.thickness, color=self.color,
                       alpha=self.alpha,
-                      parent=self, static=False)
+                      parent=self, static=False, name="border_top_box")
 
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, z=z, width=self.width,
                          height=self.thickness,
-                         color=self.color, alpha=self.alpha, parent=self, static=False)
+                         color=self.color, alpha=self.alpha, parent=self, static=False, name="border_bottom_box")
 
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness, z=z,
                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                       static=False)
+                       static=False, name="border_left_box")
 
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, z=z, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                        static=False)
+                        static=False, name="border_right_box")
 
         side_boxes = [top_box, bottom_box, left_box, right_box]
 
@@ -733,8 +737,9 @@ class Button(Box):
         parent: Parent object to which this box is attached.
         static (bool): Indicates whether the box is static (does not move together with its parent).
         displayable (bool): Indicates whether the box is visible.
-        opaque (bool): Indicates whether the box blocks objects earlier in the processing order from
-            being clicked.
+        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
+        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is the GameObjects parent.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the box in degrees.
@@ -871,7 +876,8 @@ class Button(Box):
             width (int): The new width of the button.
         """
         super().set_width(width)
-        self.get_border().set_width(width)
+        if self.get_border() is not None:
+            self.get_border().set_width(width)
 
     def set_height(self, height):
         """Sets the height of the button and its associated Border.
@@ -880,7 +886,9 @@ class Button(Box):
             height (int): The new height of the button.
         """
         super().set_height(height)
-        self.get_border().set_height(height)
+        if self.get_border() is not None:
+            self.get_border().set_height(height)
+
 
     def set_colors(self, colors):
         """Sets the colors of the button for the different states.
@@ -998,7 +1006,7 @@ class Button(Box):
         """Check for button presses/key presses and executes corresponding functions. Can execute any combination of
         different click events in the same tick."""
         mouse_position = environment.get_mouse_position()
-        mouse_over_rect = self.get_rect().collidepoint(mouse_position) ###
+        mouse_over_rect = self.get_rect().collidepoint(mouse_position)
 
         if not self.click_blocked(mouse_position):
             button_left_clicked = self.click_detector.left_clicked or environment.key_press in self.left_trigger_keys
@@ -1186,8 +1194,9 @@ class MobileButton(Button):
         parent: The parent object to which this button is attached.
         static (bool): Indicates whether the button is static (does not move together with its parent).
         displayable (bool): Indicates whether the button is visible.
-        opaque (bool): Indicates whether the button blocks objects earlier in the processing order from
-            being clicked.
+        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
+        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is the GameObjects parent.
         children (list): List of child objects.
         rect (pygame.Rect): The rectangular area occupied by the object.
         rotation_angle (int): The rotation angle of the button in degrees.
@@ -1243,7 +1252,7 @@ class MobileButton(Button):
             external_process_arguments: Arguments for the external process function (default is None).
         """
 
-        colors = {"normal": color, "hover": color, "pressed": color}
+        colors = {"normal": color, "hover": BLACK, "pressed": color}
         self.moving = False
         self.click_x = None
         self.click_y = None
@@ -1301,8 +1310,9 @@ class Overlay(GameObject):
         external_process_function (callable): External function to be called during the overlay's processing.
         external_process_arguments: Arguments for the external process function.
         displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
-            being clicked.
+        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
+        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is the GameObjects parent.
         children (list): List of child objects.
         rotation_angle (int): Rotation angle of the object in degrees.
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.

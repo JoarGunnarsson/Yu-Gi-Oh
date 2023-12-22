@@ -589,8 +589,9 @@ class LargeCardOverlay(assets.Overlay):
         super().destroy()
 
 
-class Board:
+class Board(assets.GameObject):
     def __init__(self, card_ids=None, name="", scene=None):
+        super().__init__()
         self.z = 2
         if card_ids is None:
             card_ids = []
@@ -941,18 +942,21 @@ def create_test_scene():
     scene.background_color = SIENNA
     exit_btn = assets.Button(text="Main Menu", alpha=255,
                              left_click_function=game_engine.schedule_scene_change,
-                             left_click_args=[create_main_menu, "main_menu"])
-    scene.add_object(exit_btn)
+                             left_click_args=[create_main_menu, "main_menu"],
+                             name="exit_btn")
+    #scene.add_object(exit_btn)
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                            left_click_function=create_confirmation_overlay,
                            left_click_args=[(700, 700), test_button, []],
-                           colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175)
+                           colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175,
+                           name="test_btn")
     button.hug_text(15)
     movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
     follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
                                         image_id=game_engine.load_image("./Images/card_back.png"),
-                                        name="follow_mobile")
+                                        name="follow_mobile")  #
+    follow_mobile.opaque_to_parent = True
 
     movable_btn.add_child(follow_mobile)
 
@@ -1369,6 +1373,7 @@ if __name__ == "__main__":
     pygame.display.set_caption("A tool for playtesting Yu-Gi-Oh!")
 
     game_engine.schedule_scene_change(create_main_menu, "main_menu")
+    #game_engine.schedule_scene_change(create_test_scene, "test_scene")
     running = True
     while running:
         running = environment.handle_events()

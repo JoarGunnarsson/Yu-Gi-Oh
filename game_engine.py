@@ -618,10 +618,29 @@ class Scene:
         """
         index = self.processing_order.index(obj)
         blocking_object_list = []
-        for masking_object in self.processing_order[index + 1:]:
-            not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
-            if not hasattr(masking_object, "get_rect") or not_opaque:
+        for masking_object in self.processing_order:
+            if masking_object == obj:
                 continue
+            not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
+            has_rect = hasattr(masking_object, "get_rect")
+            if not_opaque or not has_rect:
+                continue
+
+            is_below = masking_object.z < obj.z
+            if is_below:
+                continue
+            same_z = masking_object.z == obj.z
+            if same_z:
+                related = relation_distance(masking_object, obj)
+                if related is not None:
+                    related_up = related >= 0
+                    print(obj.name, masking_object.name, related, related_up, related_up and not masking_object.opaque_to_parent or not related_up)
+                    if related_up and not masking_object.opaque_to_parent or not related_up:
+                        continue
+                else:
+                    if index > self.processing_order.index(masking_object):
+                        continue
+
             if obj.get_rect().colliderect(masking_object.get_rect()):
                 blocking_object_list.append(masking_object)
 
@@ -672,6 +691,7 @@ class Scene:
         self.schedule_processing()
 
         # Process objects.
+        self.processing_order.sort(key=lambda x: x.z)
         for obj in reversed(self.processing_order.copy()):
             self.process_object(obj)
 
@@ -701,6 +721,26 @@ def get_tick_manager():
         TickManager or None: The tick manager of the current game state.
     """
     return game_state.tick_manager
+
+
+def get_object_tree_root(obj):
+    current_object = obj
+    distance = 0
+    while True:
+        if hasattr(current_object, "parent") and current_object.parent is not None:
+            current_object = current_object.parent
+            distance += 1
+        else:
+            break
+    return current_object, distance
+
+
+def relation_distance(obj1, obj2):
+    root1, d1 = get_object_tree_root(obj1)
+    root2, d2 = get_object_tree_root(obj2)
+    if root1 != root2:
+        return None
+    return d1 - d2
 
 
 def get_scene_manager():
