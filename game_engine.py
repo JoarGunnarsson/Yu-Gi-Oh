@@ -616,31 +616,11 @@ class Scene:
         Returns:
             list: The list of objects that could be blocking the given object.
         """
-        index = self.processing_order.index(obj)
+        object_index = self.processing_order.index(obj)
         blocking_object_list = []
-        for masking_object in self.processing_order:
-            if masking_object == obj:
+        for masking_object_index, masking_object in enumerate(self.processing_order):
+            if should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
                 continue
-            not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
-            has_rect = hasattr(masking_object, "get_rect")
-            if not_opaque or not has_rect:
-                continue
-
-            is_below = masking_object.z < obj.z
-            if is_below:
-                continue
-            same_z = masking_object.z == obj.z
-            if same_z:
-                related = relation_distance(masking_object, obj)
-                if related is not None:
-                    related_up = related >= 0
-                    print(obj.name, masking_object.name, related, related_up, related_up and not masking_object.opaque_to_parent or not related_up)
-                    if related_up and not masking_object.opaque_to_parent or not related_up:
-                        continue
-                else:
-                    if index > self.processing_order.index(masking_object):
-                        continue
-
             if obj.get_rect().colliderect(masking_object.get_rect()):
                 blocking_object_list.append(masking_object)
 
@@ -723,7 +703,15 @@ def get_tick_manager():
     return game_state.tick_manager
 
 
-def get_object_tree_root(obj):
+def find_object_root_and_distance(obj):
+    """Finds the root of the object's hierarchy tree and calculates the distance from the object to its root.
+
+    Args:
+        obj: The object for which to find the root.
+
+    Returns:
+        Tuple: A tuple containing the root object and the distance from the input object to the root.
+    """
     current_object = obj
     distance = 0
     while True:
@@ -735,12 +723,53 @@ def get_object_tree_root(obj):
     return current_object, distance
 
 
-def relation_distance(obj1, obj2):
-    root1, d1 = get_object_tree_root(obj1)
-    root2, d2 = get_object_tree_root(obj2)
+def calculate_hierarchy_depth_difference(obj1, obj2):
+    """Calculates the distance between two objects in their hierarchy tree.
+
+    Args:
+        obj1: The first object.
+        obj2: The second object.
+
+    Returns:
+        int or None: The difference between the two objects' hierarchy depth if they share the same root;
+        otherwise, returns None. If the difference is positive, the first object is higher up in the hierarchy
+        than the second object.
+    """
+    root1, d1 = find_object_root_and_distance(obj1)
+    root2, d2 = find_object_root_and_distance(obj2)
     if root1 != root2:
         return None
     return d1 - d2
+
+
+def should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
+    """Determines whether an object should block the clicks of another object or not.
+
+    Args:
+        obj: The object for which the click-blocking status is determined.
+        masking_object: The object that might block clicks.
+        object_index (int): The index of obj in the processing order.
+        masking_object_index (int): The index of masking_object in the processing order.
+
+    Returns:
+        bool: True if the clicks of the first object should be blocked by the second object, False otherwise.
+    """
+    same_object = masking_object == obj
+    not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
+    has_rect = hasattr(masking_object, "get_rect")
+    is_below = masking_object.z < obj.z
+    same_z = masking_object.z == obj.z
+
+    relation_distance = calculate_hierarchy_depth_difference(masking_object, obj)
+
+    if relation_distance is None:
+        relation_bool = object_index > masking_object_index
+    else:
+        related_up = relation_distance > 0
+        relation_bool = related_up and not masking_object.opaque_to_ancestor or not related_up
+
+    dont_block_clicks = (same_z and relation_bool) or is_below or same_object or not_opaque or not has_rect
+    return dont_block_clicks
 
 
 def get_scene_manager():

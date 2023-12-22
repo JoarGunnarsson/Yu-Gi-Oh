@@ -44,7 +44,7 @@ class GameObject:
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
    """
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
-                 opaque_to_parent=False,
+                 opaque_to_ancestor=True,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -60,8 +60,8 @@ class GameObject:
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
             opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-            opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-                if the object is the GameObjects parent.
+            opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same
+                z-coordinate, if the object  is an ancestor to the game object.
         """
         self.x = x
         self.y = y
@@ -78,7 +78,7 @@ class GameObject:
         self.rotation_angle = 0
         self.alpha = alpha
         self.opaque = opaque
-        self.opaque_to_parent = opaque_to_parent
+        self.opaque_to_ancestor = opaque_to_ancestor
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
@@ -416,8 +416,8 @@ class Box(GameObject):
         static (bool): Indicates whether the box is static (does not move together with its parent).
         displayable (bool): Indicates whether the box is visible.
         opaque (bool): Indicates whether the box blocks objects below it from being clicked.
-            opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-                if the object is the box' parent.
+        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is an ancestor to the box.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the box in degrees.
@@ -610,8 +610,8 @@ class Border(GameObject):
         static (bool): Indicates whether the object is static (does not move together with its parent).
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is the GameObjects parent.
+        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is an ancestor to the border.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the object in degrees.
@@ -726,31 +726,31 @@ class Button(Box):
     """A customizable button with various interactive features, such as click and hover events.
 
     Attributes:
-        x (int): X-coordinate of the box.
-        y (int): Y-coordinate of the box.
-        z (float): Z-coordinate of the box.
-        width (int): Width of the box.
-        height (int): Height of the box.
+        x (int): X-coordinate of the button.
+        y (int): Y-coordinate of the button.
+        z (float): Z-coordinate of the button.
+        width (int): Width of the button.
+        height (int): Height of the button.
         alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): Name of the box.
-        destroyed (bool): Indicates whether the box has been destroyed.
-        parent: Parent object to which this box is attached.
-        static (bool): Indicates whether the box is static (does not move together with its parent).
-        displayable (bool): Indicates whether the box is visible.
+        name (str): Name of the button.
+        destroyed (bool): Indicates whether the button has been destroyed.
+        parent: Parent object to which this button is attached.
+        static (bool): Indicates whether the button is static (does not move together with its parent).
+        displayable (bool): Indicates whether the button is visible.
         opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is the GameObjects parent.
+        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is an ancestor to the button
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
-        rotation_angle (int): Rotation angle of the box in degrees.
-        relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
-        text (str): The string to be displayed on the box
+        rotation_angle (int): Rotation angle of the button in degrees.
+        relative_x (int): The x-coordinate of the button in relation to it's parent, if applicable.
+        relative_y (int): The y-coordinate of the button in relation to it's parent, if applicable.
+        text (str): The string to be displayed on the button
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
-        text_surface_id (int): The id corresponding to the text surface of the box.
-        update_text_func (callable): The function responsible for updating the box text.
-        surface_id (int): The id corresponding to the surface of the box.
+        text_surface_id (int): The id corresponding to the text surface of the button.
+        update_text_func (callable): The function responsible for updating the button text.
+        surface_id (int): The id corresponding to the surface of the button.
         left_click_function (callable):
         right_click_function (callable):
     """
@@ -1195,8 +1195,8 @@ class MobileButton(Button):
         static (bool): Indicates whether the button is static (does not move together with its parent).
         displayable (bool): Indicates whether the button is visible.
         opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is the GameObjects parent.
+        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is an ancestor to the button.
         children (list): List of child objects.
         rect (pygame.Rect): The rectangular area occupied by the object.
         rotation_angle (int): The rotation angle of the button in degrees.
@@ -1311,8 +1311,8 @@ class Overlay(GameObject):
         external_process_arguments: Arguments for the external process function.
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_parent (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is the GameObjects parent.
+        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
+            if the object is an ancestor to the overlay.
         children (list): List of child objects.
         rotation_angle (int): Rotation angle of the object in degrees.
         relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.

@@ -944,7 +944,7 @@ def create_test_scene():
                              left_click_function=game_engine.schedule_scene_change,
                              left_click_args=[create_main_menu, "main_menu"],
                              name="exit_btn")
-    #scene.add_object(exit_btn)
+    scene.add_object(exit_btn)
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                            left_click_function=create_confirmation_overlay,
                            left_click_args=[(700, 700), test_button, []],
@@ -955,8 +955,7 @@ def create_test_scene():
 
     follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
                                         image_id=game_engine.load_image("./Images/card_back.png"),
-                                        name="follow_mobile")  #
-    follow_mobile.opaque_to_parent = True
+                                        name="follow_mobile")
 
     movable_btn.add_child(follow_mobile)
 
