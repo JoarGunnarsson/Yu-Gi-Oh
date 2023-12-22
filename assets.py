@@ -6,6 +6,7 @@ import pygame
 from game_engine import environment
 import game_engine
 import utility_functions as utils
+from enum import Enum
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
@@ -428,7 +429,7 @@ class Box(GameObject):
         text (str): The string to be displayed on the box
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
-        text_surface_id (int): The id corresponding to the text surface of the box.
+        font_surface_id (int): The id corresponding to the font surface of the box.
         update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
@@ -463,9 +464,9 @@ class Box(GameObject):
         self.text_color = text_color
         self.font_size = font_size
         if self.text == "":
-            self.text_surface_id = None
+            self.font_surface_id = None
         else:
-            self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
+            self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                          self.font_size)
 
         self.update_text_func = update_text_func
@@ -512,15 +513,15 @@ class Box(GameObject):
         self.update_image()
 
     def set_text(self, new_text):
-        """Sets the text of the Box and updates the text surface id.
+        """Sets the text of the Box and updates the font surface id.
 
         Args:
             new_text (str): The new text for the Box.
         """
         self.text = new_text
-        self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
+        self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                      self.font_size,
-                                                                                     self.text_surface_id)
+                                                                                     self.font_surface_id)
 
     def set_color(self, color):
         """Sets the color of the Box.
@@ -545,9 +546,9 @@ class Box(GameObject):
         Args:
             offset (int): The additional offset to apply.
         """
-        text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
-        self.set_width(text_surface.get_width() + 2 * offset)
-        self.set_height(text_surface.get_height() + 2 * offset)
+        font_surface = game_engine.get_surface_manager().fetch_font_surface(self.font_surface_id)
+        self.set_width(font_surface.get_width() + 2 * offset)
+        self.set_height(font_surface.get_height() + 2 * offset)
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
@@ -582,14 +583,14 @@ class Box(GameObject):
         if self.update_text_func is not None:
             self.text = self.update_text_func()
             game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
-                                                                  self.text_surface_id)
+                                                                  self.font_surface_id)
 
         if self.text != "":
-            text_surface = game_engine.get_surface_manager().fetch_text_surface(self.text_surface_id)
+            font_surface = game_engine.get_surface_manager().fetch_font_surface(self.font_surface_id)
             surface = game_engine.get_surface_manager().fetch_surface(self.surface_id)
-            surface_middle = [(self.width - text_surface.get_width()) / 2,
-                              (self.height - text_surface.get_height()) / 2]
-            surface.blit(text_surface, surface_middle)
+            surface_middle = [(self.width - font_surface.get_width()) / 2,
+                              (self.height - font_surface.get_height()) / 2]
+            surface.blit(font_surface, surface_middle)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
 
@@ -722,6 +723,106 @@ class Border(GameObject):
         self.update_position_relative_to_parent()
 
 
+class ButtonState(Enum):
+    NORMAL = "normal"
+    HOVER = "hover"
+    PRESSED = "pressed"
+
+
+class ClickDetector:
+    """A class dedicated to detecting clicks for buttons
+
+    Attributes:
+        rect (Pygame.rect): The rect inside which the click detector detects clicks.
+        left_clicked (bool):
+        left_clicked_long (bool):
+        right_clicked (bool):
+        right_clicked_long (bool):
+        require_continuous_hovering (bool):
+    """
+
+    def __init__(self, rect):
+        """Initialize the ClickDetector with the specified rectangle.
+
+        Args:
+            rect (pygame.Rect): The rect inside which the click detector detects clicks.
+        """
+        self.rect = rect
+
+        self.left_clicked = False
+        self.left_clicked_long = False
+
+        self.right_clicked = False
+        self.right_clicked_long = False
+
+        self.require_continuous_hovering = True
+
+    def _left_clicked(self):
+        """Detects new left clicks.
+
+        Returns:
+            bool: True if the related rectangle is left-clicked, False otherwise.
+        """
+        left_mouse_down = environment.get_left_mouse_click_this_tick()
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        if left_mouse_down and mouse_over_rect and not environment.get_left_mouse_click_last_tick():
+            return True
+
+        return False
+
+    def _left_clicked_long(self):
+        """Detects long left clicks, that is if the mouse button continually being pressed.
+
+        Returns:
+            bool: True if the related rectangle is long left-clicked, False otherwise.
+        """
+        left_mouse_down = environment.get_left_mouse_click_this_tick()
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        excuse_non_hovering = not self.require_continuous_hovering and (self.left_clicked or self.left_clicked_long)
+
+        if left_mouse_down and (mouse_over_rect or excuse_non_hovering):
+            return True
+
+        return False
+
+    def _right_clicked(self):
+        """Detects new right clicks.
+
+        Returns:
+            bool: True if the related rectangle is right-clicked, False otherwise.
+        """
+        right_mouse_down = environment.get_right_mouse_click_this_tick()
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        if right_mouse_down and mouse_over_rect and not environment.get_right_mouse_click_last_tick():
+            return True
+
+        return False
+
+    def _right_clicked_long(self):
+        """Detects long right clicks, that is if the mouse button continually being pressed.
+
+        Returns:
+            bool: True if the related rectangle is long right-clicked, False otherwise.
+        """
+        right_mouse_down = environment.get_right_mouse_click_this_tick()
+        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
+        excuse_non_hovering = not self.require_continuous_hovering and (self.right_clicked or self.right_clicked_long)
+
+        if right_mouse_down and (mouse_over_rect or excuse_non_hovering):
+            return True
+
+        return False
+
+    def update(self):
+        """Updates the click detector's attributes based on the current mouse click events."""
+        self.left_clicked = self._left_clicked()
+        self.left_clicked_long = self._left_clicked_long()
+
+        self.right_clicked_long = self._right_clicked_long()
+        self.right_clicked = self._right_clicked()
+
+
+
 class Button(Box):
     """A customizable button with various interactive features, such as click and hover events.
 
@@ -748,7 +849,7 @@ class Button(Box):
         text (str): The string to be displayed on the button
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
-        text_surface_id (int): The id corresponding to the text surface of the button.
+        font_surface_id (int): The id corresponding to the font surface of the button.
         update_text_func (callable): The function responsible for updating the button text.
         surface_id (int): The id corresponding to the surface of the button.
         left_click_function (callable):
@@ -796,7 +897,7 @@ class Button(Box):
         """
 
         # TODO: Perhaps change the format for the colors, use a list or something.
-        standard_colors = {"normal": (100, 100, 100), "hover": (150, 150, 150), "pressed": (200, 200, 200)}
+        standard_colors = {ButtonState.NORMAL: (100, 100, 100), ButtonState.HOVER: (150, 150, 150), ButtonState.PRESSED: (200, 200, 200)}
         if colors is None:
             colors = standard_colors
 
@@ -839,7 +940,7 @@ class Button(Box):
             self.key_functions = {}
         else:
             self.key_functions = key_functions
-        super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors["normal"], alpha=alpha,
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors[ButtonState.NORMAL], alpha=alpha,
                          source_image_id=image_id, text=text, font_size=font_size, text_color=text_color, parent=parent,
                          static=static, name=name)
 
@@ -853,7 +954,7 @@ class Button(Box):
         self.static = False
 
         self.external_process_function = external_process_function
-        self.status = "normal"
+        self.status = ButtonState.NORMAL
 
         self.click_detector = ClickDetector(self.get_rect())
 
@@ -1025,7 +1126,7 @@ class Button(Box):
             button_right_held = False
             hovering = False
 
-        self.status = "normal"
+        self.status = ButtonState.NORMAL
 
         key_function, key_args = None, []
         for key in self.key_functions:
@@ -1035,21 +1136,21 @@ class Button(Box):
                 break
 
         if button_left_clicked and self.left_click_function is not None:
-            self.status = "pressed"
+            self.status = ButtonState.PRESSED
             if isinstance(self.left_click_args, dict):
                 self.left_click_function(**self.left_click_args)
             else:
                 self.left_click_function(*self.left_click_args)
 
         if button_left_held and self.left_hold_function is not None:
-            self.status = "pressed"
+            self.status = ButtonState.PRESSED
             if isinstance(self.left_hold_args, dict):
                 self.left_hold_function(**self.left_hold_args)
             else:
                 self.left_hold_function(*self.left_hold_args)
 
         if button_right_clicked and self.right_click_function is not None:
-            self.status = "pressed"
+            self.status = ButtonState.PRESSED
 
             if isinstance(self.right_click_args, dict):
                 self.right_click_function(**self.right_click_args)
@@ -1057,7 +1158,7 @@ class Button(Box):
                 self.right_click_function(*self.right_click_args)
 
         if button_right_held and self.right_hold_function is not None:
-            self.status = "pressed"
+            self.status = ButtonState.PRESSED
             if isinstance(self.right_hold_args, dict):
                 self.right_hold_function(**self.right_hold_args)
             else:
@@ -1069,8 +1170,8 @@ class Button(Box):
             else:
                 key_function(*key_args)
 
-        if hovering and self.status != "pressed":
-            self.status = "hover"
+        if hovering and self.status != ButtonState.PRESSED:
+            self.status = ButtonState.HOVER
 
     def process(self):
         """Process the button, updating its click_detector checking for click-events and updating it's color."""
@@ -1084,99 +1185,6 @@ class Button(Box):
         self.check_button_presses()
 
         self.set_color(self.colors[self.status])
-
-
-class ClickDetector:
-    """A class dedicated to detecting clicks for buttons
-
-    Attributes:
-        rect (Pygame.rect): The rect inside which the click detector detects clicks.
-        left_clicked (bool):
-        left_clicked_long (bool):
-        right_clicked (bool):
-        right_clicked_long (bool):
-        require_continuous_hovering (bool):
-    """
-
-    def __init__(self, rect):
-        """Initialize the ClickDetector with the specified rectangle.
-
-        Args:
-            rect (pygame.Rect): The rect inside which the click detector detects clicks.
-        """
-        self.rect = rect
-
-        self.left_clicked = False
-        self.left_clicked_long = False
-
-        self.right_clicked = False
-        self.right_clicked_long = False
-
-        self.require_continuous_hovering = True
-
-    def _left_clicked(self):
-        """Detects new left clicks.
-
-        Returns:
-            bool: True if the related rectangle is left-clicked, False otherwise.
-        """
-        left_mouse_down = environment.get_left_mouse_click_this_tick()
-        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if left_mouse_down and mouse_over_rect and not environment.get_left_mouse_click_last_tick():
-            return True
-
-        return False
-
-    def _left_clicked_long(self):
-        """Detects long left clicks, that is if the mouse button continually being pressed.
-
-        Returns:
-            bool: True if the related rectangle is long left-clicked, False otherwise.
-        """
-        left_mouse_down = environment.get_left_mouse_click_this_tick()
-        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
-        excuse_non_hovering = not self.require_continuous_hovering and (self.left_clicked or self.left_clicked_long)
-
-        if left_mouse_down and (mouse_over_rect or excuse_non_hovering):
-            return True
-
-        return False
-
-    def _right_clicked(self):
-        """Detects new right clicks.
-
-        Returns:
-            bool: True if the related rectangle is right-clicked, False otherwise.
-        """
-        right_mouse_down = environment.get_right_mouse_click_this_tick()
-        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
-        if right_mouse_down and mouse_over_rect and not environment.get_right_mouse_click_last_tick():
-            return True
-
-        return False
-
-    def _right_clicked_long(self):
-        """Detects long right clicks, that is if the mouse button continually being pressed.
-
-        Returns:
-            bool: True if the related rectangle is long right-clicked, False otherwise.
-        """
-        right_mouse_down = environment.get_right_mouse_click_this_tick()
-        mouse_over_rect = self.rect.collidepoint(environment.get_mouse_position())
-        excuse_non_hovering = not self.require_continuous_hovering and (self.right_clicked or self.right_clicked_long)
-
-        if right_mouse_down and (mouse_over_rect or excuse_non_hovering):
-            return True
-
-        return False
-
-    def update(self):
-        """Updates the click detector's attributes based on the current mouse click events."""
-        self.left_clicked = self._left_clicked()
-        self.left_clicked_long = self._left_clicked_long()
-
-        self.right_clicked_long = self._right_clicked_long()
-        self.right_clicked = self._right_clicked()
 
 
 class MobileButton(Button):
@@ -1205,7 +1213,7 @@ class MobileButton(Button):
         text (str): The string to be displayed on the button.
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
-        text_surface_id (int): The id corresponding to the text surface of the button.
+        font_surface_id (int): The id corresponding to the font surface of the button.
         update_text_func (callable): The function responsible for updating the button text.
         surface_id (int): The id corresponding to the surface of the button.
         left_click_function (callable): Function to be called on left-click.
@@ -1252,7 +1260,7 @@ class MobileButton(Button):
             external_process_arguments: Arguments for the external process function (default is None).
         """
 
-        colors = {"normal": color, "hover": BLACK, "pressed": color}
+        colors = {ButtonState.NORMAL: color, ButtonState.HOVER: color, ButtonState.PRESSED: color}
         self.moving = False
         self.click_x = None
         self.click_y = None

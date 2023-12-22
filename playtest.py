@@ -948,7 +948,7 @@ def create_test_scene():
     button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                            left_click_function=create_confirmation_overlay,
                            left_click_args=[(700, 700), test_button, []],
-                           colors={"normal": SADDLE_BROWN, "hover": SIENNA, "pressed": BLACK}, alpha=175,
+                           colors={assets.ButtonState.NORMAL: SADDLE_BROWN, assets.ButtonState.HOVER: SIENNA, assets.ButtonState.PRESSED: BLACK}, alpha=175,
                            name="test_btn")
     button.hug_text(15)
     movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
