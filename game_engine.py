@@ -216,6 +216,11 @@ class GameState:
         self.image_path_id_dict = self.surface_manager.image_path_id_dict
 
     def get_savable_copy(self):
+        """Creates a copy of the GameState object that can be saved.
+
+        Returns:
+            GameState: A new GameState object with surface-related attributes prepared for saving.
+        """
         new_game_state = GameState()
         new_game_state.surface_manager = self.surface_manager.copy()
         new_game_state.scene_manager = self.scene_manager
@@ -868,15 +873,6 @@ class Scene:
         for obj in self.objects:
             items_to_be_processed = obj.schedule_processing()
             self.processing_order.extend(items_to_be_processed)
-
-    def process_given_objects(self, objects):
-        """Process a given list of objects.
-
-        Args:
-            objects (list): The list of objects to process.
-        """
-        for obj in objects:
-            self.process_object(obj)
 
     def process_object(self, obj):
         """Process a specific object.

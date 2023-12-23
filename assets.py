@@ -822,7 +822,6 @@ class ClickDetector:
         self.right_clicked = self._right_clicked()
 
 
-
 class Button(Box):
     """A customizable button with various interactive features, such as click and hover events.
 
