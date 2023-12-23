@@ -1,4 +1,3 @@
-import copy
 import os
 import sys
 import random
@@ -240,8 +239,8 @@ class Card(assets.MobileButton):
         hand_box = utils.find_object_from_name(scene.get_objects(), "hand_box")
         if hand_box is None:
             return
-        in_hand = hand_box.get_rect().colliderect(self.get_rect())
 
+        in_hand = hand_box.get_rect().colliderect(self.get_rect())
         if not in_hand:
             board.move_to_field(self, board.hand)
             return
@@ -260,8 +259,8 @@ class Card(assets.MobileButton):
         field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
         if hand_box is None or field_box is None:
             return
-        in_hand = hand_box.get_rect().colliderect(self.get_rect())
 
+        in_hand = hand_box.get_rect().colliderect(self.get_rect())
         if in_hand:
             board.add_to_hand(self, board.field)
             return
@@ -330,14 +329,16 @@ class Card(assets.MobileButton):
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        visible_before_and_after = location in ["hand", "field"] and previous_location in ["hand", "field"]
-        if not visible_before_and_after:
+        visible_after = location in ["hand", "field"]
+        visible_before = previous_location in ["hand", "field"]
+        if visible_before and not visible_after:
             self.remove_large_card_button()
+
         if self.parent is not None:
             self.parent.cards.remove(self)  # TODO: Use a method here instead?
             self.set_parent(None)
 
-        if location in ["hand", "field"]:
+        if visible_after and not visible_before:
             self.change_to_movable_card()
 
     def change_to_movable_card(self):
@@ -685,8 +686,7 @@ class CardOverlay(assets.Overlay):
         Returns:
             List: A list of items to be processed.
         """
-        self.pre_process()
-        items_to_be_processed = [self]
+        items_to_be_processed = []
         items_to_be_processed.extend(self.get_box().schedule_processing())
         for btn in self.get_buttons():
             items_to_be_processed.extend(btn.schedule_processing())
@@ -696,18 +696,8 @@ class CardOverlay(assets.Overlay):
             if i < self.start_index or i > self.stop_index:
                 continue
             items_to_be_processed.extend(card.schedule_processing())
-
+        items_to_be_processed.append(self)
         return items_to_be_processed
-
-    def pre_process(self):
-        """Pre-processes the overlay, updating the card list and the card positions."""
-        self.card_list = self.card_list_function()
-
-        self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
-
-        self.update_card_list()
-
-        self.update_card_positions()
 
     def get_displayable_objects(self):
         """Gets the displayable objects within the overlay and updates the card list and their positions.
@@ -721,8 +711,6 @@ class CardOverlay(assets.Overlay):
             return displayable_objects
 
         displayable_objects.extend(super().get_displayable_objects())
-
-        self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
         self.update_card_list()
 
@@ -827,7 +815,7 @@ class Board(assets.GameObject):
         name (str): The name of the board.
         scene: The scene to which the board belongs.
     """
-    def __init__(self, card_ids=None, name="", scene=None):
+    def __init__(self, card_ids=None, name="board", scene=None):
         """Initializes a Board instance.
 
         Args:
@@ -835,7 +823,7 @@ class Board(assets.GameObject):
             name (str): The name of the board.
             scene (game_engine.Scene): The scene to which the board belongs.
         """
-        super().__init__()
+        super().__init__(name=name)
         self.z = 2
         if card_ids is None:
             card_ids = []
@@ -1015,12 +1003,32 @@ class Board(assets.GameObject):
             raise IndexError("Card not found in previous location")
 
         card.new_location(location="hand")
-        self.hand.append(card)
+
         if not card.moving:
+            self.hand.append(card)
             x, y = self.get_card_in_hand_pos(card)
             card.set_pos(x, y)
+        else:
+            card_index = self.find_index_by_x_value(card)
+            self.hand.insert(card_index, card)
 
         previous_location.remove(card)
+
+    def find_index_by_x_value(self, card):
+        """Calculates the index a card should have in the hand, based on its x-coordinate.
+
+        Args:
+            card (Card): The card whose new index should be calculated.
+
+        Returns:
+            int: The index the card should have in the hand.
+        """
+        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+        visible_hand.append(card)
+        visible_hand.sort(key=lambda hand_card: hand_card.x)
+        card_index = visible_hand.index(card)
+        card_index = utils.clamp(card_index, 0, self.display_hand_number-1) + self.display_hand_start_index
+        return card_index
 
     def move_to_field(self, card, previous_location):
         """Moves a card to the field and removes it from the previous location.
@@ -1110,8 +1118,10 @@ class Board(assets.GameObject):
 
     def process(self):
         """Processes the board, sorting the hand based on the card's x-coordinate."""
-        for j in range(len(self.hand)):
-            for i in range(len(self.hand) - 1):
+        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+        for _ in visible_hand:
+            for j in range(len(visible_hand)-1):
+                i = j + self.display_hand_start_index
                 if self.hand[i].x > self.hand[i + 1].x:
                     self.hand[i], self.hand[i + 1] = self.hand[i + 1], self.hand[i]
 
@@ -1227,6 +1237,7 @@ def change_overlay_limits(overlay, change_in_limits):
 
     else:
         overlay.start_index += change_in_limits
+        overlay.stop_index += change_in_limits
 
 
 def create_main_menu():
@@ -1335,7 +1346,8 @@ def create_play_testing():
                           width=environment.get_width() - left_side_box.width - right_side_box.width - 2 * button_width,
                           height=int(card_height) + offset, color=GREY, name="hand_box")
 
-    hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width, height=hand_box.height,
+    hand_border_offset = 0
+    hand_border = assets.Border(x=hand_box.x, y=hand_box.y + hand_border_offset, width=hand_box.width, height=hand_box.height - 2 * hand_border_offset,
                                 parent=hand_box)
 
     scene.add_multiple_objects([field_box, hand_box, left_side_box, right_side_box])
