@@ -1,11 +1,9 @@
-import utility_functions
-from game_engine import environment, Scene
+from game_engine import Scene
 import game_engine
 import assets
 from constants import *
 from Scenes import main_menu_scene
 import time
-import utility_functions as utils
 
 
 class TestScene(Scene):
@@ -25,8 +23,8 @@ class TestScene(Scene):
                                  name="exit_btn")
         self.add_object(exit_btn)
         button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
-                               left_click_function=utility_functions.create_confirmation_overlay,
-                               left_click_args=[700, 700, test_button, []],
+                               left_click_function=self.create_object,
+                               left_click_args=[assets.ConfirmationOverlay, 700, 700, test_button, []],
                                colors={assets.ButtonState.NORMAL: SADDLE_BROWN, assets.ButtonState.HOVER: SIENNA,
                                        assets.ButtonState.PRESSED: BLACK}, alpha=175,
                                name="test_btn")

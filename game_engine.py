@@ -910,6 +910,15 @@ class Scene:
         """Virtual method for creating a scene. Implemented by child scene classes."""
         pass
 
+    def create_object(self, object_class, *args, **kwargs):
+        """Create a new object and adds it to the scene.
+
+         Args:
+             object_class (callable): The (x, y) position to place the overlay.
+         """
+        new_object = object_class(*args, **kwargs)
+        self.add_object(new_object)
+
 
 def get_tick_manager():
     """Returns the current tick manager.
@@ -1133,6 +1142,11 @@ def execute_multiple_functions(functions, argument_list):
             function(**argument_list[i])
         else:
             function(*argument_list[i])
+
+
+def process_current_scene():
+    """Process the current scene."""
+    get_scene_manager().get_current_scene().process()
 
 
 def load_image(image_path):

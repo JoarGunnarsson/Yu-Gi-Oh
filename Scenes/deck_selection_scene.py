@@ -2,7 +2,6 @@ from game_engine import environment, Scene
 import game_engine
 import assets
 from constants import *
-import time
 import utility_functions as utils
 from Scenes import playtesting_scene
 from decks import DECKS
@@ -28,8 +27,8 @@ class DeckSelectionScene(Scene):
         for i, deck in enumerate(DECKS):
             deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, z=1, width=large_card_width,
                                      height=large_card_height,
-                                     left_click_function=utils.create_confirmation_overlay,
-                                     left_click_args=[i * large_card_width, 500, choose_deck, [deck]])
+                                     left_click_function=self.create_object,
+                                     left_click_args=[assets.ConfirmationOverlay, i * large_card_width, 500, choose_deck, [deck]])
             deck_btn.set_image(deck.get_image_id())
             deck_selection_overlay.add_child(deck_btn)
 

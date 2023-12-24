@@ -1,6 +1,6 @@
 from Scenes import main_menu_scene
-from game_engine import environment
 import game_engine
+from game_engine import environment
 from constants import *
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -35,7 +35,9 @@ import pygame
 
 # TODO: Improve utils file structure, move change_overlay_limits into a method.
 
-# TODO: Write documentation for the scene classes?
+# TODO: Write documentation for the scene classes.
+
+# TODO: Change the way args are used -> *args, **kwargs.
 
 if __name__ == "__main__":
     pygame.init()
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     while running:
         running = environment.handle_events()
         game_engine.start_tick()
-        game_engine.get_scene_manager().get_current_scene().process()
+        game_engine.process_current_scene()
 
         environment.draw_screen()
 

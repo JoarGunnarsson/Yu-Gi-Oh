@@ -192,7 +192,7 @@ class Board(assets.GameObject):
         self.deck = []
         self.extra_deck = []
         for card_id in card_ids:
-            new_card = Card(card_id=card_id, parent=None)
+            new_card = Card(card_id=card_id, parent=self)
             card_start_location = utils.card_starting_location(new_card.card_type)
             new_card.location = card_start_location
             if card_start_location == "main_deck":
@@ -283,6 +283,10 @@ class Board(assets.GameObject):
 
         return x, y
 
+    def get_visible_hand(self):
+        """Returns the list of cards that are visible in the hand."""
+        return self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+
     def shuffle_the_deck(self):
         """Shuffles the main deck."""
         random.shuffle(self.deck)
@@ -303,10 +307,11 @@ class Board(assets.GameObject):
         """
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
-        card.new_location(location="gy")
+
         self.stop_processing(card)
         self.gy.insert(0, card)
         previous_location.remove(card)
+        card.new_location(location="gy")
 
     def banish(self, card, previous_location):
         """Banishes a card and removes it from the previous location.
@@ -317,10 +322,10 @@ class Board(assets.GameObject):
         """
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
-        card.new_location(location="banished")
         self.stop_processing(card)
         self.banished.insert(0, card)
         previous_location.remove(card)
+        card.new_location(location="banished")
 
     def add_to_the_deck(self, card, previous_location):
         """Adds a card to the main deck and removes it from the previous location.
@@ -332,10 +337,10 @@ class Board(assets.GameObject):
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
         self.stop_processing(card)
-        card.new_location(location="main_deck")
         self.deck.insert(0, card)
         card.moving = False
         previous_location.remove(card)
+        card.new_location(location="main_deck")
 
     def add_to_the_extra_deck(self, card, previous_location):
         """Adds a card to the extra deck and removes it from the previous location.
@@ -347,11 +352,11 @@ class Board(assets.GameObject):
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
         self.stop_processing(card)
-        card.new_location(location="extra_deck")
         self.extra_deck.insert(0, card)
 
         card.moving = False
         previous_location.remove(card)
+        card.new_location(location="extra_deck")
 
     def add_to_hand(self, card, previous_location):
         """Adds a card to the hand and removes it from the previous location.
@@ -363,8 +368,6 @@ class Board(assets.GameObject):
         if card not in previous_location:
             raise IndexError("Card not found in previous location")
 
-        card.new_location(location="hand")
-
         if not card.moving:
             self.hand.append(card)
             x, y = self.get_card_in_hand_pos(card)
@@ -375,21 +378,7 @@ class Board(assets.GameObject):
 
         previous_location.remove(card)
 
-    def find_index_by_x_value(self, card):
-        """Calculates the index a card should have in the hand, based on its x-coordinate.
-
-        Args:
-            card (Card): The card whose new index should be calculated.
-
-        Returns:
-            int: The index the card should have in the hand.
-        """
-        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
-        visible_hand.append(card)
-        visible_hand.sort(key=lambda hand_card: hand_card.x)
-        card_index = visible_hand.index(card)
-        card_index = utils.clamp(card_index, 0, self.display_hand_number - 1) + self.display_hand_start_index
-        return card_index
+        card.new_location(location="hand")
 
     def move_to_field(self, card, previous_location):
         """Moves a card to the field and removes it from the previous location.
@@ -403,13 +392,38 @@ class Board(assets.GameObject):
         if card.location != "hand":
             default_x, default_y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(default_x, default_y)
-        card.new_location(location="field")
+
         self.field.append(card)
+        previous_location.remove(card)
         self.begin_processing(card)
         if not card.moving:
             x, y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(x, y)
-        previous_location.remove(card)
+
+        card.new_location(location="field")
+
+    def find_index_by_x_value(self, card):
+        """Calculates the index a card should have in the hand, based on its x-coordinate.
+
+        Args:
+            card (Card): The card whose new index should be calculated.
+
+        Returns:
+            int: The index the card should have in the hand.
+        """
+        visible_hand = self.get_visible_hand()
+        visible_hand.append(card)
+        visible_hand.sort(key=lambda hand_card: hand_card.x)
+        card_index = visible_hand.index(card)
+        card_index = utils.clamp(card_index, 0, self.display_hand_number - 1) + self.display_hand_start_index
+        return card_index
+
+    def is_card_visible(self, card):
+        """Determines if a card is visible on the board.
+        Args:
+            card (Card): The card for which the visibility should be determined.
+        """
+        return card in self.field or card in self.get_visible_hand()
 
     def bump(self, card):
         """Moves a card to the end of the processing order list, so that it will be processed first.
@@ -457,11 +471,9 @@ class Board(assets.GameObject):
         for i, card in enumerate(self.hand):
             if card.moving:
                 continue
-            display_stop_index = self.display_hand_start_index + self.display_hand_number
-            is_visible_in_hand = self.display_hand_start_index <= i < display_stop_index
             x, y = self.get_card_in_hand_pos(card, i)
             card.set_pos(x, y)
-            if is_visible_in_hand:
+            if card in self.get_visible_hand():
                 self.begin_processing(card)
             else:
                 self.stop_processing(card)
@@ -508,7 +520,7 @@ class Board(assets.GameObject):
             x, y = self.get_card_in_hand_pos(card, i)
             card.set_pos(x, y)
 
-        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
+        visible_hand = self.get_visible_hand()
         moving_card = None
         for card in reversed(visible_hand):
             if card.moving:
@@ -596,7 +608,6 @@ class Card(assets.MobileButton):
         self.card_type = self.get_card_type()
 
         self.location = None
-        self.has_been_processed = False
 
     def get_card_type(self):
         """Determine the type of the card based on the color of its card frame.
@@ -738,7 +749,6 @@ class Card(assets.MobileButton):
 
         self.update_in_hand()
         self.update_on_field()
-        self.has_been_processed = True
 
     def start_movement(self):
         """Starts the movement of the card. Removes the card overlay, creates a large_card_button, and places it at
@@ -754,24 +764,21 @@ class Card(assets.MobileButton):
         self.create_large_card_button()
 
     def new_location(self, location=None):
-        """Updates the card's location.
+        """Updates the card's location, destroying the card overlay and/or large card button if necessary.
 
         Args:
             location: The new location of the card.
         """
-        # TODO: Maybe add remove_from_display_order(self) instead.
         previous_location = self.location
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        visible_after = location in ["hand", "field"]
+        visible_after = self.parent.is_card_visible(self)#location in ["hand", "field"]
         visible_before = previous_location in ["hand", "field"]
+        # TODO: Issue here if a card is added to the hand via button, and is not shown. Then, increasing the hand limits
+        # to show it, the large card button appears, since it was not removed as the card was moved by button.
         if visible_before and not visible_after:
             self.remove_large_card_button()
-
-        if self.parent is not None:
-            self.parent.cards.remove(self)  # TODO: Use a method here instead?
-            self.set_parent(None)
 
         if visible_after and not visible_before:
             self.change_to_movable_card()
@@ -1112,11 +1119,6 @@ class CardOverlay(assets.Overlay):
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_btn_size=30, close_btn_offset=5, parent=None, external_process_function=None,
                  external_process_arguments=None, card_list_function=None):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, static=static, name=name,
-                         background_color=background_color, close_btn_size=close_btn_size,
-                         close_btn_offset=close_btn_offset, parent=parent,
-                         external_process_function=external_process_function,
-                         external_process_arguments=external_process_arguments)
         """Initializes a CardOverlay instance.
 
         Args:
@@ -1136,6 +1138,11 @@ class CardOverlay(assets.Overlay):
             external_process_arguments: The external process arguments for the overlay.
             card_list_function: The function to retrieve the list of cards for the overlay.
         """
+        super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, static=static, name=name,
+                         background_color=background_color, close_btn_size=close_btn_size,
+                         close_btn_offset=close_btn_offset, parent=parent,
+                         external_process_function=external_process_function,
+                         external_process_arguments=external_process_arguments)
         self.card_list_function = card_list_function
 
         self.cards_per_row = 7
@@ -1183,6 +1190,7 @@ class CardOverlay(assets.Overlay):
 
     def update_card_list(self):
         """Updates the list of overlay cards."""
+        del self.cards[len(self.card_list):]
         for i, card in enumerate(self.card_list):
             if card not in self.cards:
                 self.set_overlay_card(self.create_overlay_card(card, i), i)
@@ -1191,7 +1199,7 @@ class CardOverlay(assets.Overlay):
 
     def update_card_positions(self):
         """Updates the positions of overlay cards."""
-        for i, card in enumerate(self.cards[self.start_index:self.stop_index + 1]):
+        for i, card in enumerate(self.get_visible_cards()):
             x, y, _, _ = self.get_card_info(i)
             card.set_pos(x=x, y=y)
 
@@ -1228,6 +1236,28 @@ class CardOverlay(assets.Overlay):
         y = self.get_box().y + y_offset + int(i // self.cards_per_row * (card_space + card_height))
         return x, y, card_width, card_height
 
+    def is_card_visible(self, card=None, i=None):
+        """Determines if a card is visible in the overlay, either by using the card itself or its index.
+
+        Args:
+            card (Card): The card for which the visibility should be determined.
+            i (int): The index of the card in the card list.
+
+        Returns:
+            bool: True if the card is visible in the overlay, False otherwise.
+        """
+        if i is None:
+            return card in self.get_visible_cards()
+        return self.start_index <= i <= self.stop_index
+
+    def get_visible_cards(self):
+        """Gets the visible cards in the overlay.
+
+        Returns:
+            list: The list of cards that are visible in the overlay.
+        """
+        return self.cards[self.start_index:self.stop_index+1]
+
     def schedule_processing(self):
         """Schedules processing of the overlay and its cards.
 
@@ -1241,7 +1271,7 @@ class CardOverlay(assets.Overlay):
 
         for j, card in enumerate(reversed(self.cards.copy())):
             i = len(self.cards) - 1 - j
-            if i < self.start_index or i > self.stop_index:
+            if not self.is_card_visible(i=i):
                 continue
             items_to_be_processed.extend(card.schedule_processing())
         items_to_be_processed.append(self)
@@ -1266,8 +1296,10 @@ class CardOverlay(assets.Overlay):
 
         for j, card in enumerate(reversed(self.cards)):
             i = len(self.cards) - 1 - j
-            if self.start_index <= i <= self.stop_index:
-                displayable_objects.extend(card.get_displayable_objects())
+            if not self.is_card_visible(i=i):
+                continue
+
+            displayable_objects.extend(card.get_displayable_objects())
 
         return displayable_objects
 
