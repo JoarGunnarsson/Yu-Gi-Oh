@@ -706,25 +706,19 @@ class SceneManager:
         """
         self.current_scene = new_scene
 
-    def create_scene(self, scene_function, scene_name, scene_arguments):
+    def create_scene(self, scene):
         """Create and change to a new scene.
 
         Args:
-            scene_function (callable): The function to create the new scene.
-            scene_name (str): The name to identify the scene.
-            scene_arguments (list or dict): Arguments to pass to the scene function.
+            scene (Scene): THe new scene.
 
         Returns:
             Scene: The newly created scene.
         """
-        if scene_name in self.scenes and self.scenes[scene_name].persistent:
-            return self.change_scene_by_name(scene_name)
+        if scene.name in self.scenes and self.scenes[scene.name].persistent:
+            return self.change_scene_by_name(scene.name)
 
-        if isinstance(scene_arguments, dict):
-            scene = scene_function(**scene_arguments)
-        else:
-            scene = scene_function(*scene_arguments)
-
+        scene.create_scene()
         return self.change_scene(scene)
 
     def change_scene_by_name(self, name):
@@ -757,18 +751,14 @@ class SceneManager:
         if self.get_current_scene() is not None and not self.get_current_scene().persistent:
             self.get_current_scene().clear()
 
-    def schedule_scene_change(self, scene_function, scene_name="", scene_arguments=None):
+    def schedule_scene_change(self, scene):
         """Schedule a scene change at the start of the next tick.
 
         Args:
-            scene_function (callable): The function to create the new scene.
-            scene_name (str): The name to identify the scene.
-            scene_arguments (list or dict): Arguments to pass to the scene function.
+            scene (Scene): The new scene.
         """
-        if scene_arguments is None:
-            scene_arguments = []
 
-        schedule_start_of_tick_function(self.create_scene, [scene_function, scene_name, scene_arguments])
+        schedule_start_of_tick_function(self.create_scene, [scene])
 
 
 class Scene:
@@ -785,7 +775,7 @@ class Scene:
         persistent (bool): Whether the scene is persistent across scene changes.
     """
 
-    def __init__(self, name=""):
+    def __init__(self, name):
         """Initialize a Scene object.
 
         Args:
@@ -868,7 +858,7 @@ class Scene:
         """Schedule the processing order of objects."""
         self.processing_order = []
 
-        self.objects.sort(key=lambda x: x.z)
+        self.get_objects().sort(key=lambda x: x.z)
 
         for obj in self.objects:
             items_to_be_processed = obj.schedule_processing()
@@ -915,6 +905,10 @@ class Scene:
         for obj in self.objects:
             if hasattr(obj, "destroyed") and obj.destroyed:
                 self.objects.remove(obj)
+
+    def create_scene(self, *args, **kwargs):
+        """Virtual method for creating a scene. Implemented by child scene classes."""
+        pass
 
 
 def get_tick_manager():
@@ -1072,15 +1066,13 @@ def end_tick():
     environment.set_events_this_tick({"left_mouse_button": False, "right_mouse_button": False, "key_press": None})
 
 
-def schedule_scene_change(scene_function, scene_name, scene_arguments=None):
+def schedule_scene_change(scene):
     """Schedules a scene change with the scene manager.
 
     Args:
-        scene_function (callable): The function responsible for creating the new scene.
-        scene_name (str): The name of the new scene.
-        scene_arguments (list): A list of arguments to pass to the scene function. Defaults to None.
+        scene (Scene): The scene that the scene manager will set to the current scene.
     """
-    get_scene_manager().schedule_scene_change(scene_function, scene_name, scene_arguments)
+    get_scene_manager().schedule_scene_change(scene)
 
 
 def save(save_number=0):

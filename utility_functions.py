@@ -1,7 +1,8 @@
 import pygame
 from game_engine import environment
 from constants import *
-
+import assets
+import game_engine
 
 def clamp(x, lower, upper):
     """Clamps a value 'x' to the range ['lower', 'upper'].
@@ -166,3 +167,18 @@ def destroy_on_external_clicks(obj, allowed_rect_list):
         if rect.collidepoint(mouse_position):
             return
     obj.destroy()
+
+
+def create_confirmation_overlay(x, y, func, args):
+    """Create a confirmation overlay with Yes and No buttons.
+
+     Args:
+         position (tuple): The (x, y) position to place the overlay.
+         func (callable): The function to execute if the "Yes" button is clicked.
+         args: The arguments to pass to the function.
+     """
+    overlay = assets.ConfirmationOverlay(x, y, func, args)
+    game_engine.get_scene_manager().get_current_scene().add_object(overlay)
+
+
+
