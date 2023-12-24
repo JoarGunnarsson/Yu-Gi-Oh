@@ -479,23 +479,12 @@ class Board(assets.GameObject):
 
     def process(self):
         """Processes the board, sorting the hand based on the card's x-coordinate."""
-        visible_hand = self.hand[self.display_hand_start_index:self.display_hand_start_index + self.display_hand_number]
-        for _ in visible_hand:
-            for j in range(len(visible_hand) - 1):
-                i = j + self.display_hand_start_index
-                if self.hand[i].x > self.hand[i + 1].x:
-                    self.hand[i], self.hand[i + 1] = self.hand[i + 1], self.hand[i]
+        self.sort_visible_hand()
 
-        all_cards = []
-        all_cards.extend(self.hand)
-        all_cards.extend(self.field)
-        all_cards.extend(self.deck)
-        all_cards.extend(self.extra_deck)
-        all_cards.extend(self.gy)
-        all_cards.extend(self.banished)
-
-        for card in all_cards:
-            card.has_been_processed = False
+    def sort_visible_hand(self):
+        """Sorts the visible cards in the hand based on their x-position."""
+        start, stop = self.display_hand_start_index, self.display_hand_start_index + self.display_hand_number
+        self.hand[start:stop] = sorted(self.hand[start:stop], key=lambda card: card.x)
 
     def destroy_child(self, child):
         """Destroys a child object.

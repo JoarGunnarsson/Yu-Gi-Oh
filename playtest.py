@@ -33,6 +33,9 @@ import pygame
 # TODO: There are many "magic values", such as scene.name == "playtesting_scene", which has caused trouble before.
 # Fix this by for example using an Enum for scenes.
 
+# TODO: Improve utils file structure, move change_overlay_limits into a method.
+
+# TODO: Write documentation for the scene classes?
 
 if __name__ == "__main__":
     pygame.init()
