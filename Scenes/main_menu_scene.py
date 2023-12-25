@@ -7,6 +7,10 @@ from Scenes import test_scene, deck_selection_scene
 
 
 class MainMenuScene(Scene):
+    """Creates a scene used displaying the main menu.
+
+    Inherits all attributes from the Scene class, and implements the create_scene method.
+    """
     def __init__(self):
         super().__init__(name="main_menu_scene")
 

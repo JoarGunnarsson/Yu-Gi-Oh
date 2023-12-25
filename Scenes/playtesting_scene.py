@@ -9,6 +9,11 @@ import math
 
 
 class PlaytestingScene(game_engine.Scene):
+    """Creates a scene used for playtesting a Yu-Gi-Oh!.
+
+    Inherits all attributes from the Scene class, and implements the create_scene method.
+    """
+
     def __init__(self, deck):
         super().__init__(name="playtesting_scene")
         self.deck = deck
@@ -42,14 +47,14 @@ class PlaytestingScene(game_engine.Scene):
                                height=environment.get_height() - int(card_height) - offset, color=SADDLE_BROWN,
                                name="field_box")
 
+        hand_box_width = environment.get_width() - left_side_box.width - right_side_box.width - 2 * button_width
         hand_box = assets.Box(x=left_side_box.width + button_width,
                               y=environment.get_height() - int(card_height) - offset,
-                              width=environment.get_width() - left_side_box.width - right_side_box.width - 2 * button_width,
+                              width=hand_box_width,
                               height=int(card_height) + offset, color=GREY, name="hand_box")
 
-        hand_border_offset = 0
-        hand_border = assets.Border(x=hand_box.x, y=hand_box.y + hand_border_offset, width=hand_box.width,
-                                    height=hand_box.height - 2 * hand_border_offset,
+        hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width,
+                                    height=hand_box.height,
                                     parent=hand_box)
 
         self.add_multiple_objects([field_box, hand_box, left_side_box, right_side_box])
@@ -70,8 +75,8 @@ class PlaytestingScene(game_engine.Scene):
                               y=draw_btn.y - deck_text_box.height - offset)
 
         show_deck_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - button_height - offset, width=button_width // 2,
-                                      height=button_height, image_id=game_engine.load_image(
-                card_image_location + "millennium_eye.png"),
+                                      height=button_height,
+                                      image_id=game_engine.load_image(card_image_location + "millennium_eye.png"),
                                       name="show_deck_btn", left_click_function=create_deck_overlay)
 
         show_extra_deck_btn = assets.Button(x=left_side_box.x + offset,
@@ -95,8 +100,8 @@ class PlaytestingScene(game_engine.Scene):
         show_banished_btn = assets.Button(x=draw_btn.x + button_width // 2,
                                           y=deck_text_box.y - 2 * button_height - offset,
                                           width=button_width // 2,
-                                          height=button_height, image_id=game_engine.load_image(
-                card_image_location + "banished_icon.png"),
+                                          height=button_height,
+                                          image_id=game_engine.load_image(card_image_location + "banished_icon.png"),
                                           name="show_banished_btn", left_click_function=create_banished_overlay)
 
         main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
@@ -110,7 +115,7 @@ class PlaytestingScene(game_engine.Scene):
                                  left_click_args=[game_engine.save, []])
 
         """assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
-                                  text="Reset", name="reset_btn", 
+                                  text="Reset", name="reset_btn",
                                   left_click_function=game_engine.schedule_scene_change,
                                   left_click_args=[create_play_testing])"""
 
@@ -192,7 +197,9 @@ class Board(assets.GameObject):
         self.deck = []
         self.extra_deck = []
         for card_id in card_ids:
-            new_card = Card(card_id=card_id, parent=self)
+            new_card = Card(card_id=card_id, parent=self)  # TODO: Adding self here causes an issue with the cards.
+            # TODO: Perhaps object_mask parent issue??? The issue is that they now share a parent, and are on the same
+            # z-value, so they will not be opaque. Fixable with opaque to siblind/opaque to ... attribute.
             card_start_location = utils.card_starting_location(new_card.card_type)
             new_card.location = card_start_location
             if card_start_location == "main_deck":
@@ -211,15 +218,10 @@ class Board(assets.GameObject):
         self.name = name
         self.scene = scene
         card_space = 10  # TODO: This is hard-coded.
-        if self.scene.name == "playtesting_scene":
-            scene_objects = self.scene.get_objects()
-            hand_box_width = utils.find_object_from_name(scene_objects, "hand_box").width
-            self.display_hand_number = hand_box_width // (standard_card_width + card_space)
-        else:
-            self.display_hand_number = 10
+        scene_objects = self.scene.get_objects()
+        hand_box_width = utils.find_object_from_name(scene_objects, "hand_box").width
+        self.display_hand_number = hand_box_width // (standard_card_width + card_space)
         self.display_hand_start_index = 0
-
-        self.old_hand = [card.x for card in self.hand]
 
     def set_display_hand_start_index(self, new_index):
         """Sets the starting index for displaying the hand.
@@ -487,6 +489,7 @@ class Board(assets.GameObject):
         if moving_card is not None:
             items_to_be_processed.extend(moving_card.schedule_processing())
         items_to_be_processed.append(self)
+
         return items_to_be_processed
 
     def process(self):
@@ -510,9 +513,6 @@ class Board(assets.GameObject):
         """Gets all displayable objects on the board, namely the cards on the field and
         the visible cards in the hand."""
         displayable_objects = []
-        for card in self.card_processing_order:
-            if card in self.field:
-                displayable_objects.extend(card.get_displayable_objects())
 
         for i, card in enumerate(self.hand):
             if card.moving:
@@ -528,9 +528,12 @@ class Board(assets.GameObject):
                 continue
             displayable_objects.extend(card.get_displayable_objects())
 
+        for card in self.card_processing_order:
+            if card in self.field:
+                displayable_objects.extend(card.get_displayable_objects())
+
         if moving_card is not None:
             displayable_objects.extend(moving_card.get_displayable_objects())
-
         return displayable_objects
 
 
@@ -588,7 +591,6 @@ class Card(assets.MobileButton):
         click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
         card_type (str): A string representing the type of card (e.g Fusion, Xyz, etc.).
         location (str): A string representing the current location of the card.
-        has_been_processed (bool): Indicates if the card has been processed yet.
     """
 
     def __init__(self, x=0, y=0, card_id="423585", parent=None):
@@ -605,6 +607,7 @@ class Card(assets.MobileButton):
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_overlay)
 
+        self.opaque_to_descendant = True
         self.card_type = self.get_card_type()
 
         self.location = None
@@ -707,7 +710,8 @@ class Card(assets.MobileButton):
             return
 
         in_hand = hand_box.get_rect().colliderect(self.get_rect())
-        if in_hand:
+        can_be_added_to_hand = utils.card_starting_location(self.card_type) == "main_deck"
+        if in_hand and can_be_added_to_hand:
             board.add_to_hand(self, board.field)
             return
 
@@ -773,10 +777,11 @@ class Card(assets.MobileButton):
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        visible_after = self.parent.is_card_visible(self)#location in ["hand", "field"]
+        if self.parent is None:
+            visible_after = False
+        else:
+            visible_after = self.parent.is_card_visible(self)
         visible_before = previous_location in ["hand", "field"]
-        # TODO: Issue here if a card is added to the hand via button, and is not shown. Then, increasing the hand limits
-        # to show it, the large card button appears, since it was not removed as the card was moved by button.
         if visible_before and not visible_after:
             self.remove_large_card_button()
 
@@ -786,7 +791,6 @@ class Card(assets.MobileButton):
     def change_to_movable_card(self):
         """Changes the card to a movable state."""
         self.set_left_click_function(self.start_movement)
-        self.set_left_hold_function(self.move)
         self.set_size(standard_card_width, standard_card_height)
         self.set_z(1)
 
@@ -1256,7 +1260,7 @@ class CardOverlay(assets.Overlay):
         Returns:
             list: The list of cards that are visible in the overlay.
         """
-        return self.cards[self.start_index:self.stop_index+1]
+        return self.cards[self.start_index:self.stop_index + 1]
 
     def schedule_processing(self):
         """Schedules processing of the overlay and its cards.

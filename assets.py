@@ -38,6 +38,11 @@ class GameObject:
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
             being clicked.
+        opaque_to_ancestor (bool): Indicates whether the object should block clicks for objects that are it's ancestor
+            (is closer to the shared root parent than the other object) if they share the same z-value.
+        opaque_to_descendant (bool): Indicates whether the object should block clicks for objects that are it's
+            descendant (is further or has the same distance from the shared root parent than the other object)
+            if they share the same z-value.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the object in degrees.
@@ -45,7 +50,7 @@ class GameObject:
         relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
    """
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
-                 opaque_to_ancestor=True,
+                 opaque_to_ancestor=True, opaque_to_descendant=True,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -64,6 +69,7 @@ class GameObject:
             opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same
                 z-coordinate, if the object  is an ancestor to the game object.
         """
+        self.opaque_to_relative = False
         self.x = x
         self.y = y
         self.z = z
@@ -80,6 +86,7 @@ class GameObject:
         self.alpha = alpha
         self.opaque = opaque
         self.opaque_to_ancestor = opaque_to_ancestor
+        self.opaque_to_descendant = opaque_to_descendant
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
@@ -405,27 +412,7 @@ class Box(GameObject):
     A class representing boxes, inheriting from the base class GameObject.
 
     Attributes:
-        x (int): X-coordinate of the box.
-        y (int): Y-coordinate of the box.
-        z (float): Z-coordinate of the box.
-        width (int): Width of the box.
-        height (int): Height of the box.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): Name of the box.
-        destroyed (bool): Indicates whether the box has been destroyed.
-        parent: Parent object to which this box is attached.
-        static (bool): Indicates whether the box is static (does not move together with its parent).
-        displayable (bool): Indicates whether the box is visible.
-        opaque (bool): Indicates whether the box blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the box.
-        children (list): List of child objects.
-        rect (pygame.Rect): Rectangular area occupied by the object.
-        rotation_angle (int): Rotation angle of the box in degrees.
-        changed_recently (bool): Indicates if the box has changed size or been rotated since the last time it was
-            displayed.
-        relative_x (int): The x-coordinate of the box in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the box in relation to it's parent, if applicable.
+        changed_recently (bool): Indicates if the box has been transformed since the last time it was displayed.
         text (str): The string to be displayed on the box
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
@@ -599,25 +586,6 @@ class Border(GameObject):
     """A class for displaying a rectangular border.
 
     Attributes:
-        x (int): X-coordinate of the object.
-        y (int): Y-coordinate of the object.
-        z (float): Z-coordinate of the object.
-        width (int): Width of the object.
-        height (int): Height of the object.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): Name of the object.
-        destroyed (bool): Indicates whether the object has been destroyed.
-        parent: Parent object to which this object is attached.
-        static (bool): Indicates whether the object is static (does not move together with its parent).
-        displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the border.
-        children (list): List of child objects.
-        rect (pygame.Rect): Rectangular area occupied by the object.
-        rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
         thickness (int): The thickness of the border.
     """
 
@@ -826,33 +794,18 @@ class Button(Box):
     """A customizable button with various interactive features, such as click and hover events.
 
     Attributes:
-        x (int): X-coordinate of the button.
-        y (int): Y-coordinate of the button.
-        z (float): Z-coordinate of the button.
-        width (int): Width of the button.
-        height (int): Height of the button.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): Name of the button.
-        destroyed (bool): Indicates whether the button has been destroyed.
-        parent: Parent object to which this button is attached.
-        static (bool): Indicates whether the button is static (does not move together with its parent).
-        displayable (bool): Indicates whether the button is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the button
-        children (list): List of child objects.
-        rect (pygame.Rect): Rectangular area occupied by the object.
-        rotation_angle (int): Rotation angle of the button in degrees.
-        relative_x (int): The x-coordinate of the button in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the button in relation to it's parent, if applicable.
-        text (str): The string to be displayed on the button
-        text_color (tuple): The color of the text.
-        font_size (int): The font size of the text.
-        font_surface_id (int): The id corresponding to the font surface of the button.
-        update_text_func (callable): The function responsible for updating the button text.
-        surface_id (int): The id corresponding to the surface of the button.
-        left_click_function (callable):
-        right_click_function (callable):
+        left_click_function (callable): The function to be called when the button is left-clicked.
+        left_click_args (iterable): The arguments to be passed to the left click function.
+        left_hold_function (callable): The function to be called when the button is left-held.
+        left_hold_args (iterable): The arguments to be passed to the left hold function.
+        right_click_function (callable): The function to be called when the button is right-clicked.
+        right_click_args (iterable): The arguments to be passed to the right click function.
+        right_hold_function (callable): The function to be called when the button is right-held.
+        right_hold_args (iterable): The arguments to be passed to the right hold function.
+        key_functions (dict): Dictionary mapping keys to functions and their arguments (default is None).
+        external_process_function (callable): External function to be called during the button's processing
+            (default is None).
+        external_process_arguments: Arguments for the external process function (default is None).
     """
 
     # TODO: Change left_click_args etc. to args and kwargs.
@@ -896,7 +849,9 @@ class Button(Box):
         """
 
         # TODO: Perhaps change the format for the colors, use a list or something.
-        standard_colors = {ButtonState.NORMAL: (100, 100, 100), ButtonState.HOVER: (150, 150, 150), ButtonState.PRESSED: (200, 200, 200)}
+        standard_colors = {ButtonState.NORMAL: (100, 100, 100),
+                           ButtonState.HOVER: (150, 150, 150),
+                           ButtonState.PRESSED: (200, 200, 200)}
         if colors is None:
             colors = standard_colors
 
@@ -988,7 +943,6 @@ class Button(Box):
         super().set_height(height)
         if self.get_border() is not None:
             self.get_border().set_height(height)
-
 
     def set_colors(self, colors):
         """Sets the colors of the button for the different states.
@@ -1190,33 +1144,6 @@ class MobileButton(Button):
     """A class for button that can be moved using the mouse.
 
     Attributes:
-        x (int): The x-coordinate of the button.
-        y (int): The y-coordinate of the button.
-        z (float): The z-coordinate of the button.
-        width (int): The width of the button.
-        height (int): The height of the button.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): The name of the button.
-        destroyed (bool): Indicates whether the button has been destroyed.
-        parent: The parent object to which this button is attached.
-        static (bool): Indicates whether the button is static (does not move together with its parent).
-        displayable (bool): Indicates whether the button is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the button.
-        children (list): List of child objects.
-        rect (pygame.Rect): The rectangular area occupied by the object.
-        rotation_angle (int): The rotation angle of the button in degrees.
-        relative_x (int): The x-coordinate of the button in relation to its parent, if applicable.
-        relative_y (int): The y-coordinate of the button in relation to its parent, if applicable.
-        text (str): The string to be displayed on the button.
-        text_color (tuple): The color of the text.
-        font_size (int): The font size of the text.
-        font_surface_id (int): The id corresponding to the font surface of the button.
-        update_text_func (callable): The function responsible for updating the button text.
-        surface_id (int): The id corresponding to the surface of the button.
-        left_click_function (callable): Function to be called on left-click.
-        right_click_function (callable): Function to be called on right-click.
         moving (bool): Indicates whether the button is currently moving.
         click_x (int): The x-coordinate of the mouse click in the button's coordinate system.
         click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
@@ -1302,28 +1229,7 @@ class Overlay(GameObject):
     """A graphical overlay with a customizable appearance and optional close button.
 
     Attributes:
-        x (int): The x-coordinate of the overlay.
-        y (int): The y-coordinate of the overlay.
-        z (float): The z-coordinate of the overlay.
-        width (int): The width of the overlay.
-        height (int): The height of the overlay.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        static (bool): Indicates whether the overlay is static (does not move together with its parent).
-        name (str): The name of the overlay.
-        destroyed (bool): Indicates whether the object has been destroyed.
-        parent: Parent object to which this overlay is attached.
-        close_btn_size (int): Size of the close button on the overlay.
-        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        external_process_function (callable): External function to be called during the overlay's processing.
-        external_process_arguments: Arguments for the external process function.
-        displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the overlay.
-        children (list): List of child objects.
-        rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        Inherits all attributes from the GameObject class.
     """
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
@@ -1419,27 +1325,7 @@ class ConfirmationOverlay(Overlay):
     """A graphical overlay with Yes and No buttons.
 
     Attributes:
-        x (int): The x-coordinate of the overlay.
-        y (int): The y-coordinate of the overlay.
-        z (float): The z-coordinate of the overlay.
-        width (int): The width of the overlay.
-        height (int): The height of the overlay.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        static (bool): Indicates whether the overlay is static (does not move together with its parent).
-        name (str): The name of the overlay.
-        destroyed (bool): Indicates whether the object has been destroyed.
-        parent: Parent object to which this overlay is attached.
-        close_btn_size (int): Size of the close button on the overlay.
-        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        external_process_function (func): External function to be called during the overlay's processing.
-        external_process_arguments: Arguments for the external process function.
-        displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
-            being clicked.
-        children (list): List of child objects.
-        rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        Inherits all attributes from the Overlay class.
     """
     def __init__(self, x=0, y=0, yes_button_function=None, args=None):
         """

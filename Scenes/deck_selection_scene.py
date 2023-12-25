@@ -8,6 +8,10 @@ from decks import DECKS
 
 
 class DeckSelectionScene(Scene):
+    """Creates a scene used for selecting a Yu-Gi-Oh! deck.
+
+    Inherits all attributes from the Scene class, and implements the create_scene method.
+    """
     def __init__(self):
         super().__init__(name="deck_selection_scene")
 
@@ -28,7 +32,8 @@ class DeckSelectionScene(Scene):
             deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, z=1, width=large_card_width,
                                      height=large_card_height,
                                      left_click_function=self.create_object,
-                                     left_click_args=[assets.ConfirmationOverlay, i * large_card_width, 500, choose_deck, [deck]])
+                                     left_click_args=[assets.ConfirmationOverlay, i * large_card_width, 500,
+                                                      choose_deck, [deck]])
             deck_btn.set_image(deck.get_image_id())
             deck_selection_overlay.add_child(deck_btn)
 

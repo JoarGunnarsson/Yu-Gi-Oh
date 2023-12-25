@@ -7,6 +7,10 @@ import time
 
 
 class TestScene(Scene):
+    """Creates a scene used for testing.
+
+    Inherits all attributes from the Scene class, and implements the create_scene method.
+    """
     def __init__(self):
         super().__init__(name="test_scene")
 

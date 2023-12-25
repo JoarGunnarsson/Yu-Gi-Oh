@@ -1,8 +1,5 @@
-import pygame
 from game_engine import environment
-from constants import *
-import assets
-import game_engine
+
 
 def clamp(x, lower, upper):
     """Clamps a value 'x' to the range ['lower', 'upper'].

@@ -35,9 +35,7 @@ import pygame
 
 # TODO: Improve utils file structure, move change_overlay_limits into a method.
 
-# TODO: Write documentation for the scene classes.
-
-# TODO: Change the way args are used -> *args, **kwargs.
+# TODO: Perhaps merge the card lists of the board to a single list, instead using an Enum to set the location.
 
 if __name__ == "__main__":
     pygame.init()

@@ -821,7 +821,8 @@ class Scene:
         """
         self.objects.extend(object_list)
 
-    def get_default_position(self):
+    @staticmethod
+    def get_default_position():
         """Get the default position in the scene.
 
         Returns:
@@ -987,14 +988,17 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
     same_z = masking_object.z == obj.z
 
     relation_distance = calculate_hierarchy_depth_difference(masking_object, obj)
-
+    # TODO: Rename "relation_bool"
+    # TODO: Make opaque_to_parent easier to understand, perhaps change the name etc.
+    visually_blocked = object_index < masking_object_index
     if relation_distance is None:
-        relation_bool = object_index > masking_object_index
+        relation_bool = visually_blocked
     else:
         related_up = relation_distance > 0
-        relation_bool = related_up and not masking_object.opaque_to_ancestor or not related_up
+        related_down = related_up < 0
+        relation_bool = related_up and not masking_object.opaque_to_ancestor or related_down and not masking_object.opaque_to_descendant
 
-    dont_block_clicks = (same_z and relation_bool) or is_below or same_object or not_opaque or not has_rect
+    dont_block_clicks = (same_z and not visually_blocked) or (same_z and relation_bool) or is_below or same_object or not_opaque or not has_rect
     return dont_block_clicks
 
 
