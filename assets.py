@@ -6,7 +6,6 @@ import pygame
 from game_engine import environment
 import game_engine
 import utility_functions as utils
-from enum import Enum
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
@@ -374,11 +373,10 @@ class GameObject:
         Returns:
             list: List of game objects to be processed in the game loop.
         """
-        items_to_be_processed = []
+        items_to_be_processed = [self]  # Potential source for error: This used to be at the end of the function.
         for child in self.children:
             items_to_be_processed.extend(child.schedule_processing())
 
-        items_to_be_processed.append(self)
         items_to_be_processed.sort(key=lambda x: x.z)
         return items_to_be_processed
 
@@ -556,7 +554,7 @@ class Box(GameObject):
         """Return a tuple containing the surface to be displayed and the object's rect.
 
         Returns:
-            tuple: The first element is the surface to be displayed, and the second element is the object's rect.
+            tuple: The surface to be displayed and the object's rect.
         """
         if self.changed_recently:
             self.update_surfaces()
@@ -691,7 +689,7 @@ class Border(GameObject):
         self.update_position_relative_to_parent()
 
 
-class ButtonState(Enum):
+class ButtonState:
     NORMAL = "normal"
     HOVER = "hover"
     PRESSED = "pressed"
@@ -916,6 +914,9 @@ class Button(Box):
                         name="btn_border")
         self.add_child(border)
 
+        self.indicator_id = game_engine.get_surface_manager().create_surface(self.width, self.height, 0)
+        self.indicator_color = WHITE
+
     def get_border(self):
         """Gets the border object associated with the button.
 
@@ -1069,8 +1070,7 @@ class Button(Box):
             button_right_clicked = self.click_detector.right_clicked or environment.key_press in self.right_trigger_keys
             button_right_held = self.click_detector.right_clicked_long
 
-            hovering = (not self.click_detector.left_clicked and not self.click_detector.right_clicked and
-                        mouse_over_rect)
+            hovering = mouse_over_rect
 
         else:
             button_left_clicked = False
@@ -1079,7 +1079,7 @@ class Button(Box):
             button_right_held = False
             hovering = False
 
-        self.status = ButtonState.NORMAL
+        self.status = ButtonState.HOVER
 
         key_function, key_args = None, []
         for key in self.key_functions:
@@ -1123,8 +1123,8 @@ class Button(Box):
             else:
                 key_function(*key_args)
 
-        if hovering and self.status != ButtonState.PRESSED:
-            self.status = ButtonState.HOVER
+        if not hovering:
+            self.status = ButtonState.NORMAL
 
     def process(self):
         """Process the button, updating its click_detector checking for click-events and updating it's color."""
@@ -1138,6 +1138,24 @@ class Button(Box):
         self.check_button_presses()
 
         self.set_color(self.colors[self.status])
+
+    def get_display_surface(self):
+        surf, rect = super().get_display_surface()
+        # TODO: The following is only a test for how indication could work for buttons. Would need to be implemented
+        if hasattr(self, "indicator_id"):
+            if self.status == ButtonState.PRESSED:
+                indicator_alpha = 150
+            elif self.status == ButtonState.HOVER:
+                indicator_alpha = 125
+            else:
+                indicator_alpha = 0
+            indicator_surface = game_engine.get_surface_manager().fetch_surface(self.indicator_id)
+            indicator_surface.set_alpha(indicator_alpha)
+            indicator_surface.fill(self.indicator_color)
+            surf.blit(indicator_surface, (0, 0))
+
+        return surf, rect
+
 
 
 class MobileButton(Button):

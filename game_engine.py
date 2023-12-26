@@ -1,7 +1,6 @@
 from constants import *
 import os
 import pickle
-from enum import Enum
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -249,7 +248,7 @@ class TickManager:
         self.end_of_tick_arguments = []
 
 
-class SurfaceType(Enum):
+class SurfaceType:
     SURFACE = "surface"
     IMAGE = "image"
     FONT = "font"
@@ -265,7 +264,7 @@ class SurfaceHelper:
         alpha (int): The alpha value of the surface.
         image_string (str): The string representation of the image (only for image surfaces).
         font_data (tuple): Tuple related to font surfaces (text, text_color, font_size).
-        surface_type (SurfaceType): The type of the surface (e.g SurfaceType.IMAGE).
+        surface_type (str): The type of the surface (e.g SurfaceType.IMAGE).
     """
     def __init__(self, surface, surface_id=None, size=(0, 0), alpha=255, image_string="",
                  font_data=("", BLACK, 30),
@@ -279,7 +278,7 @@ class SurfaceHelper:
             alpha (int): The alpha value of the surface.
             image_string (str): The string representation of the image (only for image surfaces).
             font_data (tuple): Tuple related to font surfaces (text, text_color, font_size).
-            surface_type (SurfaceType): The type of the surface (e.g., SurfaceType.IMAGE).
+            surface_type (str): The type of the surface (e.g., SurfaceType.IMAGE).
         """
         self.surface = surface
         if surface_id is None:
@@ -345,7 +344,7 @@ class SurfaceHelper:
         """Gets the type of the surface (e.g., SurfaceType.SURFACE).
 
         Returns:
-            SurfaceType: The type of the surface.
+            str: The type of the surface.
         """
         return self.surface_type
 
@@ -415,7 +414,7 @@ class SurfaceManager:
             alpha (int): The alpha value of the surface (transparency).
             image_string (str): String representation of the surface's image data.
             font_data (tuple): Tuple containing font information (text, color, size).
-            surface_type (SurfaceType): The type of the surface (e.g., SurfaceType.SURFACE).
+            surface_type (str): The type of the surface (e.g., SurfaceType.SURFACE).
 
         Returns:
             int: The identifier of the added surface.
@@ -988,17 +987,20 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
     same_z = masking_object.z == obj.z
 
     relation_distance = calculate_hierarchy_depth_difference(masking_object, obj)
-    # TODO: Rename "relation_bool"
-    # TODO: Make opaque_to_parent easier to understand, perhaps change the name etc.
+
     visually_blocked = object_index < masking_object_index
     if relation_distance is None:
-        relation_bool = visually_blocked
+        non_opaque_to_relative = False
     else:
         related_up = relation_distance > 0
-        related_down = related_up < 0
-        relation_bool = related_up and not masking_object.opaque_to_ancestor or related_down and not masking_object.opaque_to_descendant
+        related_down = relation_distance < 0
+        non_opaque_to_ancestor = related_up and not masking_object.opaque_to_ancestor
+        non_opaque_to_descendant = related_down and not masking_object.opaque_to_descendant
+        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant
 
-    dont_block_clicks = (same_z and not visually_blocked) or (same_z and relation_bool) or is_below or same_object or not_opaque or not has_rect
+    same_z_exception = same_z and (not visually_blocked or non_opaque_to_relative)
+
+    dont_block_clicks = same_z_exception or is_below or same_object or not_opaque or not has_rect
     return dont_block_clicks
 
 

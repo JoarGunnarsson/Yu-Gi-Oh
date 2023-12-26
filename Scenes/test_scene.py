@@ -36,10 +36,11 @@ class TestScene(Scene):
         movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
-                                            image_id=game_engine.load_image("./Images/card_back.png"),
+                                            image_id=game_engine.load_image(f"{card_image_location}card_back.png"),
                                             name="follow_mobile")
 
         movable_btn.add_child(follow_mobile)
+        follow_mobile.opaque_to_ancestor = True
 
         self.add_object(movable_btn)
         self.add_object(button)

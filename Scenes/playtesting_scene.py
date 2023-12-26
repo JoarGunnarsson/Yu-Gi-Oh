@@ -197,9 +197,7 @@ class Board(assets.GameObject):
         self.deck = []
         self.extra_deck = []
         for card_id in card_ids:
-            new_card = Card(card_id=card_id, parent=self)  # TODO: Adding self here causes an issue with the cards.
-            # TODO: Perhaps object_mask parent issue??? The issue is that they now share a parent, and are on the same
-            # z-value, so they will not be opaque. Fixable with opaque to siblind/opaque to ... attribute.
+            new_card = Card(card_id=card_id)
             card_start_location = utils.card_starting_location(new_card.card_type)
             new_card.location = card_start_location
             if card_start_location == "main_deck":
@@ -379,8 +377,7 @@ class Board(assets.GameObject):
             self.hand.insert(card_index, card)
 
         previous_location.remove(card)
-
-        card.new_location(location="hand")
+        card.new_location(location="hand", visible_after=self.is_card_visible(card))
 
     def move_to_field(self, card, previous_location):
         """Moves a card to the field and removes it from the previous location.
@@ -402,7 +399,7 @@ class Board(assets.GameObject):
             x, y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(x, y)
 
-        card.new_location(location="field")
+        card.new_location(location="field", visible_after=True)
 
     def find_index_by_x_value(self, card):
         """Calculates the index a card should have in the hand, based on its x-coordinate.
@@ -767,7 +764,7 @@ class Card(assets.MobileButton):
 
         self.create_large_card_button()
 
-    def new_location(self, location=None):
+    def new_location(self, location=None, visible_after=False):
         """Updates the card's location, destroying the card overlay and/or large card button if necessary.
 
         Args:
@@ -777,10 +774,10 @@ class Card(assets.MobileButton):
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        if self.parent is None:
+        """        if self.parent is None:
             visible_after = False
         else:
-            visible_after = self.parent.is_card_visible(self)
+            visible_after = self.parent.is_card_visible(self)"""
         visible_before = previous_location in ["hand", "field"]
         if visible_before and not visible_after:
             self.remove_large_card_button()
@@ -1406,7 +1403,7 @@ def generate_token():
     scene = game_engine.get_scene_manager().get_current_scene()
     board = utils.find_object_from_name(scene.get_objects(), "board")
 
-    token = Card(card_id="token", parent=board)
+    token = Card(card_id="token")
     token.static = True
     x, y = scene.get_default_position()  # TODO: Change this to something else?
     token.set_pos(x, y)
