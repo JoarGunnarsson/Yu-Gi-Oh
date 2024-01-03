@@ -951,28 +951,23 @@ def get_tick_manager():
     return game_state.tick_manager
 
 
-def find_object_root_and_distance(obj):
-    """Finds the root of the object's hierarchy tree and calculates the distance from the object to its root.
+def find_all_ancestors(current_object):
+    """Finds all ancestors of an object and returns it.
 
     Args:
-        obj: The object for which to find the root.
+        current_object: The object which ancestors should be returned.
 
     Returns:
-        Tuple: A tuple containing the root object and the distance from the input object to the root.
+        All non-None ancestors of current_object.
     """
-    current_object = obj
-    distance = 0
-    while True:
-        if hasattr(current_object, "parent") and current_object.parent is not None:
-            current_object = current_object.parent
-            distance += 1
-        else:
-            break
-    return current_object, distance
+    ancestors = []
+    while hasattr(current_object, "parent") and current_object is not None:
+        ancestors.append(current_object)
+        current_object = current_object.parent
+    return ancestors
 
 
 def calculate_hierarchy_depth_difference(obj1, obj2):
-    # TODO: This should be changed so it only finds a common root that is not none.
     """Calculates the distance between two objects in their hierarchy tree.
 
     Args:
@@ -984,11 +979,15 @@ def calculate_hierarchy_depth_difference(obj1, obj2):
         otherwise, returns None. If the difference is positive, the first object is higher up in the hierarchy
         than the second object.
     """
-    root1, d1 = find_object_root_and_distance(obj1)
-    root2, d2 = find_object_root_and_distance(obj2)
-    if root1 != root2:
-        return None
-    return d1 - d2
+
+    ancestors_of_obj1 = find_all_ancestors(obj1)
+    ancestors_of_obj2 = find_all_ancestors(obj2)
+
+    for ancestor in ancestors_of_obj2:
+        if ancestor in ancestors_of_obj1:
+            return ancestors_of_obj1.index(ancestor) - ancestors_of_obj2.index(ancestor)
+
+    return None
 
 
 def should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
@@ -1195,7 +1194,7 @@ def load_image(image_path):
 
 def get_fps():
     fps = environment.clock.get_fps()
-    return str(int(fps))
+    return str(round(float(fps), 2))
 
 
 environment = Environment()

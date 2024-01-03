@@ -623,8 +623,8 @@ class Border(GameObject):
                       parent=self, static=False, opaque=False, name="border_top_box")
 
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, z=z, width=self.width,
-                         height=self.thickness,
-                         color=self.color, alpha=self.alpha, parent=self, static=False, opaque=False, name="border_bottom_box")
+                         height=self.thickness, color=self.color, alpha=self.alpha, parent=self, static=False,
+                         opaque=False, name="border_bottom_box")
 
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness, z=z,
                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
@@ -693,10 +693,6 @@ class Border(GameObject):
         """
         side_boxes = [x for x in self.children if isinstance(x, Box)]
         return side_boxes
-
-    def process(self):
-        """Processes the Border, updating its position relative to its parent if applicable."""
-        self.update_position_relative_to_parent()
 
 
 class ButtonState:
