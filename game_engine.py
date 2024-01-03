@@ -472,7 +472,7 @@ class SurfaceManager:
         Returns:
             int: The identifier of the newly created surface.
         """
-        return self.create_surface(width, height, alpha, None)
+        return self.create_surface(width, height, alpha, -1)
 
     def restore_surface(self, surface_id):
         """Restores the surface with the given surface id.
@@ -646,9 +646,6 @@ class SurfaceManager:
         Returns:
             pygame.Surface: The font surface.
         """
-        if font_surface_id not in self.surface_objects:
-            self.restore_font_surface(font_surface_id)
-
         return self.surface_objects[font_surface_id].get_surface()
 
     def restore_font_surface(self, surface_id):

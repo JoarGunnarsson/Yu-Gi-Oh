@@ -1136,7 +1136,7 @@ class Button(Box):
         self.check_button_presses()
 
         if self.status == ButtonState.PRESSED and self.indicate_clicks:
-            self.indicator_alpha = 30
+            self.indicator_alpha = 100
         elif self.status == ButtonState.HOVER and self.indicate_hover:
             self.indicator_alpha = 80
         elif self.status == ButtonState.NORMAL:
@@ -1145,12 +1145,13 @@ class Button(Box):
     def get_display_surface(self):
         surf, rect = super().get_display_surface()
 
-        temporary_surface_id = game_engine.get_surface_manager().create_temporary_surface(self.width,
-                                                                                          self.height,
-                                                                                          self.indicator_alpha)
-        indicator_surface = game_engine.get_surface_manager().fetch_surface(temporary_surface_id)
-        indicator_surface.fill(self.indicator_color)
-        surf.blit(indicator_surface, (0, 0))
+        if self.indicator_alpha != 0:
+            temporary_surface_id = game_engine.get_surface_manager().create_temporary_surface(self.width,
+                                                                                              self.height,
+                                                                                              self.indicator_alpha)
+            indicator_surface = game_engine.get_surface_manager().fetch_surface(temporary_surface_id)
+            indicator_surface.fill(self.indicator_color)
+            surf.blit(indicator_surface, (0, 0))
 
         return surf, rect
 

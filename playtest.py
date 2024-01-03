@@ -10,16 +10,7 @@ import pygame
 
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
 
-# TODO: Find a way to highlight buttons even when they use images.
-# could work with always highlighting a border around the button, or using a transparent white layer above the button.
-
-# TODO: Fix classes, functions etc so that things work without knowing how everything works in detail.
-# That is, fix the api, so that you can create a new scene easily.
-
 # TODO: Make small_card_overlay into a sub-class of Overlay?
-
-# TODO: Make button colors easier to use. Specify one main color, and then the highlighting is done either by
-# opacity or increasing (or decreasing) the brightness by a certain amount.
 
 # TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
 
@@ -36,6 +27,10 @@ import pygame
 # TODO: Improve utils file structure, move change_overlay_limits into a method.
 
 # TODO: Perhaps merge the card lists of the board to a single list, instead using an Enum to set the location.
+
+# TODO: Change the file structure further, so that assets can be imported without creating a game window?
+
+# TODO: Fix the remove_on_external_clicks functionality -> GameScript.
 
 if __name__ == "__main__":
     pygame.init()
