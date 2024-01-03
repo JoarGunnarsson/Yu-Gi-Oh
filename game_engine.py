@@ -861,6 +861,7 @@ class Scene:
         """
         object_index = self.processing_order.index(obj)
         blocking_object_list = []
+
         for masking_object_index, masking_object in enumerate(self.processing_order):
             if should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
                 continue
@@ -971,6 +972,7 @@ def find_object_root_and_distance(obj):
 
 
 def calculate_hierarchy_depth_difference(obj1, obj2):
+    # TODO: This should be changed so it only finds a common root that is not none.
     """Calculates the distance between two objects in their hierarchy tree.
 
     Args:
@@ -1002,9 +1004,17 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
         bool: True if the clicks of the first object should be blocked by the second object, False otherwise.
     """
     same_object = masking_object == obj
+    if same_object:
+        return True
     not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
+    if not_opaque:
+        return True
     has_rect = hasattr(masking_object, "get_rect")
+    if not has_rect:
+        return True
     is_below = masking_object.z < obj.z
+    if is_below:
+        return True
     same_z = masking_object.z == obj.z
 
     relation_distance = calculate_hierarchy_depth_difference(masking_object, obj)
@@ -1023,7 +1033,7 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
 
     same_z_exception = same_z and non_opaque_to_relative
 
-    dont_block_clicks = same_z_exception or is_below or same_object or not_opaque or not has_rect
+    dont_block_clicks = same_z_exception
     return dont_block_clicks
 
 
@@ -1181,6 +1191,11 @@ def process_current_scene():
 def load_image(image_path):
     """Loads the image with the given image_path."""
     return get_surface_manager().load_image(image_path)
+
+
+def get_fps():
+    fps = environment.clock.get_fps()
+    return str(int(fps))
 
 
 environment = Environment()

@@ -428,7 +428,8 @@ class Box(GameObject):
     """
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
-                 text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
+                 text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, opaque=True,
+                 name=None):
         """Initializes a Box object.
 
         Args:
@@ -444,12 +445,13 @@ class Box(GameObject):
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
             update_text_func (callable): The function responsible for updating the box text.
-            parent: The parent object to which this object is attached.
-            static (bool): Indicates whether the object is static (does not move together with its parent).
-            name (str): The name of the object.
+            parent: The parent object to which this box is attached.
+            static (bool): Indicates whether the box is static (does not move together with its parent).
+            opaque (bool): Indicates whether the box is capable of blocking clicks.
+            name (str): The name of the box.
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
-                         displayable=True, name=name)
+                         displayable=True, opaque=opaque, name=name)
         self.color = color
         self.image_id = None
         self.source_image_id = source_image_id
@@ -457,12 +459,11 @@ class Box(GameObject):
         self.text = text
         self.text_color = text_color
         self.font_size = font_size
-        if self.text == "":
+        if self.text == "" and update_text_func is None:
             self.font_surface_id = None
         else:
             self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                          self.font_size)
-
         self.update_text_func = update_text_func
 
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
@@ -619,19 +620,19 @@ class Border(GameObject):
         self.thickness = thickness
         top_box = Box(x=self.x, y=self.y, z=z, width=self.width, height=self.thickness, color=self.color,
                       alpha=self.alpha,
-                      parent=self, static=False, name="border_top_box")
+                      parent=self, static=False, opaque=False, name="border_top_box")
 
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, z=z, width=self.width,
                          height=self.thickness,
-                         color=self.color, alpha=self.alpha, parent=self, static=False, name="border_bottom_box")
+                         color=self.color, alpha=self.alpha, parent=self, static=False, opaque=False, name="border_bottom_box")
 
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness, z=z,
                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                       static=False, name="border_left_box")
+                       static=False, opaque=False, name="border_left_box")
 
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, z=z, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                        static=False, name="border_right_box")
+                        static=False, opaque=False, name="border_right_box")
 
         side_boxes = [top_box, bottom_box, left_box, right_box]
 

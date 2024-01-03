@@ -152,6 +152,10 @@ class PlaytestingScene(game_engine.Scene):
         for _ in range(5):
             board.draw()
 
+        fps_button = assets.Box(x=environment.get_width() - 100, y=0, z=100, width=100,
+                                update_text_func=game_engine.get_fps,
+                                name="fps_button")
+        self.add_object(fps_button)
         return self
 
 
@@ -571,13 +575,13 @@ class Card(assets.MobileButton):
             parent: The parent object.
         """
         card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
-        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=True,
+        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,
                          image_id=card_image_id,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_overlay)
 
-        self.opaque_to_descendant = True
+        self.opaque_to_sibling = True
         self.card_type = self.get_card_type()
 
         self.location = None
@@ -694,7 +698,7 @@ class Card(assets.MobileButton):
             self.clamp_pos(field_box)
 
     def check_deck_collision(self, board, current_location):
-        """Checks collision with the deck or extra deck buttons.
+        """Checks collision with the deck or extra deck buttons, and adds the card to the respective deck if true.
 
         Args:
             board: The board object.
@@ -723,7 +727,6 @@ class Card(assets.MobileButton):
     def process(self):
         """Processes the card, updating its state."""
         super().process()
-
         self.update_in_hand()
         self.update_on_field()
 
@@ -753,7 +756,7 @@ class Card(assets.MobileButton):
         self.remove_card_overlay()
 
         visible_before = previous_location in ["hand", "field"]
-        if visible_before and not visible_after:
+        if not visible_after:
             self.remove_large_card_button()
 
         if visible_after and not visible_before:
@@ -764,6 +767,7 @@ class Card(assets.MobileButton):
         self.set_left_click_function(self.start_movement)
         self.set_size(standard_card_width, standard_card_height)
         self.set_z(1)
+        self.parent = None
 
     def create_card_overlay(self):
         """Creates an overlay for the card. Includes buttons for sending the card to the gy, field, deck, hand, etc."""
@@ -993,28 +997,7 @@ class LargeCardOverlay(assets.Overlay):
     """Overlay for displaying the image of a card in an easily readable way.
 
     Attributes:
-        x (int): The x-coordinate of the overlay.
-        y (int): The y-coordinate of the overlay.
-        z (float): The z-coordinate of the overlay.
-        width (int): The width of the overlay.
-        height (int): The height of the overlay.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        static (bool): Indicates whether the overlay is static (does not move together with its parent).
-        name (str): The name of the overlay.
-        destroyed (bool): Indicates whether the object has been destroyed.
-        parent: Parent object to which this overlay is attached.
-        close_btn_size (int): Size of the close button on the overlay.
-        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        external_process_function (callable): External function to be called during the overlay's processing.
-        external_process_arguments: Arguments for the external process function.
-        displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the overlay.
-        children (list): List of child objects.
-        rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
+        card (assets.Card): The card the button Overlay should display.
     """
 
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
@@ -1060,35 +1043,13 @@ class CardOverlay(assets.Overlay):
     """A class representing an overlay of cards.
 
         Attributes:
-        x (int): The x-coordinate of the overlay.
-        y (int): The y-coordinate of the overlay.
-        z (float): The z-coordinate of the overlay.
-        width (int): The width of the overlay.
-        height (int): The height of the overlay.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        static (bool): Indicates whether the overlay is static (does not move together with its parent).
-        name (str): The name of the overlay.
-        destroyed (bool): Indicates whether the object has been destroyed.
-        parent: Parent object to which this overlay is attached.
-        close_btn_size (int): Size of the close button on the overlay.
-        close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
-        external_process_function (callable): External function to be called during the overlay's processing.
-        external_process_arguments: Arguments for the external process function.
-        displayable (bool): Indicates whether the object is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the overlay.
-        children (list): List of child objects.
-        rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
         card_list_function (callable): The function responsible for updating the card list of the overlay.
         cards_per_row (int): The number of cards to be displayed for each row.
         number_of_rows (int): The number of rows to be displayed.
         start_index (int): The index of the first displayed card.
         stop_index (int): The index of the last displayed cards.
-        card_list (list): The list containing the cards to be displayed on the overlay
-        cards (list): The list currently
+        card_list (list): The list containing the cards to be displayed on the overlay.
+        cards (list): The list currently in the overlay.
         """
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
@@ -1240,6 +1201,7 @@ class CardOverlay(assets.Overlay):
             List: A list of items to be processed.
         """
         items_to_be_processed = []
+
         items_to_be_processed.extend(self.get_box().schedule_processing())
         for btn in self.get_buttons():
             items_to_be_processed.extend(btn.schedule_processing())
@@ -1268,7 +1230,6 @@ class CardOverlay(assets.Overlay):
         self.update_card_list()
 
         self.update_card_positions()
-
         for j, card in enumerate(reversed(self.cards)):
             i = len(self.cards) - 1 - j
             if not self.is_card_visible(i=i):
