@@ -425,6 +425,14 @@ class SurfaceManager:
         self.surface_objects[surface_object.get_surface_id()] = surface_object
         return surface_object.get_surface_id()
 
+    def remove_surface(self, surface_id):
+        """Removes the surface associated with the provided surface id.
+
+        Args:
+            surface_id (int): The id of the surface.
+        """
+        del self.surface_objects[surface_id]
+
     def fetch_surface(self, surface_id):
         """Returns the Pygame surface object associated with the given surface identifier.
 
@@ -437,7 +445,7 @@ class SurfaceManager:
         return self.surface_objects[surface_id].get_surface()
 
     def create_surface(self, width, height, alpha=255, surface_id=None):
-        """Creates a new surface with the specified width and height.
+        """Creates a new surface.
 
         Args:
             width (int): The width of the new surface.
@@ -452,6 +460,19 @@ class SurfaceManager:
         surface.set_alpha(alpha)
         surface_id = self.add_surface(surface, surface_id=surface_id, alpha=alpha)
         return surface_id
+
+    def create_temporary_surface(self, width, height, alpha=255):
+        """Creates a new temporary surface.
+
+        Args:
+            width (int): The width of the new surface.
+            height (int): The height of the new surface.
+            alpha (int): The alpha value of the new surface (transparency).
+
+        Returns:
+            int: The identifier of the newly created surface.
+        """
+        return self.create_surface(width, height, alpha, None)
 
     def restore_surface(self, surface_id):
         """Restores the surface with the given surface id.
@@ -990,15 +1011,17 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
 
     visually_blocked = object_index < masking_object_index
     if relation_distance is None:
-        non_opaque_to_relative = False
+        non_opaque_to_relative = not visually_blocked
     else:
         related_up = relation_distance > 0
         related_down = relation_distance < 0
+        siblings = relation_distance == 0
         non_opaque_to_ancestor = related_up and not masking_object.opaque_to_ancestor
         non_opaque_to_descendant = related_down and not masking_object.opaque_to_descendant
-        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant
+        non_opaque_to_sibling = siblings and not masking_object.opaque_to_sibling
+        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant or non_opaque_to_sibling
 
-    same_z_exception = same_z and (not visually_blocked or non_opaque_to_relative)
+    same_z_exception = same_z and non_opaque_to_relative
 
     dont_block_clicks = same_z_exception or is_below or same_object or not_opaque or not has_rect
     return dont_block_clicks

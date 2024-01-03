@@ -24,7 +24,7 @@ class PlaytestingScene(game_engine.Scene):
         Returns:
             Scene: The playtesting scene.
         """
-        self.background_color = GREY
+        self.background_color = DARK_GREY
 
         button_width = 200
         button_height = 100
@@ -35,11 +35,11 @@ class PlaytestingScene(game_engine.Scene):
         card_height = standard_card_width * card_aspect_ratio
 
         left_side_box = assets.Box(x=0, y=0, width=large_card_width + 2 * offset,
-                                   height=environment.get_height(), color=GREY, name="left_side_box")
+                                   height=environment.get_height(), color=DARK_GREY, name="left_side_box")
 
         right_side_box = assets.Box(x=environment.get_width() - side_width, width=side_width,
                                     height=environment.get_height(),
-                                    color=GREY,
+                                    color=DARK_GREY,
                                     name="right_side_box")
 
         field_box = assets.Box(x=left_side_box.x + left_side_box.width,
@@ -51,7 +51,7 @@ class PlaytestingScene(game_engine.Scene):
         hand_box = assets.Box(x=left_side_box.width + button_width,
                               y=environment.get_height() - int(card_height) - offset,
                               width=hand_box_width,
-                              height=int(card_height) + offset, color=GREY, name="hand_box")
+                              height=int(card_height) + offset, color=DARK_GREY, name="hand_box")
 
         hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width,
                                     height=hand_box.height,
@@ -175,8 +175,8 @@ class Board(assets.GameObject):
         children (list): List of child board.
         rect (pygame.Rect): Rectangular area occupied by the board.
         rotation_angle (int): Rotation angle of the board in degrees.
-        relative_x (int): The x-coordinate of the board in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the board in relation to it's parent, if applicable.
+        relative_x (int): The x-coordinate of the board in relation to its parent, if applicable.
+        relative_y (int): The y-coordinate of the board in relation to its parent, if applicable.
         name (str): The name of the board.
         scene: The scene to which the board belongs.
     """
@@ -268,7 +268,7 @@ class Board(assets.GameObject):
         if card_index is None:
             card_index = self.hand.index(card)
 
-        card_width = self.hand[0].width
+        card_width = self.hand[0].width  # TODO: Perhaps change this.
         hand_box = utils.find_object_from_name(self.scene.get_objects(), "hand_box")
         y_offset = (hand_box.get_rect().height - card.get_rect().height) // 2
         card_space = 10
@@ -555,37 +555,8 @@ def generate_board(scene, deck):
 
 class Card(assets.MobileButton):
     """A class representing cards.
+
     Attributes:
-        x (int): The x-coordinate of the button.
-        y (int): The y-coordinate of the button.
-        z (float): The z-coordinate of the button.
-        width (int): The width of the button.
-        height (int): The height of the button.
-        alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-        name (str): The name of the button.
-        destroyed (bool): Indicates whether the button has been destroyed.
-        parent: The parent object to which this button is attached.
-        static (bool): Indicates whether the button is static (does not move together with its parent).
-        displayable (bool): Indicates whether the button is visible.
-        opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same z-coordinate,
-            if the object is an ancestor to the button.
-        children (list): List of child objects.
-        rect (pygame.Rect): The rectangular area occupied by the object.
-        rotation_angle (int): The rotation angle of the button in degrees.
-        relative_x (int): The x-coordinate of the button in relation to its parent, if applicable.
-        relative_y (int): The y-coordinate of the button in relation to its parent, if applicable.
-        text (str): The string to be displayed on the button.
-        text_color (tuple): The color of the text.
-        font_size (int): The font size of the text.
-        font_surface_id (int): The id corresponding to the font surface of the button.
-        update_text_func (callable): The function responsible for updating the button text.
-        surface_id (int): The id corresponding to the surface of the button.
-        left_click_function (callable): Function to be called on left-click.
-        right_click_function (callable): Function to be called on right-click.
-        moving (bool): Indicates whether the button is currently moving.
-        click_x (int): The x-coordinate of the mouse click in the button's coordinate system.
-        click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
         card_type (str): A string representing the type of card (e.g Fusion, Xyz, etc.).
         location (str): A string representing the current location of the card.
     """
@@ -600,7 +571,9 @@ class Card(assets.MobileButton):
             parent: The parent object.
         """
         card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
-        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, image_id=card_image_id,
+        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=True,
+                         indicate_clicks=False,
+                         image_id=card_image_id,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_overlay)
 
@@ -680,7 +653,7 @@ class Card(assets.MobileButton):
         """Updates the card's state when in the hand."""
         scene = game_engine.get_scene_manager().get_current_scene()
         board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
-        if board is None or self not in board.hand:
+        if board is None or self not in board.get_visible_hand():
             return
         hand_box = utils.find_object_from_name(scene.get_objects(), "hand_box")
         if hand_box is None:
@@ -709,8 +682,11 @@ class Card(assets.MobileButton):
         in_hand = hand_box.get_rect().colliderect(self.get_rect())
         can_be_added_to_hand = utils.card_starting_location(self.card_type) == "main_deck"
         if in_hand and can_be_added_to_hand:
-            board.add_to_hand(self, board.field)
-            return
+            self.set_rotation(0)
+            in_hand_again = hand_box.get_rect().colliderect(self.get_rect())
+            if in_hand_again:
+                board.add_to_hand(self, board.field)
+                return
 
         if self.check_deck_collision(board, board.field):
             return
@@ -768,16 +744,14 @@ class Card(assets.MobileButton):
         """Updates the card's location, destroying the card overlay and/or large card button if necessary.
 
         Args:
-            location: The new location of the card.
+            location (str): The new location of the card.
+            visible_after (bool): Indicates if the card will be visible at its new location.
         """
         previous_location = self.location
         self.location = location
         self.set_rotation(0)
         self.remove_card_overlay()
-        """        if self.parent is None:
-            visible_after = False
-        else:
-            visible_after = self.parent.is_card_visible(self)"""
+
         visible_before = previous_location in ["hand", "field"]
         if visible_before and not visible_after:
             self.remove_large_card_button()
@@ -1039,8 +1013,8 @@ class LargeCardOverlay(assets.Overlay):
             if the object is an ancestor to the overlay.
         children (list): List of child objects.
         rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
     """
 
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
@@ -1106,8 +1080,8 @@ class CardOverlay(assets.Overlay):
             if the object is an ancestor to the overlay.
         children (list): List of child objects.
         rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
         card_list_function (callable): The function responsible for updating the card list of the overlay.
         cards_per_row (int): The number of cards to be displayed for each row.
         number_of_rows (int): The number of rows to be displayed.

@@ -13,6 +13,7 @@ import utility_functions as utils
 
 class GameScript:
     """Represents a game script."""
+
     def __init__(self):
         pass
 
@@ -37,19 +38,22 @@ class GameObject:
         displayable (bool): Indicates whether the object is visible.
         opaque (bool): Indicates whether the object blocks objects earlier in the processing order from
             being clicked.
-        opaque_to_ancestor (bool): Indicates whether the object should block clicks for objects that are it's ancestor
+        opaque_to_ancestor (bool): Indicates whether the object should block clicks for objects that are its ancestor
             (is closer to the shared root parent than the other object) if they share the same z-value.
-        opaque_to_descendant (bool): Indicates whether the object should block clicks for objects that are it's
-            descendant (is further or has the same distance from the shared root parent than the other object)
-            if they share the same z-value.
+        opaque_to_descendant (bool): Indicates whether the object should block clicks for objects that are its
+            descendant (is further from the shared root parent than the other object) if they share the same z-value.
+        opaque_to_sibling (bool): Indicates whether the object should block clicks for objects that are its
+            siblings (is the same distance from the shared root parent as the other object) if they share the same
+            z-value.
         children (list): List of child objects.
         rect (pygame.Rect): Rectangular area occupied by the object.
         rotation_angle (int): Rotation angle of the object in degrees.
-        relative_x (int): The x-coordinate of the object in relation to it's parent, if applicable.
-        relative_y (int): The y-coordinate of the object in relation to it's parent, if applicable.
+        relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
+        relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
    """
+
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
-                 opaque_to_ancestor=True, opaque_to_descendant=True,
+                 opaque_to_ancestor=True, opaque_to_descendant=False, opaque_to_sibling=False,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -65,8 +69,12 @@ class GameObject:
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
             opaque (bool): Indicates whether the object blocks objects below it from being clicked.
-            opaque_to_ancestor (bool): Indicates whether the object blocks objects below it or with the same
-                z-coordinate, if the object  is an ancestor to the game object.
+            opaque_to_ancestor (bool): Indicates whether the object should block clicks for its ancestors, if they
+            share the same z-value.
+            opaque_to_descendant (bool):Indicates whether the object should block clicks for its descendants, if they
+            share the same z-value.
+            opaque_to_ancestor (bool): Indicates whether the object should block clicks for its siblings, if they
+            share the same z-value.
         """
         self.opaque_to_relative = False
         self.x = x
@@ -86,6 +94,7 @@ class GameObject:
         self.opaque = opaque
         self.opaque_to_ancestor = opaque_to_ancestor
         self.opaque_to_descendant = opaque_to_descendant
+        self.opaque_to_sibling = opaque_to_sibling
         if self.parent is None:
             self.relative_x, self.relative_y = 0, 0
         else:
@@ -100,28 +109,28 @@ class GameObject:
         return self.rect
 
     def set_x(self, x):
-        """Sets the x-coordinate of the object and updates its position relative to it's parent (if applicable), as well
+        """Sets the x-coordinate of the object and updates its position relative to its parent (if applicable), as well
         as updates the position of its children.
 
         Args:
             x (int): The new x-coordinate of the object.
         """
         self.x = x
-        self.update_position()
+        self.propagate_new_position()
 
     def set_y(self, y):
-        """Sets the x-coordinate of the game object and updates its position relative to it's parent (if applicable),
+        """Sets the x-coordinate of the game object and updates its position relative to its parent (if applicable),
         as well as updates the position of its children.
 
         Args:
             y (int): The new y-coordinate of the object.
         """
         self.y = y
-        self.update_position()
+        self.propagate_new_position()
 
-    def update_position(self):
-        """Updates the position of the game object its related attributes, as well as its children's positions,
-        after either it's x or y coordinate has changed."""
+    def propagate_new_position(self):
+        """Updates the position of the game objects related attributes, as well as its children's positions,
+        after either the objects x or y coordinate has changed."""
         self.get_rect().update(self.x, self.y, self.width, self.height)
         self.update_relative_position()
         for child in self.children:
@@ -139,14 +148,6 @@ class GameObject:
         self.z = z
         for child in self.children:
             child.shift_z(delta_z)
-
-    def propagate_new_position(self):
-        """Updates the position of the game object."""
-        self.get_rect().update(self.x, self.y, self.width, self.height)
-        self.update_relative_position()
-        for child in self.children:
-            if hasattr(child, "update_position_relative_to_parent"):
-                child.update_position_relative_to_parent()
 
     def set_pos(self, x, y):
         """Sets the x and y coordinates of the game object.
@@ -373,20 +374,27 @@ class GameObject:
         Returns:
             list: List of game objects to be processed in the game loop.
         """
-        items_to_be_processed = [self]  # Potential source for error: This used to be at the end of the function.
+        items_to_be_processed = []
         for child in self.children:
+            if hasattr(child, "update_position"):
+                child.update_position()
             items_to_be_processed.extend(child.schedule_processing())
 
+        items_to_be_processed.append(self)
         items_to_be_processed.sort(key=lambda x: x.z)
         return items_to_be_processed
 
     def process(self):
-        """Process the game object, updating its position relative to its parent if applicable."""
+        """Processes the game object. Additional functionality to be implemented in child classes."""
+        self.update_position()
+
+    def update_position(self):
+        """Updates the game object, updating its position relative to its parent if applicable."""
         if self.parent is not None and not self.static:
             self.update_position_relative_to_parent()
 
     def get_displayable_objects(self):
-        """Gets a list of displayable game objects corresponding to the game object itself or it's children.
+        """Gets a list of displayable game objects corresponding to the game object itself or its children.
 
         Returns:
             list: List of displayable game objects.
@@ -418,6 +426,7 @@ class Box(GameObject):
         update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
+
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, name=None):
         """Initializes a Box object.
@@ -792,6 +801,10 @@ class Button(Box):
     """A customizable button with various interactive features, such as click and hover events.
 
     Attributes:
+        indicator_color (tuple): The color used for indicating if the button is hovered over or clicked.
+        indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
+        indicate_clicks (bool): Indicates if the button should change appearance when it is clicked.
+        indicator_alpha (int): The alpha-value to be used on the indicator surface, if applicable.
         left_click_function (callable): The function to be called when the button is left-clicked.
         left_click_args (iterable): The arguments to be passed to the left click function.
         left_hold_function (callable): The function to be called when the button is left-held.
@@ -807,7 +820,8 @@ class Button(Box):
     """
 
     # TODO: Change left_click_args etc. to args and kwargs.
-    def __init__(self, x=0, y=0, z=1, width=200, height=120, colors=None, alpha=255, image_id=None, text="",
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
+                 indicate_clicks=True, alpha=255, image_id=None, text="",
                  font_size=40, text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
                  left_hold_args=None, right_click_function=None, right_click_args=None, right_hold_function=None,
@@ -821,7 +835,10 @@ class Button(Box):
             z (float): The z-coordinate of the button.
             width (int): The width of the button.
             height (int): The height of the button.
-            colors (dict): Dictionary containing color information for different button states.
+            color (tuple): The color of the button
+            indicator_color (tuple): The color used for indicating if the button is hovered over or clicked.
+            indicate_hover (bool);
+            indicate_clicks (bool):
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
@@ -845,13 +862,6 @@ class Button(Box):
                 (default is None).
             external_process_arguments: Arguments for the external process function (default is None).
         """
-
-        # TODO: Perhaps change the format for the colors, use a list or something.
-        standard_colors = {ButtonState.NORMAL: (100, 100, 100),
-                           ButtonState.HOVER: (150, 150, 150),
-                           ButtonState.PRESSED: (200, 200, 200)}
-        if colors is None:
-            colors = standard_colors
 
         if external_process_arguments is None:
             self.external_process_arguments = []
@@ -892,7 +902,7 @@ class Button(Box):
             self.key_functions = {}
         else:
             self.key_functions = key_functions
-        super().__init__(x=x, y=y, z=z, width=width, height=height, color=colors[ButtonState.NORMAL], alpha=alpha,
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
                          source_image_id=image_id, text=text, font_size=font_size, text_color=text_color, parent=parent,
                          static=static, name=name)
 
@@ -900,8 +910,6 @@ class Button(Box):
         self.left_hold_function = left_hold_function
         self.right_click_function = right_click_function
         self.right_hold_function = right_hold_function
-
-        self.colors = colors
 
         self.static = False
 
@@ -914,8 +922,10 @@ class Button(Box):
                         name="btn_border")
         self.add_child(border)
 
-        self.indicator_id = game_engine.get_surface_manager().create_surface(self.width, self.height, 0)
-        self.indicator_color = WHITE
+        self.indicator_color = indicator_color
+        self.indicate_hover = indicate_hover
+        self.indicate_clicks = indicate_clicks
+        self.indicator_alpha = 0
 
     def get_border(self):
         """Gets the border object associated with the button.
@@ -944,15 +954,6 @@ class Button(Box):
         super().set_height(height)
         if self.get_border() is not None:
             self.get_border().set_height(height)
-
-    def set_colors(self, colors):
-        """Sets the colors of the button for the different states.
-
-        Args:
-            colors (dict): Dictionary containing color information for the different button states.
-        """
-        super().set_color(self.colors[self.status])
-        self.colors = colors
 
     def set_left_click_function(self, new_function, new_arguments=None):
         """Sets the function to be called when the button is left-clicked.
@@ -1127,7 +1128,7 @@ class Button(Box):
             self.status = ButtonState.NORMAL
 
     def process(self):
-        """Process the button, updating its click_detector checking for click-events and updating it's color."""
+        """Process the button, updating its click_detector checking for click-events and updating its color."""
         if self.external_process_function is not None:
             self.external_process_function(*self.external_process_arguments)
 
@@ -1137,25 +1138,24 @@ class Button(Box):
 
         self.check_button_presses()
 
-        self.set_color(self.colors[self.status])
+        if self.status == ButtonState.PRESSED and self.indicate_clicks:
+            self.indicator_alpha = 30
+        elif self.status == ButtonState.HOVER and self.indicate_hover:
+            self.indicator_alpha = 80
+        elif self.status == ButtonState.NORMAL:
+            self.indicator_alpha = 0
 
     def get_display_surface(self):
         surf, rect = super().get_display_surface()
-        # TODO: The following is only a test for how indication could work for buttons. Would need to be implemented
-        if hasattr(self, "indicator_id"):
-            if self.status == ButtonState.PRESSED:
-                indicator_alpha = 150
-            elif self.status == ButtonState.HOVER:
-                indicator_alpha = 125
-            else:
-                indicator_alpha = 0
-            indicator_surface = game_engine.get_surface_manager().fetch_surface(self.indicator_id)
-            indicator_surface.set_alpha(indicator_alpha)
-            indicator_surface.fill(self.indicator_color)
-            surf.blit(indicator_surface, (0, 0))
+
+        temporary_surface_id = game_engine.get_surface_manager().create_temporary_surface(self.width,
+                                                                                          self.height,
+                                                                                          self.indicator_alpha)
+        indicator_surface = game_engine.get_surface_manager().fetch_surface(temporary_surface_id)
+        indicator_surface.fill(self.indicator_color)
+        surf.blit(indicator_surface, (0, 0))
 
         return surf, rect
-
 
 
 class MobileButton(Button):
@@ -1167,7 +1167,9 @@ class MobileButton(Button):
         click_y (int): The y-coordinate of the mouse click in the button's coordinate system.
     """
 
-    def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), alpha=255, static=False,
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), indicator_color=WHITE,
+                 indicate_hover=True,
+                 indicate_clicks=False, alpha=255, static=False,
                  image_id=None, text="", font_size=40,
                  text_color=BLACK, name=None, parent=None, left_trigger_keys=None, left_hold_function=None,
                  left_hold_args=None, right_trigger_keys=None,
@@ -1182,6 +1184,9 @@ class MobileButton(Button):
             width (int): The width of the button.
             height (int): The height of the button.
             color (tuple): The color of the button.
+            indicator_color (tuple): The color to be used to indicate if the button is hovered over or pressed.
+            indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
+            indicate_clicks (bool): Indicates if the button should change appearance when it is clicked.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             static (bool): Indicates whether the button is static (does not move together with its parent).
             image_id (int): The id of the image used for the button (default is None).
@@ -1204,11 +1209,11 @@ class MobileButton(Button):
             external_process_arguments: Arguments for the external process function (default is None).
         """
 
-        colors = {ButtonState.NORMAL: color, ButtonState.HOVER: color, ButtonState.PRESSED: color}
         self.moving = False
         self.click_x = None
         self.click_y = None
-        super().__init__(x=x, y=y, z=z, width=width, height=height, colors=colors, alpha=alpha, image_id=image_id,
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicator_color=indicator_color,
+                         indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha, image_id=image_id,
                          text=text, font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=left_hold_function,
@@ -1219,15 +1224,15 @@ class MobileButton(Button):
                          external_process_arguments=external_process_arguments)
         super().set_require_continuous_hovering(False)
 
-    def process(self):
-        """Processes the mobile button, resetting the attributes related to movement if the button is not being
-         left-held."""
+    def update_position(self):
+        """Updates the mobile buttons position."""
+
         if not self.click_detector.left_clicked_long:
             self.moving = False
             self.click_x, self.click_y = None, None
         else:
             self.move()
-        super().process()
+        super().update_position()
 
     def move(self):
         """Handles the movement of the mobile button."""
@@ -1345,6 +1350,7 @@ class ConfirmationOverlay(Overlay):
     Attributes:
         Inherits all attributes from the Overlay class.
     """
+
     def __init__(self, x=0, y=0, yes_button_function=None, args=None):
         """
         Creates the Confirmation Overlay object.

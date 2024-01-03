@@ -1,7 +1,8 @@
 import os
 FPS = 30
 BLACK = (0, 0, 0)
-GREY = (50, 50, 50)
+DARK_GREY = (50, 50, 50)
+GREY = (100, 100, 100)
 LIGHT_GREY = (169, 169, 169)
 WHITE = (255, 255, 255)
 SADDLE_BROWN = (139, 69, 19)
