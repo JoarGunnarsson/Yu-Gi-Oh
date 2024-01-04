@@ -1,5 +1,4 @@
-import decks
-from Scenes import main_menu_scene, playtesting_scene
+from Scenes import main_menu_scene
 import game_engine
 from game_engine import environment
 from constants import *
@@ -11,11 +10,7 @@ import pygame
 
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
 
-# TODO: Make small_card_overlay into a sub-class of Overlay?
-
 # TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
-
-# TODO: Fix the deck selection scene
 
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
@@ -24,8 +19,6 @@ import pygame
 
 # TODO: There are many "magic values", such as scene.name == "playtesting_scene", which has caused trouble before.
 # Fix this by for example using an Enum for scenes.
-
-# TODO: Improve utils file structure, move change_overlay_limits into a method.
 
 # TODO: Perhaps merge the card lists of the board to a single list, instead using an Enum to set the location.
 

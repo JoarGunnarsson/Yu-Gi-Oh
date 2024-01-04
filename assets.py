@@ -267,7 +267,7 @@ class GameObject:
         self.set_width(width)
         self.set_height(height)
 
-    def set_width_relative(self, delta_w):
+    def adjust_width(self, delta_w):
         """Change the width of the game object by a given amount.
 
         Args:
@@ -275,7 +275,7 @@ class GameObject:
         """
         self.set_width(self.width + delta_w)
 
-    def set_height_relative(self, delta_h):
+    def adjust_height(self, delta_h):
         """Change the height of the game object by a given amount.
 
         Args:
@@ -676,8 +676,8 @@ class Border(GameObject):
         width_difference = width - self.width
         side_boxes = self.get_side_boxes()
         side_boxes[3].shift_x(width_difference)
-        side_boxes[0].set_width_relative(width_difference)
-        side_boxes[1].set_width_relative(width_difference)
+        side_boxes[0].adjust_width(width_difference)
+        side_boxes[1].adjust_width(width_difference)
 
         super().set_width(width)
 
@@ -690,8 +690,8 @@ class Border(GameObject):
         height_difference = height - self.height
         side_boxes = self.get_side_boxes()
         side_boxes[1].shift_y(height_difference)
-        side_boxes[2].set_height_relative(height_difference)
-        side_boxes[3].set_height_relative(height_difference)
+        side_boxes[2].adjust_height(height_difference)
+        side_boxes[3].adjust_height(height_difference)
 
         super().set_height(height)
 

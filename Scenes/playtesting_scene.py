@@ -198,14 +198,14 @@ class Board(assets.GameObject):
         self.extra_deck = []
         for card_id in card_ids:
             new_card = Card(card_id=card_id, parent=self)
-            card_start_location = utils.card_starting_location(new_card.card_type)
+            card_start_location = new_card.card_starting_location()
             new_card.location = card_start_location
             if card_start_location == "main_deck":
                 self.deck.append(new_card)
             else:
                 self.extra_deck.append(new_card)
 
-        utils.card_sort_card_type(self.extra_deck)
+        card_sort_card_type(self.extra_deck)
 
         random.shuffle(self.deck)
         self.hand = []
@@ -604,7 +604,7 @@ class Card(assets.MobileButton):
         x = int(width_fraction * image.get_width())
         y = int(height_fraction * image.get_height())
         pixel_value = image.get_at((x, y))
-        best_match = utils.closest_color(card_colors, pixel_value)
+        best_match = closest_color(card_colors, pixel_value)
         return best_match
 
     def clamp_pos(self, rect):
@@ -652,6 +652,18 @@ class Card(assets.MobileButton):
         if self.get_rect().colliderect(hand_box.get_rect()):
             self.set_rotation(0)
 
+    def card_starting_location(self):
+        """Returns the starting location of the card based on its type.
+
+        Returns:
+            str: The starting location of the card (e.g., "main_deck" or "extra_deck").
+        """
+        if self.card_type in ["normal", "effect", "ritual", "spell", "trap"]:
+            return "main_deck"
+        elif self.card_type in ["fusion", "synchro", "xyz", "link"]:
+            return "extra_deck"
+        return None
+
     def update_in_hand(self):
         """Updates the card's state when in the hand."""
         scene = game_engine.get_scene_manager().get_current_scene()
@@ -683,7 +695,7 @@ class Card(assets.MobileButton):
             return
 
         in_hand = hand_box.get_rect().colliderect(self.get_rect())
-        can_be_added_to_hand = utils.card_starting_location(self.card_type) == "main_deck"
+        can_be_added_to_hand = self.card_starting_location() == "main_deck"
         if in_hand and can_be_added_to_hand:
             self.set_rotation(0)
             in_hand_again = hand_box.get_rect().colliderect(self.get_rect())
@@ -712,7 +724,7 @@ class Card(assets.MobileButton):
         on_the_deck = draw_btn.get_rect().colliderect(self.get_rect())
         on_the_extra_deck = extra_deck_btn.get_rect().colliderect(self.get_rect())
 
-        starting_location = utils.card_starting_location(self.card_type)
+        starting_location = self.card_starting_location()
 
         if on_the_deck and not self.moving and starting_location == "main_deck":
             board.add_to_the_deck(self, current_location)
@@ -798,7 +810,7 @@ class Card(assets.MobileButton):
         self.add_child(overlay)
         board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
         board.bump(self)
-        starting_location = utils.card_starting_location(self.card_type)
+        starting_location = self.card_starting_location()
         card_location = board.get_location(self)
 
         large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
@@ -1231,6 +1243,26 @@ class CardOverlay(assets.Overlay):
 
         return displayable_objects
 
+    def change_overlay_limits(self, change_in_limits):
+        """Changes the start index of the overlay within specified limits.
+
+        Args:
+            change_in_limits (int): The change in start index. A positive value moves down, and a negative value
+            moves up.
+        """
+        new_start_index = self.start_index + change_in_limits
+        new_stop_index = new_start_index + (self.number_of_rows - 1) * self.cards_per_row + 1
+        new_index_out_of_bounds = new_stop_index > len(self.cards)
+        if new_index_out_of_bounds and change_in_limits > 0:
+            return
+
+        elif new_start_index < 0:
+            self.start_index = 0
+
+        else:
+            self.start_index += change_in_limits
+            self.stop_index += change_in_limits
+
 
 def cards_in_deck_string(scene=None):
     """Generates a string indicating the number of cards in the deck for the specified scene.
@@ -1379,8 +1411,8 @@ def create_location_overlay(location_name, card_list_function):
                                   image_id=game_engine.load_image(card_image_location + "up_arrow.png"),
                                   name="scroll_up_btn",
                                   left_trigger_keys=["up"],
-                                  left_click_function=change_overlay_limits,
-                                  left_click_args=[overlay, -overlay.cards_per_row])
+                                  left_click_function=overlay.change_overlay_limits,
+                                  left_click_args=[-overlay.cards_per_row])
 
     scroll_down_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
                                     y=overlay.y + overlay_height - small_button_height - y_offset,
@@ -1389,30 +1421,73 @@ def create_location_overlay(location_name, card_list_function):
                                     image_id=game_engine.load_image(card_image_location + "down_arrow.png"),
                                     name="scroll_down_btn",
                                     left_trigger_keys=["down"],
-                                    left_click_function=change_overlay_limits,
-                                    left_click_args=[overlay, overlay.cards_per_row])
+                                    left_click_function=overlay.change_overlay_limits,
+                                    left_click_args=[overlay.cards_per_row])
 
     overlay.add_multiple_children([scroll_up_btn, scroll_down_btn])
     scene.add_object(overlay)
 
 
-def change_overlay_limits(overlay, change_in_limits):
-    """Changes the start index of an overlay within specified limits.
+def closest_color(color_dict, reference_color):
+    """Finds the closest color in a dictionary to a given color.
 
     Args:
-        overlay: The overlay object whose start index needs to be modified.
-        change_in_limits (int): The change in start index. A positive value moves forward, and a negative value moves
-        backward.
+        color_dict (dict): The dictionary mapping color names to RGB values.
+        reference_color (tuple): The RGB values of the color to match.
+
+    Returns:
+        str: The name of the color with the closest match in the dictionary.
+
+    Raises:
+        ValueError: If no good match for the color is found.
     """
-    new_start_index = overlay.start_index + change_in_limits
-    new_stop_index = new_start_index + (overlay.number_of_rows - 1) * overlay.cards_per_row + 1
-    new_index_out_of_bounds = new_stop_index > len(overlay.cards)
-    if new_index_out_of_bounds and change_in_limits > 0:
-        return
+    min_distance = 3 * 255 ** 2
+    saved_color_name = None
+    for color_name, color in color_dict.items():
+        color_distance = 0
+        for i in range(3):
+            color_distance += (color[i] - reference_color[i]) ** 2
+        if color_distance <= min_distance:
+            min_distance = color_distance
+            saved_color_name = color_name
 
-    elif new_start_index < 0:
-        overlay.start_index = 0
+    if saved_color_name is None:
+        raise ValueError("No good match for the color.")
+    return saved_color_name
 
-    else:
-        overlay.start_index += change_in_limits
-        overlay.stop_index += change_in_limits
+
+def card_sort_card_type(cards):
+    """Sorts a list of cards in-place based on their card type using insertion sort.
+
+    Args:
+        cards (list): The list of cards to be sorted.
+    """
+    i = 1
+    while i < len(cards):
+        temp_card = cards[i]
+        j = i - 1
+        while j >= 0 and card_type_int(cards[j]) > card_type_int(temp_card):
+            cards[j + 1] = cards[j]
+            j = j - 1
+        cards[j + 1] = temp_card
+        i = i + 1
+
+
+def card_type_int(card):
+    """Converts a card type string to an integer for sorting purposes.
+
+    Args:
+        card: The card object.
+
+    Returns:
+        int: The integer value representing the card type.
+
+    Raises:
+        ValueError: If the card type is not valid.
+    """
+    card_type = card.get_card_type()
+    card_type_order = ["normal", "effect", "spell",  "trap", "ritual", "xyz", "synchro", "fusion", "link", "token"]
+    for i, element in enumerate(card_type_order):
+        if card_type == element:
+            return i
+    raise ValueError(f"{card_type} is not a valid card type")

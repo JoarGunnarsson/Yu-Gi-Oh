@@ -2,6 +2,7 @@ from constants import *
 import os
 import pickle
 from pathlib import Path
+import utility_functions as utils
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -15,7 +16,7 @@ class Environment:
 
     Attributes:
         scale_factor (int): The scaling factor for the game window.
-        window_id (int): The id of the resizable game window.
+        window (pygame.Surface): The resizable game window.
         key_press (str): The key pressed during the current tick.
         width (int): The width of the game window.
         height (int): The height of the game window.
@@ -29,8 +30,7 @@ class Environment:
     def __init__(self):
         """Creates the Environment object."""
         self.scale_factor = 1
-        window = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
-        self.window_id = get_surface_manager().add_surface(window)
+        self.window = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
         self.key_press = None
         self.width = pygame.display.Info().current_w
         self.height = pygame.display.Info().current_h
@@ -223,9 +223,8 @@ class Environment:
     def draw_screen(self):
         """Draws the screen by scaling the surface and updating the window display."""
         screen = get_surface_manager().fetch_surface(self.screen_id)
-        window = get_surface_manager().fetch_surface(self.window_id)
-        resized_screen = pygame.transform.scale(screen, window.get_rect().size)
-        window.blit(resized_screen, (0, 0))
+        resized_screen = pygame.transform.scale(screen, self.window.get_rect().size)
+        self.window.blit(resized_screen, (0, 0))
         pygame.display.flip()
 
 
@@ -309,6 +308,7 @@ class SurfaceHelper:
         font_data (tuple): Tuple related to font surfaces (text, text_color, font_size).
         surface_type (str): The type of the surface (e.g SurfaceType.IMAGE).
     """
+
     def __init__(self, surface, surface_id=None, size=(0, 0), alpha=255, image_string="",
                  font_data=("", BLACK, 30),
                  surface_type=SurfaceType.SURFACE):
@@ -433,6 +433,7 @@ class SurfaceManager:
         image_path_id_dict (dict): Dictionary mapping image paths to surface IDs.
         surface_objects (dict): Dictionary to store SurfaceHelper objects.
     """
+
     # TODO: Need some way to remove surfaces that are no longer used.
     def __init__(self):
         """Initializes a SurfaceManager instance."""
@@ -961,6 +962,7 @@ class Scene:
         for obj in self.objects:
             if hasattr(obj, "get_displayable_objects"):
                 self.display_order.extend(obj.get_displayable_objects())
+                self.display_order.extend(obj.get_displayable_objects())
         self.display_order.sort(key=lambda x: x.z)
 
         # Display objects.
@@ -1137,16 +1139,16 @@ def schedule_end_of_tick_function(function, arguments):
 
 def start_tick():
     """Executes start-of-tick functions."""
-    execute_multiple_functions(game_state.tick_manager.start_of_tick_functions,
-                               game_state.tick_manager.start_of_tick_arguments)
+    utils.execute_multiple_functions(game_state.tick_manager.start_of_tick_functions,
+                                     game_state.tick_manager.start_of_tick_arguments)
     game_state.tick_manager.start_of_tick_functions = []
     game_state.tick_manager.start_of_tick_arguments = []
 
 
 def end_tick():
     """Executes end-of-tick functions and resets environment events."""
-    execute_multiple_functions(game_state.tick_manager.end_of_tick_functions,
-                               game_state.tick_manager.end_of_tick_arguments)
+    utils.execute_multiple_functions(game_state.tick_manager.end_of_tick_functions,
+                                     game_state.tick_manager.end_of_tick_arguments)
     game_state.tick_manager.end_of_tick_functions = []
     game_state.tick_manager.end_of_tick_arguments = []
 
@@ -1207,20 +1209,6 @@ def _load(save_number):
         get_surface_manager().load_surfaces(loaded_game_state)
         set_scene_manager(loaded_game_state.scene_manager)
         game_state.load_from_surface_manager()
-
-
-def execute_multiple_functions(functions, argument_list):
-    """Executes multiple functions with corresponding argument lists.
-
-    Args:
-        functions (list): List of functions to be executed.
-        argument_list (list): List of argument lists corresponding to the functions.
-    """
-    for i, function in enumerate(functions):
-        if isinstance(argument_list[i], dict):
-            function(**argument_list[i])
-        else:
-            function(*argument_list[i])
 
 
 def process_current_scene():
