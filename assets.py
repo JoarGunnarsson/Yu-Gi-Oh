@@ -598,6 +598,7 @@ class Box(GameObject):
             self.update_surfaces()
 
         if self.image_id is not None:
+            game_engine.get_surface_manager().reset_surface(self.surface_id)
             image = game_engine.get_surface_manager().fetch_image(self.image_id)
             game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(image, (0, 0))
         else:

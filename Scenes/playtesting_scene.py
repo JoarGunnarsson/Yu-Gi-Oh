@@ -570,6 +570,7 @@ class Card(assets.MobileButton):
             card_id (str): The ID of the card.
             parent: The parent object.
         """
+        # TODO: Enable loading either jpg or png or whatever images here.
         card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,

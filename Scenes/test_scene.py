@@ -11,6 +11,7 @@ class TestScene(Scene):
 
     Inherits all attributes from the Scene class, and implements the create_scene method.
     """
+
     def __init__(self):
         super().__init__(name="test_scene")
 
@@ -35,7 +36,8 @@ class TestScene(Scene):
         movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
-                                            image_id=game_engine.load_image(f"{card_image_location}card_back.png"),
+                                            image_id=game_engine.load_image(
+                                                card_image_location + "transparent_card.png"),
                                             name="follow_mobile")
 
         movable_btn.add_child(follow_mobile)
@@ -43,6 +45,10 @@ class TestScene(Scene):
 
         self.add_object(movable_btn)
         self.add_object(button)
+        transparent_box = assets.Box(x=600, y=600, source_image_id=game_engine.load_image(
+            card_image_location + "transparent_card.png"),
+                                     name="transparent_box")
+        self.add_object(transparent_box)
         return self
 
 

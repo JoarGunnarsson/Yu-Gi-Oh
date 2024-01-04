@@ -505,7 +505,7 @@ class SurfaceManager:
         Returns:
             int: The identifier of the newly created surface.
         """
-        surface = pygame.Surface((width, height))
+        surface = pygame.Surface((width, height), pygame.SRCALPHA)
         surface.set_alpha(alpha)
         surface_id = self.add_surface(surface, surface_id=surface_id, alpha=alpha)
         return surface_id
@@ -566,6 +566,10 @@ class SurfaceManager:
         rotated_and_scaled_surface = pygame.transform.smoothscale(rotated_surface, size)
         return rotated_and_scaled_surface
 
+    def reset_surface(self, surface_id):
+        self.fetch_surface(surface_id).fill((0, 0, 0, 0))
+        return surface_id
+
     def load_image(self, image_path):
         """Loads the image with the specified image path and returns its identifier.
 
@@ -578,7 +582,7 @@ class SurfaceManager:
         if image_path in self.image_path_id_dict:
             return self.image_path_id_dict[image_path]
 
-        image = pygame.image.load(image_path).convert_alpha()
+        image = pygame.image.load(image_path)
         image.set_alpha(255)
         image_id = self.set_image(image)
         self.image_path_id_dict[image_path] = image_id
@@ -637,7 +641,7 @@ class SurfaceManager:
         surface_object = self.surface_objects[image_id]
         image_string = surface_object.get_image_string()
         size = surface_object.get_size()
-        restored_image = pygame.image.fromstring(image_string, size, "RGBA").convert_alpha()
+        restored_image = pygame.image.fromstring(image_string, size, "RGBA")
         surface_object.set_surface(restored_image)
 
     def create_font(self, size):
@@ -961,7 +965,6 @@ class Scene:
         self.display_order = []
         for obj in self.objects:
             if hasattr(obj, "get_displayable_objects"):
-                self.display_order.extend(obj.get_displayable_objects())
                 self.display_order.extend(obj.get_displayable_objects())
         self.display_order.sort(key=lambda x: x.z)
 
