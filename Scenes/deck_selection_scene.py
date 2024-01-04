@@ -21,23 +21,36 @@ class DeckSelectionScene(Scene):
         Returns:
             Scene: The scene with deck selection options.
         """
+        self.background_color = GREY
 
-        deck_selection_overlay = assets.Overlay(z=1, width=environment.get_width(), height=environment.get_height(),
-                                                background_color=WHITE)
+        x_offset = (environment.get_width() - len(DECKS) * large_card_width) // (2 + len(DECKS)-1)
+        y_offset = environment.get_height() // 2 - large_card_height // 2
 
-        close_btn = utils.find_object_from_name(deck_selection_overlay.get_buttons(), "close_btn")
-        deck_selection_overlay.destroy_child(close_btn)
-
+        box = assets.Box(x=x_offset // 2, y=y_offset//2, width=environment.get_width() - x_offset,
+                         height=environment.get_height() - y_offset, color=SIENNA, include_border=True)
+        self.add_object(box)
+        instruction_box = assets.Box(x=environment.get_width() // 2 - 100, y=box.y + (y_offset - box.y) // 2 - 30//2,
+                                     width=100, height=30,
+                                     text="Choose a deck", color=SADDLE_BROWN, include_border=True)
+        self.add_object(instruction_box)
+        instruction_box.hug_text(15)
         for i, deck in enumerate(DECKS):
-            deck_btn = assets.Button(text=deck.name, x=i * large_card_width, y=500, z=1, width=large_card_width,
+            button_x = x_offset + i * (large_card_width + x_offset)
+            button_y = y_offset
+            deck_btn = assets.Button(x=button_x,
+                                     y=button_y, z=1,
+                                     width=large_card_width,
                                      height=large_card_height,
                                      left_click_function=self.create_object,
-                                     left_click_args=[assets.ConfirmationOverlay, i * large_card_width, 500,
+                                     left_click_args=[assets.ConfirmationOverlay, button_x, None,
                                                       choose_deck, [deck]])
             deck_btn.set_image(deck.get_image_id())
-            deck_selection_overlay.add_child(deck_btn)
-
-        self.add_object(deck_selection_overlay)
+            deck_text_box = assets.Box(x=deck_btn.x + deck_btn.width//2 - 100//2,
+                                       y=deck_btn.y + deck_btn.height + (box.y + box.height - deck_btn.y - deck_btn.height) // 2 - 40//2,
+                                       width=100, height=40, text=deck.name, include_border=True)
+            deck_text_box.hug_text(15)
+            self.add_object(deck_btn)
+            self.add_object(deck_text_box)
         return self
 
 

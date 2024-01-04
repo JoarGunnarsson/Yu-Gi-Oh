@@ -429,7 +429,7 @@ class Box(GameObject):
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
                  text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, opaque=True,
-                 name=None):
+                 include_border=False, name=None):
         """Initializes a Box object.
 
         Args:
@@ -448,6 +448,7 @@ class Box(GameObject):
             parent: The parent object to which this box is attached.
             static (bool): Indicates whether the box is static (does not move together with its parent).
             opaque (bool): Indicates whether the box is capable of blocking clicks.
+            include_border (bool): Determines if the box should add a visual border or not.
             name (str): The name of the box.
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
@@ -466,28 +467,37 @@ class Box(GameObject):
                                                                                          self.font_size)
         self.update_text_func = update_text_func
 
+        if include_border:
+            self.add_border()
+
         self.surface_id = game_engine.get_surface_manager().create_surface(self.width, self.height, self.alpha)
         self.set_alpha(self.alpha)
         self.update_surfaces()
         self.changed_recently = False
 
     def set_width(self, width):
-        """Sets the width of the Box and updates the Box's image and surface.
+        """Sets the width of the Box and updates the Box's image and surface,
+        as well as its border if applicable.
 
         Args:
             width (int): The new width of the Box.
         """
         super().set_width(width)
         self.changed_recently = True
+        if self.get_border() is not None:
+            self.get_border().set_width(width)
 
     def set_height(self, height):
-        """Sets the height of the Box and updates the Box's image and surface.
+        """Sets the height of the Box and updates the Box's image and surface,
+        as well as its border if applicable..
 
         Args:
             height (int): The new height of the Box.
         """
         super().set_height(height)
         self.changed_recently = True
+        if self.get_border() is not None:
+            self.get_border().set_height(height)
 
     def set_rotation(self, angle):
         """Sets the rotation angle of the Box and updates the Box's image and surface.
@@ -535,6 +545,19 @@ class Box(GameObject):
         self.alpha = alpha
         game_engine.get_surface_manager().fetch_surface(self.surface_id).set_alpha(self.alpha)
 
+    def get_border(self):
+        """Gets the border object associated with the button.
+
+        Returns:
+            Border: The border object of the button.
+        """
+        return utils.find_object_from_name(self.children, "btn_border")
+
+    def add_border(self):
+        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
+                        name="btn_border")
+        self.add_child(border)
+
     def hug_text(self, offset):
         """Adjusts the size of the Box to fit the text with an additional offset.
 
@@ -542,8 +565,13 @@ class Box(GameObject):
             offset (int): The additional offset to apply.
         """
         font_surface = game_engine.get_surface_manager().fetch_font_surface(self.font_surface_id)
-        self.set_width(font_surface.get_width() + 2 * offset)
-        self.set_height(font_surface.get_height() + 2 * offset)
+        new_width, new_height = font_surface.get_width() + 2 * offset, font_surface.get_height() + 2 * offset
+        x_difference = new_width - self.width
+        y_difference = new_height - self.height
+        self.set_width(new_width)
+        self.set_height(new_height)
+        self.shift_x(-x_difference // 2)
+        self.shift_y(-y_difference // 2)
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
@@ -620,19 +648,19 @@ class Border(GameObject):
         self.thickness = thickness
         top_box = Box(x=self.x, y=self.y, z=z, width=self.width, height=self.thickness, color=self.color,
                       alpha=self.alpha,
-                      parent=self, static=False, opaque=False, name="border_top_box")
+                      parent=self, static=False, opaque=False, include_border=False, name="border_top_box")
 
         bottom_box = Box(x=self.x, y=self.y + self.height - self.thickness, z=z, width=self.width,
                          height=self.thickness, color=self.color, alpha=self.alpha, parent=self, static=False,
-                         opaque=False, name="border_bottom_box")
+                         opaque=False, include_border=False, name="border_bottom_box")
 
         left_box = Box(x=self.x, y=self.y + self.thickness, width=self.thickness, z=z,
                        height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                       static=False, opaque=False, name="border_left_box")
+                       static=False, opaque=False, include_border=False, name="border_left_box")
 
         right_box = Box(x=self.x + self.width - self.thickness, y=self.y + self.thickness, z=z, width=self.thickness,
                         height=self.height - 2 * self.thickness, color=self.color, alpha=self.alpha, parent=self,
-                        static=False, opaque=False, name="border_right_box")
+                        static=False, opaque=False, include_border=False, name="border_right_box")
 
         side_boxes = [top_box, bottom_box, left_box, right_box]
 
@@ -903,7 +931,7 @@ class Button(Box):
             self.key_functions = key_functions
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
                          source_image_id=image_id, text=text, font_size=font_size, text_color=text_color, parent=parent,
-                         static=static, name=name)
+                         static=static, name=name, include_border=include_border)
 
         self.left_click_function = left_click_function
         self.left_hold_function = left_hold_function
@@ -917,41 +945,10 @@ class Button(Box):
 
         self.click_detector = ClickDetector(self.get_rect())
 
-        if include_border:
-            self.add_border()
-
         self.indicator_color = indicator_color
         self.indicate_hover = indicate_hover
         self.indicate_clicks = indicate_clicks
         self.indicator_alpha = 0
-
-    def get_border(self):
-        """Gets the border object associated with the button.
-
-        Returns:
-            Border: The border object of the button.
-        """
-        return utils.find_object_from_name(self.children, "btn_border")
-
-    def set_width(self, width):
-        """Sets the width of the button and its associated Border.
-
-        Args:
-            width (int): The new width of the button.
-        """
-        super().set_width(width)
-        if self.get_border() is not None:
-            self.get_border().set_width(width)
-
-    def set_height(self, height):
-        """Sets the height of the button and its associated Border.
-
-        Args:
-            height (int): The new height of the button.
-        """
-        super().set_height(height)
-        if self.get_border() is not None:
-            self.get_border().set_height(height)
 
     def set_left_click_function(self, new_function, new_arguments=None):
         """Sets the function to be called when the button is left-clicked.
@@ -1055,11 +1052,6 @@ class Button(Box):
             boolean (bool): True if continuous hovering is required, False otherwise.
         """
         self.click_detector.require_continuous_hovering = boolean
-
-    def add_border(self):
-        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
-                        name="btn_border")
-        self.add_child(border)
 
     def check_button_presses(self):
         """Check for button presses/key presses and executes corresponding functions. Can execute any combination of
@@ -1293,7 +1285,7 @@ class Overlay(GameObject):
         self.external_process_function = external_process_function
 
         box = Box(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=background_color,
-                  alpha=self.alpha, name="overlay_box")
+                  alpha=self.alpha, static=False, name="overlay_box")
         self.add_child(box)
 
         border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=BLACK, parent=self,
@@ -1368,8 +1360,16 @@ class ConfirmationOverlay(Overlay):
             args: The arguments to pass to the function.
         """
         z = 10
-        super().__init__(x=x, y=y, z=z, width=300, height=150, name="confirmation_overlay",
+        width = 300
+        height = 150
+        if x is None:
+            x = environment.get_mouse_position()[0] - width // 2
+        if y is None:
+            y = environment.get_mouse_position()[1] - height // 2
+        super().__init__(x=x, y=y, z=z,
+                         width=width, height=height, name="confirmation_overlay",
                          external_process_function=utils.destroy_on_external_clicks)
+
         allowed_click_rects = [self, [self.get_rect()]]
         self.external_process_arguments = allowed_click_rects
 
@@ -1379,19 +1379,21 @@ class ConfirmationOverlay(Overlay):
         button_size = 50
         offset = 7
         font_size = 30
-        text_box = Box(y=y + offset, z=self.z, text="Are you sure?")
+        text_box = Box(y=self.y + offset, z=self.z, static=False, text="Are you sure?", parent=self)
         text_box.hug_text(offset)
-        text_box.set_pos(x + (self.width - text_box.width) // 2, text_box.y)
+        text_box.set_pos(self.x + (self.width - text_box.width) // 2, text_box.y)
         self.add_child(text_box)
-        yes_btn = Button(x=x, y=y + self.height - offset - button_size, width=button_size, height=button_size,
+        yes_btn = Button(width=button_size, height=button_size,
                          text="Yes", font_size=font_size,
                          left_click_function=utils.execute_multiple_functions,
-                         left_click_args=[[self.destroy, yes_button_function], [[], args]], name="overlay_yes_btn")
+                         left_click_args=[[self.destroy, yes_button_function], [[], args]],
+                         left_trigger_keys=["return"], static=False, parent=self, name="overlay_yes_btn")
         yes_btn.hug_text(offset)
-        no_btn = Button(x=x + 50, y=y + self.height - offset - button_size, width=button_size,
+        no_btn = Button(width=button_size,
                         height=button_size,
                         text="No", font_size=font_size,
-                        left_click_function=self.destroy, left_trigger_keys=["escape"], name="overlay_no_btn")
+                        left_click_function=self.destroy, left_trigger_keys=["escape"], static=False, parent=self,
+                        name="overlay_no_btn")
         no_btn.hug_text(offset)
 
         buttons = [yes_btn, no_btn]
@@ -1400,4 +1402,4 @@ class ConfirmationOverlay(Overlay):
         for i, btn in enumerate(buttons):
             btn.set_z(self.z)
             self.add_child(btn)
-            btn.set_pos(x + (i + 1) * x_offset + i * button_size, btn.y)
+            btn.set_pos(self.x + (i + 1) * x_offset + i * button_size, y=self.y + self.height - offset - button_size)
