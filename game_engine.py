@@ -15,12 +15,11 @@ class Environment:
 
     Attributes:
         scale_factor (int): The scaling factor for the game window.
-        window (pygame.Surface): The resizable game window.
+        window_id (int): The id of the resizable game window.
         key_press (str): The key pressed during the current tick.
         width (int): The width of the game window.
         height (int): The height of the game window.
-        size (tuple): The size of the game window (width, height).
-        screen (pygame.Surface): The main drawing surface for the game.
+        screen_id (int): The id of the main drawing surface for the game.
         clock (pygame.time.Clock): The Pygame clock for managing frame rates.
         standard_offset (int): A standard offset value used in various calculations.
         events_last_tick (dict): Dictionary storing mouse and key events from the last tick.
@@ -30,12 +29,12 @@ class Environment:
     def __init__(self):
         """Creates the Environment object."""
         self.scale_factor = 1
-        self.window = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
+        window = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
+        self.window_id = get_surface_manager().add_surface(window)
         self.key_press = None
         self.width = pygame.display.Info().current_w
         self.height = pygame.display.Info().current_h
-        self.screen = pygame.Surface(self.get_resolution())
-        self.screen.set_alpha(255)
+        self.screen_id = get_surface_manager().create_surface(self.get_width(), self.get_height(), alpha=255)
         self.clock = pygame.time.Clock()
         self.standard_offset = 15
         self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
@@ -89,7 +88,15 @@ class Environment:
         """
         self.set_width(resolution[0])
         self.set_height(resolution[1])
-        self.screen = pygame.Surface(self.get_resolution())
+        self.screen_id = get_surface_manager().create_surface(self.get_width(), self.get_height())
+
+    def get_screen(self):
+        """Gets the screen surface belonging to the environment.
+
+        Returns:
+            pygame.Surface: The surface object belonging to the environment.
+        """
+        return get_surface_manager().fetch_surface(self.screen_id)
 
     def get_mouse_position(self):
         """Returns the current mouse position in screen-space coordinates, not window-space.
@@ -100,8 +107,8 @@ class Environment:
         x, y = pygame.mouse.get_pos()
         window_width = pygame.display.Info().current_w
         window_height = pygame.display.Info().current_h
-        scale_x = self.screen.get_width() / window_width
-        scale_y = self.screen.get_height() / window_height
+        scale_x = self.get_screen().get_width() / window_width
+        scale_y = self.get_screen().get_height() / window_height
         return int(x * scale_x), int(y * scale_y)
 
     def set_events_this_tick(self, events):
@@ -215,8 +222,10 @@ class Environment:
 
     def draw_screen(self):
         """Draws the screen by scaling the surface and updating the window display."""
-        resized_screen = pygame.transform.scale(self.screen, self.window.get_rect().size)
-        environment.window.blit(resized_screen, (0, 0))
+        screen = get_surface_manager().fetch_surface(self.screen_id)
+        window = get_surface_manager().fetch_surface(self.window_id)
+        resized_screen = pygame.transform.scale(screen, window.get_rect().size)
+        window.blit(resized_screen, (0, 0))
         pygame.display.flip()
 
 
@@ -939,7 +948,7 @@ class Scene:
 
     def process(self):
         """Process and display objects in the scene."""
-        environment.screen.fill(self.background_color)
+        environment.get_screen().fill(self.background_color)
         self.schedule_processing()
 
         # Process objects.
@@ -958,7 +967,7 @@ class Scene:
         for obj in self.display_order:
             if hasattr(obj, "get_display_surface") and callable(obj.get_display_surface):
                 surface, rect = obj.get_display_surface()
-                environment.screen.blit(surface, rect)
+                environment.get_screen().blit(surface, rect)
 
         # Remove destroyed objects
         for obj in self.objects:
@@ -1040,16 +1049,11 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
         bool: True if the clicks of the first object should be blocked by the second object, False otherwise.
     """
     same_object = masking_object == obj
-    if same_object:
-        return True
     not_opaque = hasattr(masking_object, "opaque") and not masking_object.opaque
-    if not_opaque:
-        return True
     has_rect = hasattr(masking_object, "get_rect")
-    if not has_rect:
-        return True
     is_below = masking_object.z < obj.z
-    if is_below:
+    is_destroyed = hasattr(masking_object, "destroyed") and masking_object.destroyed
+    if same_object or not_opaque or not has_rect or is_below or is_destroyed:
         return True
     same_z = masking_object.z == obj.z
 
@@ -1250,5 +1254,5 @@ def get_fps():
     return str(round(float(fps), 1))
 
 
-environment = Environment()
 game_state = GameState()
+environment = Environment()
