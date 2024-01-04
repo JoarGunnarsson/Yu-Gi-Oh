@@ -576,7 +576,7 @@ class Box(GameObject):
             game_engine.get_surface_manager().fetch_surface(self.surface_id).fill(self.color)
 
         if self.update_text_func is not None:
-            self.text = self.update_text_func()
+            self.set_text(self.update_text_func())
             game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
                                                                   self.font_surface_id)
 
@@ -597,7 +597,7 @@ class Border(GameObject):
         thickness (int): The thickness of the border.
     """
 
-    def __init__(self, x=0, y=0, z=1, width=100, height=100, color=BLACK, thickness=1, alpha=255, parent=None,
+    def __init__(self, x=0, y=0, z=1, width=100, height=100, color=BLACK, thickness=2, alpha=255, parent=None,
                  name=None):
         """Initialize a Border object.
 
@@ -819,7 +819,8 @@ class Button(Box):
     # TODO: Change left_click_args etc. to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
                  indicate_clicks=True, alpha=255, image_id=None, text="",
-                 font_size=40, text_color=BLACK, name=None, parent=None, static=False, left_trigger_keys=None,
+                 font_size=40, text_color=BLACK, name=None, parent=None, include_border=True,
+                 static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
                  left_hold_args=None, right_click_function=None, right_click_args=None, right_hold_function=None,
                  right_hold_args=None, key_functions=None, external_process_function=None,
@@ -834,13 +835,14 @@ class Button(Box):
             height (int): The height of the button.
             color (tuple): The color of the button
             indicator_color (tuple): The color used for indicating if the button is hovered over or clicked.
-            indicate_hover (bool);
-            indicate_clicks (bool):
+            indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
+            indicate_clicks (bool): Indicates if the button should change appearance when it is clicked.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
+            include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
             static (bool): Indicates whether the object is static (does not move together with its parent).
@@ -915,9 +917,8 @@ class Button(Box):
 
         self.click_detector = ClickDetector(self.get_rect())
 
-        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
-                        name="btn_border")
-        self.add_child(border)
+        if include_border:
+            self.add_border()
 
         self.indicator_color = indicator_color
         self.indicate_hover = indicate_hover
@@ -1055,6 +1056,11 @@ class Button(Box):
         """
         self.click_detector.require_continuous_hovering = boolean
 
+    def add_border(self):
+        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
+                        name="btn_border")
+        self.add_child(border)
+
     def check_button_presses(self):
         """Check for button presses/key presses and executes corresponding functions. Can execute any combination of
         different click events in the same tick."""
@@ -1169,7 +1175,8 @@ class MobileButton(Button):
                  indicate_hover=True,
                  indicate_clicks=False, alpha=255, static=False,
                  image_id=None, text="", font_size=40,
-                 text_color=BLACK, name=None, parent=None, left_trigger_keys=None, left_hold_function=None,
+                 text_color=BLACK, include_border=True, name=None, parent=None,
+                 left_trigger_keys=None, left_hold_function=None,
                  left_hold_args=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
                  key_functions=None, external_process_function=None, external_process_arguments=None):
@@ -1191,6 +1198,7 @@ class MobileButton(Button):
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
+            include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
             left_trigger_keys (list): List of keys triggering left-click events (default is None).
@@ -1212,7 +1220,8 @@ class MobileButton(Button):
         self.click_y = None
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicator_color=indicator_color,
                          indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha, image_id=image_id,
-                         text=text, font_size=font_size, text_color=text_color, name=name, parent=parent, static=static,
+                         text=text, font_size=font_size, text_color=text_color, include_border=include_border,
+                         name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=left_hold_function,
                          left_hold_args=left_hold_args,

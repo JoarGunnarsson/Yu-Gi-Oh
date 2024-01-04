@@ -1,6 +1,7 @@
 from constants import *
 import os
 import pickle
+from pathlib import Path
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -33,29 +34,62 @@ class Environment:
         self.key_press = None
         self.width = pygame.display.Info().current_w
         self.height = pygame.display.Info().current_h
-        self.size = (self.width, self.height)
-        self.screen = pygame.Surface(self.size)
+        self.screen = pygame.Surface(self.get_resolution())
         self.screen.set_alpha(255)
         self.clock = pygame.time.Clock()
         self.standard_offset = 15
         self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
         self.events_this_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
 
+    def get_width(self):
+        """Gets the width of the game window.
+
+        Returns:
+            int: The width of the game window.
+        """
+        return self.width
+
+    def set_width(self, width):
+        """Sets the width of the screen.
+
+        Args:
+            width (int): The new width of the screen.
+        """
+        self.width = int(width)
+
     def get_height(self):
-        """Returns the height of the game window.
+        """Gets the height of the game window.
 
         Returns:
             int: The height of the game window.
         """
         return self.height
 
-    def get_width(self):
-        """Returns the width of the game window.
+    def set_height(self, height):
+        """Sets the height of the screen.
+
+        Args:
+            height (int): The new height of the screen.
+        """
+        self.height = int(height)
+
+    def get_resolution(self):
+        """Gets the current resolution of the screen.
 
         Returns:
-            int: The width of the game window.
+            tuple: The resolution of the screen in as a (width, height) tuple.
         """
-        return self.width
+        return self.get_width(), self.get_height()
+
+    def set_resolution(self, resolution):
+        """Sets the resolution of the screen.
+
+        Args:
+            resolution (tuple): The new resolution of the screen (width, height).
+        """
+        self.set_width(resolution[0])
+        self.set_height(resolution[1])
+        self.screen = pygame.Surface(self.get_resolution())
 
     def get_mouse_position(self):
         """Returns the current mouse position in screen-space coordinates, not window-space.
@@ -349,6 +383,11 @@ class SurfaceHelper:
         return self.surface_type
 
     def set_surface(self, surface):
+        """Sets the surface of the SurfaceHelper instance.
+
+        Args:
+            surface (Pygame.Surface): The new surface.
+        """
         self.surface = surface
 
     def set_size(self, size):
@@ -529,7 +568,7 @@ class SurfaceManager:
         if image_path in self.image_path_id_dict:
             return self.image_path_id_dict[image_path]
 
-        image = pygame.image.load(image_path)
+        image = pygame.image.load(image_path).convert_alpha()
         image.set_alpha(255)
         image_id = self.set_image(image)
         self.image_path_id_dict[image_path] = image_id
@@ -586,8 +625,10 @@ class SurfaceManager:
             image_id (int): The unique identifier of the image to be restored.
         """
         surface_object = self.surface_objects[image_id]
-        surface_object.set_surface(pygame.image.fromstring(surface_object.get_image_string(), surface_object.get_size(),
-                                                           "RGBA"))
+        image_string = surface_object.get_image_string()
+        size = surface_object.get_size()
+        restored_image = pygame.image.fromstring(image_string, size, "RGBA").convert_alpha()
+        surface_object.set_surface(restored_image)
 
     def create_font(self, size):
         """Creates a font object with the specified size, with the font 'Arial'.
@@ -899,7 +940,6 @@ class Scene:
     def process(self):
         """Process and display objects in the scene."""
         environment.screen.fill(self.background_color)
-
         self.schedule_processing()
 
         # Process objects.
@@ -933,7 +973,7 @@ class Scene:
         """Create a new object and adds it to the scene.
 
          Args:
-             object_class (callable): The (x, y) position to place the overlay.
+             object_class (callable): The class of the object to be created.
          """
         new_object = object_class(*args, **kwargs)
         self.add_object(new_object)
@@ -1185,13 +1225,29 @@ def process_current_scene():
 
 
 def load_image(image_path):
-    """Loads the image with the given image_path."""
+    """Loads the image with the given image_path.
+
+    Args:
+        image_path (str): The path of the image to be loaded.
+    """
     return get_surface_manager().load_image(image_path)
 
 
+def load_all_images():
+    """Loads all images in the '/Images/' directory, to improve performance."""
+    images = Path(card_image_location).glob('*')
+    for image_path in images:
+        load_image(str(image_path))
+
+
 def get_fps():
+    """Gets the current FPS of the application.
+
+    Returns:
+        str: A string representing the current fps, up to one decimal.
+    """
     fps = environment.clock.get_fps()
-    return str(round(float(fps), 2))
+    return str(round(float(fps), 1))
 
 
 environment = Environment()

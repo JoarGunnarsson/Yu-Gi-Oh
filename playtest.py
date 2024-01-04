@@ -1,4 +1,5 @@
-from Scenes import main_menu_scene
+import decks
+from Scenes import main_menu_scene, playtesting_scene
 import game_engine
 from game_engine import environment
 from constants import *
@@ -32,10 +33,12 @@ import pygame
 
 # TODO: Fix the remove_on_external_clicks functionality -> GameScript.
 
+# TODO: Rescale all size constants, it should be possible to use a lower resolution.
+
 if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("A tool for playtesting Yu-Gi-Oh!")
-
+    game_engine.load_all_images()
     game_engine.schedule_scene_change(main_menu_scene.MainMenuScene())
     running = True
     while running:
