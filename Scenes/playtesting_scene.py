@@ -6,6 +6,7 @@ import utility_functions as utils
 from Scenes import main_menu_scene
 import random
 import math
+import glob
 
 
 class PlaytestingScene(game_engine.Scene):
@@ -570,8 +571,12 @@ class Card(assets.MobileButton):
             card_id (str): The ID of the card.
             parent: The parent object.
         """
-        # TODO: Enable loading either jpg or png or whatever images here.
-        card_image_id = game_engine.load_image(card_image_location + f'{card_id}.jpg')
+        matching_images = glob.glob(card_image_location + f"{card_id}.*")
+
+        card_image_id = None
+        for image_path in matching_images:
+            card_image_id = game_engine.load_image(str(image_path))
+
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,
                          image_id=card_image_id, include_border=False,
@@ -1487,7 +1492,7 @@ def card_type_int(card):
         ValueError: If the card type is not valid.
     """
     card_type = card.get_card_type()
-    card_type_order = ["normal", "effect", "spell",  "trap", "ritual", "xyz", "synchro", "fusion", "link", "token"]
+    card_type_order = ["normal", "effect", "spell", "trap", "ritual", "xyz", "synchro", "fusion", "link", "token"]
     for i, element in enumerate(card_type_order):
         if card_type == element:
             return i

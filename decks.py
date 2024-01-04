@@ -10,6 +10,7 @@ class Deck:
            cards (list): List of card IDs in the deck.
            image_id (int): The ID of the image representing the main card.
        """
+
     def __init__(self, name="", cards=None, main_card_id=None):
         """Initializes a Deck instance.
 
@@ -63,9 +64,16 @@ darklord_2_cards = ["14517422", "14517422", "14517422", "18168997", "18168997", 
                     "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
                     "9486959"]
 
-thin_cards = ["14517422"] * 1
+test_cards = ["14517422", "14517422", "14517422", "18168997", "18168997", "22110647", "25339070", "25339070",
+              "25451652", "26357901", "26357901", "28427869", "28427869", "28427869", "30439101", "35726888",
+              "35726888", "35726888", "38120068", "3814632", "38904695", "41209827", "4167084", "43316238",
+              "45420955", "48130397", "48130397", "49565413", "50501121", "50501121", "50501121", "52119435",
+              "52645235", "52840267", "52840267", "52840267", "5402805", "55289183", "55289183", "59900655",
+              "69946549", "72892473", "74335036", "74335036", "78868119", "78868119", "79933029", "82105704",
+              "82105704", "82134632", "82773292", "83340560", "83764719", "87112784", "87112784", "88120966",
+              "9486959", "transparent_card", "transparent_card", "transparent_card", "transparent_card", "gy_icon"]
 
 DECKS = [Deck(name="Spellcaster", cards=spellcaster_cards, main_card_id="1003840"),
          Deck(name="Darklord", cards=darklord_cards, main_card_id="14517422"),
          Deck(name="Darklord 2", cards=darklord_2_cards, main_card_id="14517422"),
-         Deck(name="Thin Deck", cards=thin_cards, main_card_id="token")]
+         Deck(name="Test Deck", cards=test_cards, main_card_id="token")]

@@ -1,7 +1,7 @@
 from constants import *
 import os
 import pickle
-from pathlib import Path
+import glob
 import utility_functions as utils
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -1230,8 +1230,11 @@ def load_image(image_path):
 
 def load_all_images():
     """Loads all images in the '/Images/' directory, to improve performance."""
-    images = Path(card_image_location).glob('*')
-    for image_path in images:
+    image_paths = []
+    for image_type in allowed_image_types:
+        image_paths.extend(glob.glob(card_image_location + "*" + image_type))
+
+    for image_path in image_paths:
         load_image(str(image_path))
 
 
