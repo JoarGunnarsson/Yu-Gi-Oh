@@ -37,7 +37,7 @@ class TestScene(Scene):
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
                                             image_id=game_engine.load_image(
-                                                card_image_location + "transparent_card.png"),
+                                                image_location + "transparent_card.png"),
                                             name="follow_mobile")
 
         movable_btn.add_child(follow_mobile)
@@ -46,9 +46,11 @@ class TestScene(Scene):
         self.add_object(movable_btn)
         self.add_object(button)
         transparent_box = assets.Box(x=600, y=600, source_image_id=game_engine.load_image(
-            card_image_location + "transparent_card.png"),
+            image_location + "transparent_card.png"),
                                      name="transparent_box")
         self.add_object(transparent_box)
+        text_box = assets.InputField(x=400, y=400)
+        self.add_object(text_box)
         return self
 
 

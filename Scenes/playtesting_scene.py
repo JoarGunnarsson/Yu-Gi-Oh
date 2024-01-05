@@ -65,7 +65,7 @@ class PlaytestingScene(game_engine.Scene):
         draw_btn = assets.Button(x=environment.get_width() - button_width - offset,
                                  y=environment.get_height() - deck_height - offset,
                                  width=deck_width, height=deck_height, image_id=game_engine.load_image(
-                card_image_location + "card_back.png"),
+                image_location + "card_back.png"),
                                  name="draw_btn", left_click_function=board.draw)
 
         deck_text_box = assets.Box(text=cards_in_deck_string(self), font_size=25, color=LIGHT_GREY,
@@ -77,33 +77,44 @@ class PlaytestingScene(game_engine.Scene):
 
         show_deck_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - button_height - offset, width=button_width // 2,
                                       height=button_height,
-                                      image_id=game_engine.load_image(card_image_location + "millennium_eye.png"),
+                                      image_id=game_engine.load_image(image_location + "millennium_eye.png"),
                                       name="show_deck_btn", left_click_function=create_deck_overlay)
 
         show_extra_deck_btn = assets.Button(x=left_side_box.x + offset,
                                             y=environment.get_height() - deck_height - offset,
                                             width=deck_width, height=deck_height,
-                                            image_id=game_engine.load_image(card_image_location + "card_back.png"),
+                                            image_id=game_engine.load_image(image_location + "card_back.png"),
                                             name="show_extra_deck_btn", left_click_function=create_extra_deck_overlay)
 
         shuffle_deck_btn = assets.Button(x=draw_btn.x + button_width // 2, y=deck_text_box.y - button_height - offset,
                                          width=button_width // 2, height=button_height,
-                                         image_id=game_engine.load_image(card_image_location + "shuffle.png"),
+                                         image_id=game_engine.load_image(image_location + "shuffle.png"),
                                          name="shuffle_deck_btn",
                                          left_click_function=board.shuffle_the_deck)
 
         show_gy_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - 2 * button_height - offset,
                                     width=button_width // 2,
                                     height=button_height,
-                                    image_id=game_engine.load_image(card_image_location + "gy_icon.png"),
+                                    image_id=game_engine.load_image(image_location + "gy_icon.png"),
                                     name="show_gy_btn", left_click_function=create_gy_overlay)
 
         show_banished_btn = assets.Button(x=draw_btn.x + button_width // 2,
                                           y=deck_text_box.y - 2 * button_height - offset,
                                           width=button_width // 2,
                                           height=button_height,
-                                          image_id=game_engine.load_image(card_image_location + "banished_icon.png"),
+                                          image_id=game_engine.load_image(image_location + "banished_icon.png"),
                                           name="show_banished_btn", left_click_function=create_banished_overlay)
+
+        extra_options_button = assets.Button(x=show_gy_btn.x, y=show_gy_btn.y - button_height, width=button_width // 2,
+                                             height=button_height,
+                                             image_id=game_engine.load_image(image_location + "extra_options.png"),
+                                             name="extra_options_button",
+                                             left_click_function=create_extra_options_overlay)
+
+        token_btn = assets.Button(x=show_gy_btn.x + button_width // 2, y=show_gy_btn.y - button_height,
+                                  width=button_width // 2,
+                                  height=button_height,
+                                  text="Token", name="token_btn", left_click_function=generate_token)
 
         main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
                                       text="Main Menu", name="main_menu_btn",
@@ -120,11 +131,9 @@ class PlaytestingScene(game_engine.Scene):
                                   left_click_function=game_engine.schedule_scene_change,
                                   left_click_args=[create_play_testing])"""
 
-        token_btn = assets.Button(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
-                                  width=button_width,
-                                  height=button_height,
-                                  text="Token", name="token_btn", left_click_function=generate_token)
-
+        input_field = assets.InputField(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
+                                        width=button_width,
+                                        height=button_height, text="Life points:")
         small_button_size = 50
 
         hand_index_button_offset = int((hand_box.height - button_height / 2) // 2)
@@ -145,7 +154,7 @@ class PlaytestingScene(game_engine.Scene):
 
         self.add_multiple_objects(
             [main_menu_btn, draw_btn, show_deck_btn, save_btn, shuffle_deck_btn, show_extra_deck_btn,
-             show_gy_btn, show_banished_btn, token_btn, hand_index_increment_btn,
+             show_gy_btn, show_banished_btn, extra_options_button, token_btn, input_field, hand_index_increment_btn,
              hand_index_decrement_btn])
 
         self.add_multiple_objects([deck_text_box])
@@ -571,7 +580,7 @@ class Card(assets.MobileButton):
             card_id (str): The ID of the card.
             parent: The parent object.
         """
-        matching_images = glob.glob(card_image_location + f"{card_id}.*")
+        matching_images = glob.glob(image_location + f"{card_id}.*")
 
         card_image_id = None
         for image_path in matching_images:
@@ -772,11 +781,10 @@ class Card(assets.MobileButton):
         self.set_rotation(0)
         self.remove_card_location_overlay()
 
-        visible_before = previous_location in ["hand", "field"]
         if not visible_after:
             self.remove_large_card_button()
 
-        if visible_after and not visible_before:
+        if self.location in ["hand", "field"] and previous_location not in ["hand", "field"]:
             self.change_to_movable_card()
 
     def change_to_movable_card(self):
@@ -1414,7 +1422,7 @@ def create_location_overlay(location_name, card_list_function):
                                   y=overlay.y + 2 * y_offset + close_btn.height,
                                   z=overlay.z,
                                   width=small_button_width, height=small_button_height,
-                                  image_id=game_engine.load_image(card_image_location + "up_arrow.png"),
+                                  image_id=game_engine.load_image(image_location + "up_arrow.png"),
                                   name="scroll_up_btn",
                                   left_trigger_keys=["up"],
                                   left_click_function=overlay.change_overlay_limits,
@@ -1424,7 +1432,7 @@ def create_location_overlay(location_name, card_list_function):
                                     y=overlay.y + overlay_height - small_button_height - y_offset,
                                     z=overlay.z,
                                     width=small_button_width, height=small_button_height,
-                                    image_id=game_engine.load_image(card_image_location + "down_arrow.png"),
+                                    image_id=game_engine.load_image(image_location + "down_arrow.png"),
                                     name="scroll_down_btn",
                                     left_trigger_keys=["down"],
                                     left_click_function=overlay.change_overlay_limits,
@@ -1432,6 +1440,45 @@ def create_location_overlay(location_name, card_list_function):
 
     overlay.add_multiple_children([scroll_up_btn, scroll_down_btn])
     scene.add_object(overlay)
+
+
+def create_extra_options_overlay():
+    scene = game_engine.get_scene_manager().get_current_scene()
+    same_overlay = utils.find_object_from_name(scene.get_objects(), "extra_options_overlay")
+
+    if same_overlay is not None:
+        same_overlay.destroy()
+        return
+    field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
+    overlay_width = field_box.width
+    overlay_height = field_box.height
+
+    options_overlay = assets.Overlay(x=field_box.x, y=field_box.y, z=2,
+                                     width=overlay_width, height=overlay_height,
+                                     name="extra_options_overlay")
+
+    dice_result_box = assets.Box(x=options_overlay.x + 100 + standard_space, y=options_overlay.y + standard_space,
+                                 z=options_overlay.z,
+                                 width=100, height=100,
+                                 text="?", name="dice_result_box", parent=options_overlay, color=SIENNA,
+                                 include_border=False)
+
+    dice_button = assets.Button(x=options_overlay.x + standard_space, y=options_overlay.y + standard_space,
+                                z=options_overlay.z, width=100, height=100,
+                                parent=options_overlay,
+                                image_id=game_engine.load_image(image_location + "dice.png"),
+                                name="dice_button")
+
+    dice_button.set_left_click_function(roll_dice, [dice_result_box])
+
+    options_overlay.add_child(dice_button)
+    options_overlay.add_child(dice_result_box)
+    game_engine.get_scene_manager().get_current_scene().add_object(options_overlay)
+
+
+def roll_dice(text_box):
+    result = random.randint(1, 6)
+    text_box.set_text(str(result))
 
 
 def closest_color(color_dict, reference_color):

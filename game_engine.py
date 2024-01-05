@@ -37,8 +37,9 @@ class Environment:
         self.screen_id = get_surface_manager().create_surface(self.get_width(), self.get_height(), alpha=255)
         self.clock = pygame.time.Clock()
         self.standard_offset = 15
-        self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
-        self.events_this_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None}
+        self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None, "pressed_keys": []}
+        self.events_this_tick = {"left_mouse_button": False, "right_mouse_button": False, "key_press": None, "pressed_keys": []}
+        self.input_event = None
 
     def get_width(self):
         """Gets the width of the game window.
@@ -189,7 +190,13 @@ class Environment:
         Returns:
             str or None: The string representing the key that was pressed this tick, or None if no key was pressed.
         """
-        return self.events_last_tick["key_press"]
+        return self.events_this_tick["key_press"]
+
+    def get_pressed_keys_this_tick(self):
+        return self.events_this_tick["pressed_keys"]
+
+    def get_pressed_keys_last_tick(self):
+        return self.events_last_tick["pressed_keys"]
 
     def get_key_press_last_tick(self):
         """Returns whether the key that was pressed during the last tick, if any.
@@ -208,16 +215,23 @@ class Environment:
         """
         is_running = True
         self.key_press = None
+        pressed_keys = self.get_pressed_keys_last_tick()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
-            elif event.type == pygame.KEYDOWN and self.key_press is None:
-                self.key_press = pygame.key.name(event.key)
+            elif event.type == pygame.KEYDOWN:
+                if self.key_press is None:
+                    self.key_press = pygame.key.name(event.key)
+                pressed_keys.append(pygame.key.name(event.key))
+            elif event.type == pygame.KEYUP:
+                pressed_keys.remove(pygame.key.name(event.key))
+            elif event.type == pygame.TEXTINPUT:
+                self.input_event = event.text
 
         left_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[0]
         right_mouse_down = pygame.mouse.get_pressed(num_buttons=3)[2]
         self.set_events_this_tick({"left_mouse_button": left_mouse_down, "right_mouse_button": right_mouse_down,
-                                   "key_press": self.key_press})
+                                   "key_press": self.key_press, "pressed_keys": pressed_keys})
         return is_running
 
     def draw_screen(self):
@@ -856,6 +870,7 @@ class Scene:
         self.name = name
         self.objects = []
         self.processing_order = []
+        self.preliminary_display_order = []
         self.display_order = []
         self.background_color = WHITE
         self.persistent = False
@@ -911,10 +926,10 @@ class Scene:
         Returns:
             list: The list of objects that could be blocking the given object.
         """
-        object_index = self.processing_order.index(obj)
+        object_index = self.preliminary_display_order.index(obj)
         blocking_object_list = []
 
-        for masking_object_index, masking_object in enumerate(self.processing_order):
+        for masking_object_index, masking_object in enumerate(self.preliminary_display_order):
             if should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
                 continue
             if obj.get_rect().colliderect(masking_object.get_rect()):
@@ -954,7 +969,14 @@ class Scene:
     def process(self):
         """Process and display objects in the scene."""
         environment.get_screen().fill(self.background_color)
+        self.preliminary_display_order = []
         self.schedule_processing()
+
+        # Generate preliminary display_order
+        for obj in self.objects:
+            if hasattr(obj, "get_displayable_objects"):
+                self.preliminary_display_order.extend(obj.get_displayable_objects())
+        self.preliminary_display_order.sort(key=lambda x: x.z)
 
         # Process objects.
         self.processing_order.sort(key=lambda x: x.z)
@@ -1033,7 +1055,6 @@ def calculate_hierarchy_depth_difference(obj1, obj2):
 
     ancestors_of_obj1 = find_all_ancestors(obj1)
     ancestors_of_obj2 = find_all_ancestors(obj2)
-
     for ancestor in ancestors_of_obj2:
         if ancestor in ancestors_of_obj1:
             return ancestors_of_obj1.index(ancestor) - ancestors_of_obj2.index(ancestor)
@@ -1074,7 +1095,7 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
         non_opaque_to_ancestor = related_up and not masking_object.opaque_to_ancestor
         non_opaque_to_descendant = related_down and not masking_object.opaque_to_descendant
         non_opaque_to_sibling = siblings and not masking_object.opaque_to_sibling
-        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant or non_opaque_to_sibling
+        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant or non_opaque_to_sibling or not visually_blocked
 
     same_z_exception = same_z and non_opaque_to_relative
 
@@ -1156,7 +1177,7 @@ def end_tick():
     game_state.tick_manager.end_of_tick_arguments = []
 
     environment.set_events_last_tick(environment.events_this_tick)
-    environment.set_events_this_tick({"left_mouse_button": False, "right_mouse_button": False, "key_press": None})
+    environment.set_events_this_tick({"left_mouse_button": False, "right_mouse_button": False, "key_press": None, "pressed_keys": []})
 
 
 def schedule_scene_change(scene):
@@ -1232,7 +1253,7 @@ def load_all_images():
     """Loads all images in the '/Images/' directory, to improve performance."""
     image_paths = []
     for image_type in allowed_image_types:
-        image_paths.extend(glob.glob(card_image_location + "*" + image_type))
+        image_paths.extend(glob.glob(image_location + "*" + image_type))
 
     for image_path in image_paths:
         load_image(str(image_path))

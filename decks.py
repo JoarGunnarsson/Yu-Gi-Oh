@@ -27,7 +27,7 @@ class Deck:
             main_card_id = cards[0]
 
         self.name = name
-        self.image_id = game_engine.load_image(card_image_location + main_card_id + ".jpg")
+        self.image_id = game_engine.load_image(image_location + main_card_id + ".jpg")
 
     def get_image_id(self):
         """Returns the ID of the image representing the main card.

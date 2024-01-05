@@ -15,5 +15,5 @@ standard_space = 10
 large_card_width = 300
 large_card_height = int(large_card_width * card_aspect_ratio)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-card_image_location = ROOT_DIR + "/Images/"
+image_location = ROOT_DIR + "/Images/"
 allowed_image_types = [".png", ".jpg", ".jpeg"]

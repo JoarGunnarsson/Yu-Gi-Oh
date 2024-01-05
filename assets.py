@@ -1136,9 +1136,13 @@ class Button(Box):
 
         if self.status == ButtonState.PRESSED and self.indicate_clicks:
             self.indicator_alpha = 100
+        elif self.status == ButtonState.PRESSED:
+            if self.indicate_hover:
+                self.indicator_alpha = 80
         elif self.status == ButtonState.HOVER and self.indicate_hover:
             self.indicator_alpha = 80
-        elif self.status == ButtonState.NORMAL:
+
+        else:
             self.indicator_alpha = 0
 
     def get_display_surface(self):
@@ -1246,6 +1250,86 @@ class MobileButton(Button):
         mouse_position = environment.get_mouse_position()
         self.moving = True
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
+
+
+class InputField(Button):
+    def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
+                 alpha=255, text="", font_size=20, text_color=BLACK, name=None, include_border=True, static=False):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicate_hover=indicate_hover,
+                         indicate_clicks=indicate_clicks, alpha=alpha, text=text, font_size=font_size,
+                         text_color=text_color, name=name, include_border=include_border, static=static,
+                         left_click_function=self.create_text_detector)
+
+        self.is_selected = False
+
+        # TODO: Enable non deletable text.
+        # TODO: Create subclass that has enter functionality.
+        # TODO: Add text-wrapping? Or simply stop writing when to much text is displayed.
+
+    def create_text_detector(self):
+        text_detectors = utils.find_objects_from_type(self.children, InputDetector)
+        if len(text_detectors) != 0:
+            return
+        text_detector = InputDetector(self, [self.get_rect()])
+        self.add_child(text_detector)
+        self.is_selected = True
+        # TODO: Force status:HOVER here? or something
+
+    def get_display_surface(self):
+        if self.is_selected:
+            self.indicator_alpha = 10
+        return super().get_display_surface()
+
+
+class Keys:
+    SPACE = "space"
+    RETURN = "return"
+    BACKSPACE = "backspace"
+    LSHIFT = "left shift"
+
+
+class InputDetector(GameObject):
+    def __init__(self, parent=None, allowed_rects=None):
+        super().__init__(parent=parent)
+        if allowed_rects is None:
+            allowed_rects = []
+        pygame.key.start_text_input()
+        self.external_processing_function = utils.destroy_on_external_clicks
+        self.external_processing_args = [self, allowed_rects]
+        self.backspace_counter = 0
+
+    def process(self):
+        self.external_processing_function(*self.external_processing_args)
+        if environment.input_event is not None:
+            self.parent.set_text(self.parent.text + environment.input_event)
+            environment.input_event = None
+
+        new_key = environment.get_key_press_this_tick()
+        keys_pressed = environment.get_pressed_keys_this_tick()
+        if new_key == Keys.BACKSPACE:
+            self.backspace()
+            return
+
+        if Keys.BACKSPACE in keys_pressed:
+            self.backspace()
+            return
+        else:
+            self.backspace_counter = 0
+
+    def backspace(self):
+        if self.backspace_counter != 0:
+            self.backspace_counter -= 1
+            return
+
+        self.parent.set_text(self.parent.text[:-1])
+
+        self.backspace_counter = 2
+
+    def destroy(self):
+        super().destroy()
+        pygame.key.stop_text_input()
+        self.parent.is_selected = False
+        # TODO: Remove parent hover status here?
 
 
 class Overlay(GameObject):

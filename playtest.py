@@ -28,6 +28,8 @@ import pygame
 
 # TODO: Rescale all size constants, it should be possible to use a lower resolution.
 
+# TODO: Make the large card overlay look better.
+
 if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("A tool for playtesting Yu-Gi-Oh!")
