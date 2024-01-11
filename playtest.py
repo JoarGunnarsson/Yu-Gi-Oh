@@ -30,6 +30,10 @@ import pygame
 
 # TODO: Make the large card overlay look better.
 
+# TODO: Perhaps clamp cards that are placed to the field using default_position.
+
+# TODO: Rescale deck selection deck images. Or use scrolling function.
+
 if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("A tool for playtesting Yu-Gi-Oh!")
