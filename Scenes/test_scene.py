@@ -28,11 +28,11 @@ class TestScene(Scene):
                                  name="exit_btn")
         self.add_object(exit_btn)
         button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
+                               resize_to_fit_text=True,
                                left_click_function=self.create_object,
                                left_click_args=[assets.ConfirmationOverlay, 700, 700, test_button, []],
                                color=SADDLE_BROWN, alpha=175,
                                name="test_btn")
-        button.hug_text(15)
         movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
@@ -51,6 +51,7 @@ class TestScene(Scene):
         self.add_object(transparent_box)
         text_box = assets.InputField(x=400, y=400)
         self.add_object(text_box)
+
         return self
 
 

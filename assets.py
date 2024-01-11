@@ -6,6 +6,7 @@ import pygame
 from game_engine import environment
 import game_engine
 import utility_functions as utils
+import math
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
@@ -245,6 +246,8 @@ class GameObject:
         Args:
             width (int): The new width.
         """
+        if width < 0:
+            return
         self.width = width
         self.get_rect().update(self.x, self.y, self.width, self.height)
 
@@ -254,6 +257,8 @@ class GameObject:
         Args:
             height (int): The new width.
         """
+        if height < 0:
+            return
         self.height = height
         self.get_rect().update(self.x, self.y, self.width, self.height)
 
@@ -420,6 +425,7 @@ class Box(GameObject):
     Attributes:
         changed_recently (bool): Indicates if the box has been transformed since the last time it was displayed.
         text (str): The string to be displayed on the box
+        text_offset (int): The space that should be between the buttons text (if any) and the edge of the box.
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
         font_surface_id (int): The id corresponding to the font surface of the box.
@@ -428,7 +434,9 @@ class Box(GameObject):
     """
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
-                 text_color=BLACK, font_size=40, update_text_func=None, parent=None, static=True, opaque=True,
+                 text_offset=standard_text_offset, text_color=BLACK, font_size=40, resize_to_fit_text=False,
+                 update_text_func=None, parent=None,
+                 static=True, opaque=True,
                  include_border=False, name=None):
         """Initializes a Box object.
 
@@ -441,9 +449,11 @@ class Box(GameObject):
             color (tuple): The color of the box
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             source_image_id (int): The id of the source image of the box.
-            text (str): The string to be displayed on the box
+            text (str): The string to be displayed on the box.
+            text_offset (int): The space that should be between the buttons text (if any) and the edge of the box.
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
+            resize_to_fit_text (bool): Indicates whether the box should be resized in order to fit its text.
             update_text_func (callable): The function responsible for updating the box text.
             parent: The parent object to which this box is attached.
             static (bool): Indicates whether the box is static (does not move together with its parent).
@@ -458,13 +468,16 @@ class Box(GameObject):
         self.source_image_id = source_image_id
 
         self.text = text
+        self.text_offset = text_offset  # TODO: Implement this further, in the resize_to_fit_text function, set_text etc.
+        # So that if the text is too big, it is cut off so that it fits.
         self.text_color = text_color
         self.font_size = font_size
-        if self.text == "" and update_text_func is None:
-            self.font_surface_id = None
-        else:
-            self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
-                                                                                         self.font_size)
+
+        self.font_surface_id = None
+        if resize_to_fit_text and self.text != "":
+            self.resize_to_fit_text()
+        self.set_text(self.text)
+
         self.update_text_func = update_text_func
 
         if include_border:
@@ -524,9 +537,19 @@ class Box(GameObject):
             new_text (str): The new text for the Box.
         """
         self.text = new_text
+        self.truncate_text()
         self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                      self.font_size,
                                                                                      self.font_surface_id)
+
+    def truncate_text(self):
+        font = game_engine.get_surface_manager().get_font(self.font_size)
+        while len(self.text) > 0:
+            occupied_width = pygame.font.Font.size(font, self.text)[0]
+            allowed_width = self.width - 2 * self.text_offset
+            if occupied_width <= allowed_width:
+                break
+            self.text = self.text[:-1]
 
     def set_color(self, color):
         """Sets the color of the Box.
@@ -558,14 +581,19 @@ class Box(GameObject):
                         name="btn_border")
         self.add_child(border)
 
-    def hug_text(self, offset):
+    def resize_to_fit_text(self, offset=None):
         """Adjusts the size of the Box to fit the text with an additional offset.
 
         Args:
             offset (int): The additional offset to apply.
         """
-        font_surface = game_engine.get_surface_manager().fetch_font_surface(self.font_surface_id)
-        new_width, new_height = font_surface.get_width() + 2 * offset, font_surface.get_height() + 2 * offset
+        if offset is None:
+            offset = self.text_offset
+        font = game_engine.get_surface_manager().get_font(self.font_size)
+        required_width, required_height = pygame.font.Font.size(font, self.text)
+        if required_width <= self.width and required_height <= self.height:
+            return
+        new_width, new_height = required_width + 2 * offset, required_height + 2 * offset
         x_difference = new_width - self.width
         y_difference = new_height - self.height
         self.set_width(new_width)
@@ -847,8 +875,9 @@ class Button(Box):
 
     # TODO: Change left_click_args etc. to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
-                 indicate_clicks=True, alpha=255, image_id=None, text="",
-                 font_size=40, text_color=BLACK, name=None, parent=None, include_border=True,
+                 indicate_clicks=True, alpha=255, image_id=None, text="", text_offset=standard_text_offset,
+                 font_size=40, text_color=BLACK, resize_to_fit_text=False,
+                 name=None, parent=None, include_border=True,
                  static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
                  left_hold_args=None, right_click_function=None, right_click_args=None, right_hold_function=None,
@@ -869,8 +898,10 @@ class Button(Box):
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
+            text_offset (int): The space that should be between the buttons text (if any) and the edge of the button.
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
+            resize_to_fit_text (bool): Indicates if the button should be resized in order to fit its text.
             include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
@@ -931,7 +962,8 @@ class Button(Box):
         else:
             self.key_functions = key_functions
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
-                         source_image_id=image_id, text=text, font_size=font_size, text_color=text_color, parent=parent,
+                         source_image_id=image_id, text=text, text_offset=text_offset, font_size=font_size,
+                         text_color=text_color, resize_to_fit_text=resize_to_fit_text, parent=parent,
                          static=static, name=name, include_border=include_border)
 
         self.left_click_function = left_click_function
@@ -1252,19 +1284,33 @@ class MobileButton(Button):
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
 
 
+class InputTypes:
+    NUMBER = "0123456789"
+    LOWERCASE = "abcdefghijklmnopqrstuvwxyzåäö"
+    UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ"
+    CHAR = LOWERCASE + UPPERCASE
+    ANY = ""
+
+
 class InputField(Button):
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
-                 alpha=255, text="", font_size=20, text_color=BLACK, name=None, include_border=True, static=False):
-        super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicate_hover=indicate_hover,
-                         indicate_clicks=indicate_clicks, alpha=alpha, text=text, font_size=font_size,
+                 alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="", text_buffer_size=8,
+                 allowed_input_types=InputTypes.ANY,
+                 name=None, include_border=True, static=False):
+        super().__init__(x=x, y=y, z=z, width=width, height=height, color=color,
+                         indicate_hover=indicate_hover,
+                         indicate_clicks=indicate_clicks, alpha=alpha, font_size=font_size,
                          text_color=text_color, name=name, include_border=include_border, static=static,
                          left_click_function=self.create_text_detector)
 
         self.is_selected = False
 
-        # TODO: Enable non deletable text.
-        # TODO: Create subclass that has enter functionality.
-        # TODO: Add text-wrapping? Or simply stop writing when to much text is displayed.
+        self.fixed_text = text
+        self.text_buffer = initial_text_buffer
+        self.text_buffer_size = text_buffer_size
+        self.update_text_from_buffer()
+
+        self.allowed_input_types = allowed_input_types
 
     def create_text_detector(self):
         text_detectors = utils.find_objects_from_type(self.children, InputDetector)
@@ -1273,19 +1319,31 @@ class InputField(Button):
         text_detector = InputDetector(self, [self.get_rect()])
         self.add_child(text_detector)
         self.is_selected = True
-        # TODO: Force status:HOVER here? or something
 
     def get_display_surface(self):
         if self.is_selected:
             self.indicator_alpha = 10
         return super().get_display_surface()
 
+    def append_text(self, added_text):
+        if not self.verify_input_type(added_text):
+            return
+        self.text_buffer += added_text
 
-class Keys:
-    SPACE = "space"
-    RETURN = "return"
-    BACKSPACE = "backspace"
-    LSHIFT = "left shift"
+    def verify_input_type(self, new_input):
+        if self.allowed_input_types == InputTypes.ANY:
+            return True
+        return new_input in self.allowed_input_types
+
+    def update_text_from_buffer(self):
+        self.set_text(self.fixed_text + self.text_buffer)
+        allowed_text_buffer_length = len(self.text) - len(self.fixed_text)
+        self.text_buffer = self.text_buffer[:allowed_text_buffer_length]
+
+    def process(self):
+        super().process()
+        if self.is_selected:
+            self.update_text_from_buffer()
 
 
 class InputDetector(GameObject):
@@ -1293,43 +1351,48 @@ class InputDetector(GameObject):
         super().__init__(parent=parent)
         if allowed_rects is None:
             allowed_rects = []
-        pygame.key.start_text_input()
+        game_engine.start_text_input()
         self.external_processing_function = utils.destroy_on_external_clicks
         self.external_processing_args = [self, allowed_rects]
         self.backspace_counter = 0
 
     def process(self):
         self.external_processing_function(*self.external_processing_args)
-        if environment.input_event is not None:
-            self.parent.set_text(self.parent.text + environment.input_event)
-            environment.input_event = None
+        self.write_to_parent()
 
         new_key = environment.get_key_press_this_tick()
         keys_pressed = environment.get_pressed_keys_this_tick()
-        if new_key == Keys.BACKSPACE:
-            self.backspace()
-            return
-
         if Keys.BACKSPACE in keys_pressed:
             self.backspace()
             return
-        else:
-            self.backspace_counter = 0
+
+        self.backspace_counter = 0
+
+    def write_to_parent(self):
+        if environment.input_event is None:
+            return
+        self.parent.append_text(environment.input_event)
+        environment.input_event = None
 
     def backspace(self):
         if self.backspace_counter != 0:
             self.backspace_counter -= 1
             return
+        self.parent.text_buffer = self.parent.text_buffer[:-1]
 
-        self.parent.set_text(self.parent.text[:-1])
-
-        self.backspace_counter = 2
+        self.backspace_counter = 2  # Hard-coded value, in order for backspace to have the right speed.
 
     def destroy(self):
         super().destroy()
-        pygame.key.stop_text_input()
+        game_engine.stop_text_input()
         self.parent.is_selected = False
-        # TODO: Remove parent hover status here?
+
+
+class Keys:
+    SPACE = "space"
+    RETURN = "return"
+    BACKSPACE = "backspace"
+    LSHIFT = "left shift"
 
 
 class Overlay(GameObject):
@@ -1461,30 +1524,29 @@ class ConfirmationOverlay(Overlay):
         close_btn = utils.find_object_from_name(self.get_buttons(), "close_btn")
         self.destroy_child(close_btn)
 
-        button_size = 50
+        button_width = 70
+        button_height = 50
         offset = 7
         font_size = 30
-        text_box = Box(y=self.y + offset, z=self.z, static=False, text="Are you sure?", parent=self)
-        text_box.hug_text(offset)
+        text_box = Box(y=self.y + offset, z=self.z, static=False, text="Are you sure?", resize_to_fit_text=True,
+                       parent=self)
         text_box.set_pos(self.x + (self.width - text_box.width) // 2, text_box.y)
         self.add_child(text_box)
-        yes_btn = Button(width=button_size, height=button_size,
-                         text="Yes", font_size=font_size,
+        yes_btn = Button(width=button_width, height=button_height,
+                         text="Yes", text_offset=5, font_size=font_size, resize_to_fit_text=True,
                          left_click_function=utils.execute_multiple_functions,
                          left_click_args=[[self.destroy, yes_button_function], [[], args]],
                          left_trigger_keys=["return"], static=False, parent=self, name="overlay_yes_btn")
-        yes_btn.hug_text(offset)
-        no_btn = Button(width=button_size,
-                        height=button_size,
-                        text="No", font_size=font_size,
+        no_btn = Button(width=button_width,
+                        height=button_height,
+                        text="No", text_offset=5, font_size=font_size, resize_to_fit_text=True,
                         left_click_function=self.destroy, left_trigger_keys=["escape"], static=False, parent=self,
                         name="overlay_no_btn")
-        no_btn.hug_text(offset)
 
         buttons = [yes_btn, no_btn]
         number_of_buttons = len(buttons)
-        x_offset = (self.width - number_of_buttons * button_size) // (number_of_buttons + 1)
+        x_offset = (self.width - number_of_buttons * button_width) // (number_of_buttons + 1)
         for i, btn in enumerate(buttons):
             btn.set_z(self.z)
             self.add_child(btn)
-            btn.set_pos(self.x + (i + 1) * x_offset + i * button_size, y=self.y + self.height - offset - button_size)
+            btn.set_pos(self.x + (i + 1) * x_offset + i * button_width, y=self.y + self.height - offset - button_height)

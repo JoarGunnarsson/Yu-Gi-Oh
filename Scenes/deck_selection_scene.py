@@ -31,9 +31,8 @@ class DeckSelectionScene(Scene):
         self.add_object(box)
         instruction_box = assets.Box(x=environment.get_width() // 2 - 100, y=box.y + (y_offset - box.y) // 2 - 30//2,
                                      width=100, height=30,
-                                     text="Choose a deck", color=SADDLE_BROWN, include_border=True)
+                                     text="Choose a deck", resize_to_fit_text=True, color=SADDLE_BROWN, include_border=True)
         self.add_object(instruction_box)
-        instruction_box.hug_text(15)
         for i, deck in enumerate(DECKS):
             button_x = x_offset + i * (large_card_width + x_offset)
             button_y = y_offset
@@ -47,8 +46,8 @@ class DeckSelectionScene(Scene):
             deck_btn.set_image(deck.get_image_id())
             deck_text_box = assets.Box(x=deck_btn.x + deck_btn.width//2 - 100//2,
                                        y=deck_btn.y + deck_btn.height + (box.y + box.height - deck_btn.y - deck_btn.height) // 2 - 40//2,
-                                       width=100, height=40, text=deck.name, include_border=True)
-            deck_text_box.hug_text(15)
+                                       width=100, height=40, text=deck.name, resize_to_fit_text=True, include_border=True)
+
             self.add_object(deck_btn)
             self.add_object(deck_text_box)
         return self

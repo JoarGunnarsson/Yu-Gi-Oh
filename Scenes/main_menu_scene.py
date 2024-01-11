@@ -23,22 +23,24 @@ class MainMenuScene(Scene):
         self.background_color = WHITE
         width = 200
         height = 100
-
+        font_size = 35
         start_btn = assets.Button(y=environment.get_height() // 2, width=width,
-                                  height=height, text="Start",
+                                  height=height, text="Start", font_size=font_size,
+                                  resize_to_fit_text=True,
                                   left_click_function=game_engine.schedule_scene_change,
                                   left_click_args=[deck_selection_scene.DeckSelectionScene()])
 
-        load_btn = assets.Button(y=environment.get_height() // 2, width=width,
+        load_btn = assets.Button(y=environment.get_height() // 2, width=width, font_size=font_size,
                                  height=height, text="Load Save", left_click_function=game_engine.load)
 
         test_btn = assets.Button(y=environment.get_height() // 2, width=width, height=height,
-                                 text="Testing", font_size=35,
+                                 text="Testing", font_size=font_size,
                                  left_click_function=game_engine.schedule_scene_change,
                                  left_click_args=[test_scene.TestScene()])
 
         exit_btn = assets.Button(y=environment.get_height() // 2, width=width,
-                                 height=height, text="Exit", left_click_function=sys.exit)
+                                 height=height, text="Exit", font_size=font_size,
+                                 left_click_function=sys.exit)
 
         buttons = [start_btn, load_btn, test_btn, exit_btn]
         number_of_buttons = len(buttons)

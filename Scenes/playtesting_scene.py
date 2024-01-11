@@ -68,9 +68,9 @@ class PlaytestingScene(game_engine.Scene):
                 image_location + "card_back.png"),
                                  name="draw_btn", left_click_function=board.draw)
 
-        deck_text_box = assets.Box(text=cards_in_deck_string(self), font_size=25, color=LIGHT_GREY,
+        deck_text_box = assets.Box(text=cards_in_deck_string(self),resize_to_fit_text=True,
+                                   font_size=25, color=LIGHT_GREY,
                                    update_text_func=cards_in_deck_string)
-        deck_text_box.hug_text(5)
 
         deck_text_box.set_pos(x=right_side_box.x + (right_side_box.width - deck_text_box.width) // 2,
                               y=draw_btn.y - deck_text_box.height - offset)
@@ -117,7 +117,7 @@ class PlaytestingScene(game_engine.Scene):
                                   text="Token", name="token_btn", left_click_function=generate_token)
 
         main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
-                                      text="Main Menu", name="main_menu_btn",
+                                      text="Main Menu", name="main_menu_btn", font_size=35,
                                       left_click_function=game_engine.schedule_scene_change,
                                       left_click_args=[main_menu_scene.MainMenuScene()])
 
@@ -133,7 +133,8 @@ class PlaytestingScene(game_engine.Scene):
 
         input_field = assets.InputField(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
                                         width=button_width,
-                                        height=button_height, text="Life points:")
+                                        height=button_height, text="Life points: ", initial_text_buffer="8000",
+                                        allowed_input_types=assets.InputTypes.NUMBER)
         small_button_size = 50
 
         hand_index_button_offset = int((hand_box.height - button_height / 2) // 2)
@@ -1378,11 +1379,29 @@ def generate_token():
 
     token = Card(card_id="token", parent=board)
     token.static = True
-    x, y = scene.get_default_position()  # TODO: Change this to something else?
+    x, y = scene.get_default_position()  # TODO: Change this to something else? Perhaps use the board instead. Perhaps
+    # use a counter so that all cards don't end up in the same location.
     token.set_pos(x, y)
     token.location = "field"
     board.field.append(token)
     board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
+
+
+def destroy_overlays(same_overlay_name):
+    scene = game_engine.get_scene_manager().get_current_scene()
+    same_location_overlay = utils.find_object_from_name(scene.get_objects(), same_overlay_name)
+    overlays = [obj for obj in scene.get_objects() if isinstance(obj, assets.Overlay) and not obj.destroyed]
+    number_of_overlays = len(overlays)
+    if number_of_overlays == 0:
+        return False
+
+    for overlay_to_remove in overlays:
+        overlay_to_remove.destroy()
+
+    if same_location_overlay is not None:
+        return True
+
+    return False
 
 
 def create_location_overlay(location_name, card_list_function):
@@ -1393,18 +1412,8 @@ def create_location_overlay(location_name, card_list_function):
         card_list_function (callable): A function returning the list of cards to be displayed.
     """
     scene = game_engine.get_scene_manager().get_current_scene()
-    while True:
-        same_location_overlay = utils.find_object_from_name(scene.get_objects(), location_name)
-        overlays = [obj for obj in scene.get_objects() if isinstance(obj, CardOverlay) and not obj.destroyed]
-        number_of_overlays = len(overlays)
-        if number_of_overlays == 0:
-            break
-
-        for overlay_to_remove in overlays:
-            overlay_to_remove.destroy()
-
-        if same_location_overlay is not None:
-            return
+    if destroy_overlays(location_name):
+        return
 
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
     x_offset = 10
@@ -1444,11 +1453,8 @@ def create_location_overlay(location_name, card_list_function):
 
 def create_extra_options_overlay():
     scene = game_engine.get_scene_manager().get_current_scene()
-    same_overlay = utils.find_object_from_name(scene.get_objects(), "extra_options_overlay")
+    destroy_overlays("extra_options_overlay")
 
-    if same_overlay is not None:
-        same_overlay.destroy()
-        return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
     overlay_width = field_box.width
     overlay_height = field_box.height

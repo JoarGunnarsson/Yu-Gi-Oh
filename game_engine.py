@@ -29,6 +29,7 @@ class Environment:
 
     def __init__(self):
         """Creates the Environment object."""
+        # TODO: Improve event structure.
         self.scale_factor = 1
         self.window = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
         self.key_press = None
@@ -926,8 +927,11 @@ class Scene:
         Returns:
             list: The list of objects that could be blocking the given object.
         """
-        object_index = self.preliminary_display_order.index(obj)
         blocking_object_list = []
+        if obj not in self.preliminary_display_order:
+            return blocking_object_list
+
+        object_index = self.preliminary_display_order.index(obj)
 
         for masking_object_index, masking_object in enumerate(self.preliminary_display_order):
             if should_not_block_clicks(obj, object_index, masking_object, masking_object_index):
@@ -952,6 +956,7 @@ class Scene:
         for obj in self.objects:
             items_to_be_processed = obj.schedule_processing()
             self.processing_order.extend(items_to_be_processed)
+        self.processing_order.sort(key=lambda x: x.z)
 
     def process_object(self, obj):
         """Process a specific object.
@@ -973,13 +978,12 @@ class Scene:
         self.schedule_processing()
 
         # Generate preliminary display_order
-        for obj in self.objects:
+        for obj in self.processing_order:
             if hasattr(obj, "get_displayable_objects"):
                 self.preliminary_display_order.extend(obj.get_displayable_objects())
         self.preliminary_display_order.sort(key=lambda x: x.z)
 
         # Process objects.
-        self.processing_order.sort(key=lambda x: x.z)
         for obj in reversed(self.processing_order.copy()):
             self.process_object(obj)
 
@@ -1267,6 +1271,14 @@ def get_fps():
     """
     fps = environment.clock.get_fps()
     return str(round(float(fps), 1))
+
+
+def start_text_input():
+    pygame.key.start_text_input()
+
+
+def stop_text_input():
+    pygame.key.stop_text_input()
 
 
 game_state = GameState()
