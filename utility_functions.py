@@ -86,3 +86,12 @@ def destroy_on_external_clicks(obj, allowed_rect_list):
         if rect.collidepoint(mouse_position):
             return
     obj.destroy()
+
+
+def center_rectangle(low, high, width):
+    midpoint = calculate_midpoint(low, high)
+    return round(low + midpoint - width / 2)
+
+
+def calculate_midpoint(low, high):
+    return (high - low) / 2

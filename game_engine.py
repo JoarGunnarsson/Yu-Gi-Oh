@@ -56,7 +56,7 @@ class Environment:
         Args:
             width (int): The new width of the screen.
         """
-        self.width = int(width)
+        self.width = round(width)
 
     def get_height(self):
         """Gets the height of the game window.
@@ -72,7 +72,7 @@ class Environment:
         Args:
             height (int): The new height of the screen.
         """
-        self.height = int(height)
+        self.height = round(height)
 
     def get_resolution(self):
         """Gets the current resolution of the screen.
@@ -111,7 +111,7 @@ class Environment:
         window_height = pygame.display.Info().current_h
         scale_x = self.get_screen().get_width() / window_width
         scale_y = self.get_screen().get_height() / window_height
-        return int(x * scale_x), int(y * scale_y)
+        return round(x * scale_x), round(y * scale_y)
 
     def set_events_this_tick(self, events):
         """Sets the recorded events for the current tick.
@@ -978,7 +978,7 @@ class Scene:
         self.schedule_processing()
 
         # Generate preliminary display_order
-        for obj in self.processing_order:
+        for obj in self.objects:
             if hasattr(obj, "get_displayable_objects"):
                 self.preliminary_display_order.extend(obj.get_displayable_objects())
         self.preliminary_display_order.sort(key=lambda x: x.z)

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from Scenes import main_menu_scene
 import game_engine
 from game_engine import environment
@@ -9,8 +10,6 @@ import pygame
 # TODO: Implement text fields, dice, etc? For randomness, life points etc.
 
 # TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
-
-# TODO: Some bug with create_overlay_card, FileNotFoundError. Can't seem to reproduce this reliably.
 
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
@@ -33,6 +32,8 @@ import pygame
 # TODO: Perhaps clamp cards that are placed to the field using default_position.
 
 # TODO: Rescale deck selection deck images. Or use scrolling function.
+
+# TODO: Closing an overlay with keyboard button does not remove card_overlay. Should be easy to fix.
 
 if __name__ == "__main__":
     pygame.init()

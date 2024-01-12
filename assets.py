@@ -6,10 +6,11 @@ import pygame
 from game_engine import environment
 import game_engine
 import utility_functions as utils
-import math
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
+# TODO: Split GameObject into two classes, one that is required for use when the object is displayed, and has
+# necessary attributes like destroyed, children, etc, and one class that has position, width, rect, etc.
 
 
 class GameScript:
@@ -26,11 +27,11 @@ class GameObject:
     """A Class for representing a GameObject.
 
     Attributes:
-        x (int): X-coordinate of the object.
-        y (int): Y-coordinate of the object.
+        x (int): X-coordinate of the object, rounded to the nearest integer.
+        y (int): Y-coordinate of the object, rounded to the nearest integer.
         z (float): Z-coordinate of the object.
-        width (int): Width of the object.
-        height (int): Height of the object.
+        width (int): Width of the object, rounded to the nearest integer.
+        height (int): Height of the object, rounded to the nearest integer.
         alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
         name (str): Name of the object.
         destroyed (bool): Indicates whether the object has been destroyed.
@@ -59,11 +60,11 @@ class GameObject:
         """Initializes a GameObject.
 
         Args:
-            x (int): The x-coordinate of the object.
-            y (int): The y-coordinate of the object.
+            x (float): The x-coordinate of the object.
+            y (float): The y-coordinate of the object.
             z (float): The z-coordinate of the object.
-            width (int): The width of the object.
-            height (int): The height of the object.
+            width (float): The width of the object.
+            height (float): The height of the object.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             name (str): The name of the object.
             parent: The parent object to which this object is attached.
@@ -78,11 +79,11 @@ class GameObject:
             share the same z-value.
         """
         self.opaque_to_relative = False
-        self.x = x
-        self.y = y
+        self.x = round(x)
+        self.y = round(y)
         self.z = z
-        self.width = width
-        self.height = height
+        self.width = round(width)
+        self.height = round(height)
         self.name = name
         self.destroyed = False
         self.parent = parent
@@ -114,9 +115,9 @@ class GameObject:
         as updates the position of its children.
 
         Args:
-            x (int): The new x-coordinate of the object.
+            x (float): The new x-coordinate of the object.
         """
-        self.x = x
+        self.x = round(x)
         self.propagate_new_position()
 
     def set_y(self, y):
@@ -124,9 +125,9 @@ class GameObject:
         as well as updates the position of its children.
 
         Args:
-            y (int): The new y-coordinate of the object.
+            y (float): The new y-coordinate of the object.
         """
-        self.y = y
+        self.y = round(y)
         self.propagate_new_position()
 
     def propagate_new_position(self):
@@ -154,8 +155,8 @@ class GameObject:
         """Sets the x and y coordinates of the game object.
 
         Args:
-            x (int): The new x-coordinate.
-            y (int): The new y-coordinate.
+            x (float): The new x-coordinate.
+            y (float): The new y-coordinate.
         """
         self.set_x(x)
         self.set_y(y)
@@ -164,7 +165,7 @@ class GameObject:
         """Shift the game object's x-coordinate by a given amount.
 
         Args:
-            delta_x (int): The change in the x-coordinate of the object.
+            delta_x (float): The change in the x-coordinate of the object.
         """
         self.set_x(self.x + delta_x)
 
@@ -172,7 +173,7 @@ class GameObject:
         """Shift the game object's x-coordinate by a given amount.
 
         Args:
-            delta_y (int): The change in the y-coordinate of the object.
+            delta_y (float): The change in the y-coordinate of the object.
         """
         self.set_y(self.y + delta_y)
 
@@ -188,8 +189,8 @@ class GameObject:
         """Shift the game object's position by a given amount in both x and y directions.
 
         Args:
-            delta_x (int): The amount to shift the x-coordinate.
-            delta_y (int): The amount to shift the y-coordinate.
+            delta_x (float): The amount to shift the x-coordinate.
+            delta_y (float): The amount to shift the y-coordinate.
         """
         self.shift_x(delta_x)
         self.shift_y(delta_y)
@@ -198,7 +199,7 @@ class GameObject:
         """Sets the relative x-coordinate of the game object relative to its parent.
 
          Args:
-             x (int): The relative x-coordinate.
+             x (float): The relative x-coordinate.
          """
         self.relative_x = x
 
@@ -206,7 +207,7 @@ class GameObject:
         """Sets the relative y-coordinate of the game object relative to its parent.
 
          Args:
-             y (int): The relative x-coordinate.
+             y (float): The relative x-coordinate.
          """
         self.relative_y = y
 
@@ -216,8 +217,8 @@ class GameObject:
         The coordinates (x, y) refer to the position in the parent's coordinate system.
 
         Args:
-            x (int): The relative x-coordinate.
-            y (int): The relative y-coordinate.
+            x (float): The relative x-coordinate.
+            y (float): The relative y-coordinate.
         """
         if self.static:
             return
@@ -244,30 +245,30 @@ class GameObject:
         """Sets the width of the game object.
 
         Args:
-            width (int): The new width.
+            width (float): The new width.
         """
         if width < 0:
             return
-        self.width = width
+        self.width = round(width)
         self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_height(self, height):
         """Sets the height of the game object.
 
         Args:
-            height (int): The new width.
+            height (float): The new width.
         """
         if height < 0:
             return
-        self.height = height
+        self.height = round(height)
         self.get_rect().update(self.x, self.y, self.width, self.height)
 
     def set_size(self, width, height):
         """Sets the width and height of the game object.
 
         Args:
-            width (int): The new height.
-            height (int): The new width.
+            width (float): The new height.
+            height (float): The new width.
         """
         self.set_width(width)
         self.set_height(height)
@@ -441,11 +442,11 @@ class Box(GameObject):
         """Initializes a Box object.
 
         Args:
-            x (int): The x-coordinate of the box.
-            y (int): The y-coordinate of the box.
+            x (float): The x-coordinate of the box.
+            y (float): The y-coordinate of the box.
             z (float): The z-coordinate of the box.
-            width (int): The width of the box.
-            height (int): The Height of the box.
+            width (float): The width of the box.
+            height (float): The Height of the box.
             color (tuple): The color of the box
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             source_image_id (int): The id of the source image of the box.
@@ -468,8 +469,7 @@ class Box(GameObject):
         self.source_image_id = source_image_id
 
         self.text = text
-        self.text_offset = text_offset  # TODO: Implement this further, in the resize_to_fit_text function, set_text etc.
-        # So that if the text is too big, it is cut off so that it fits.
+        self.text_offset = text_offset
         self.text_color = text_color
         self.font_size = font_size
 
@@ -493,7 +493,7 @@ class Box(GameObject):
         as well as its border if applicable.
 
         Args:
-            width (int): The new width of the Box.
+            width (float): The new width of the Box.
         """
         super().set_width(width)
         self.changed_recently = True
@@ -505,7 +505,7 @@ class Box(GameObject):
         as well as its border if applicable..
 
         Args:
-            height (int): The new height of the Box.
+            height (float): The new height of the Box.
         """
         super().set_height(height)
         self.changed_recently = True
@@ -591,14 +591,22 @@ class Box(GameObject):
             offset = self.text_offset
         font = game_engine.get_surface_manager().get_font(self.font_size)
         required_width, required_height = pygame.font.Font.size(font, self.text)
-        if required_width <= self.width and required_height <= self.height:
-            return
-        new_width, new_height = required_width + 2 * offset, required_height + 2 * offset
+        if required_width > self.width:
+            self._resize_width(required_width, offset)
+
+        if required_height > self.height:
+            self._resize_height(required_height, offset)
+
+    def _resize_width(self, required_width, offset):
+        new_width = required_width + 2 * offset
         x_difference = new_width - self.width
-        y_difference = new_height - self.height
         self.set_width(new_width)
-        self.set_height(new_height)
         self.shift_x(-x_difference // 2)
+
+    def _resize_height(self, required_height, offset):
+        new_height = required_height + 2 * offset
+        y_difference = new_height - self.height
+        self.set_height(new_height)
         self.shift_y(-y_difference // 2)
 
     def update_surfaces(self):
@@ -659,11 +667,11 @@ class Border(GameObject):
         """Initialize a Border object.
 
         Args:
-            x (int): The x-coordinate of the Border.
-            y (int): The y-coordinate of the Border.
+            x (float): The x-coordinate of the Border.
+            y (float): The y-coordinate of the Border.
             z (float): The z-coordinate of the Border.
-            width (int): The width of the Border.
-            height (int): The height of the Border.
+            width (float): The width of the Border.
+            height (float): The height of the Border.
             color (tuple): The color of the Border (default is BLACK).
             thickness (int): The thickness of the Border.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
@@ -700,7 +708,7 @@ class Border(GameObject):
         """Sets the width of the Border and updates the side boxes to match.
 
         Args:
-            width (int): The new width of the Border.
+            width (float): The new width of the Border.
         """
         width_difference = width - self.width
         side_boxes = self.get_side_boxes()
@@ -714,7 +722,7 @@ class Border(GameObject):
         """Sets the height of the Border and updates the side boxes to match.
 
         Args:
-            height (int): The new height of the Border.
+            height (float): The new height of the Border.
         """
         height_difference = height - self.height
         side_boxes = self.get_side_boxes()
@@ -886,11 +894,11 @@ class Button(Box):
         """Creates a new button.
 
         Args:
-            x (int): The x-coordinate of the button.
-            y (int): The y-coordinate of the button.
+            x (float): The x-coordinate of the button.
+            y (float): The y-coordinate of the button.
             z (float): The z-coordinate of the button.
-            width (int): The width of the button.
-            height (int): The height of the button.
+            width (float): The width of the button.
+            height (float): The height of the button.
             color (tuple): The color of the button
             indicator_color (tuple): The color used for indicating if the button is hovered over or clicked.
             indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
@@ -1212,11 +1220,11 @@ class MobileButton(Button):
         """Creates a new mobile button with movement support.
 
         Args:
-            x (int): The x-coordinate of the button.
-            y (int): The y-coordinate of the button.
+            x (float): The x-coordinate of the button.
+            y (float): The y-coordinate of the button.
             z (float): The z-coordinate of the button.
-            width (int): The width of the button.
-            height (int): The height of the button.
+            width (float): The width of the button.
+            height (float): The height of the button.
             color (tuple): The color of the button.
             indicator_color (tuple): The color to be used to indicate if the button is hovered over or pressed.
             indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
@@ -1403,22 +1411,23 @@ class Overlay(GameObject):
     """
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, parent=None,
+                 close_btn_size=30, close_btn_offset=5, include_border=True, include_close_button=True, parent=None,
                  external_process_function=None, external_process_arguments=None):
         """Creates a new overlay with an optional close button.
 
          Args:
-             x (int): The x-coordinate of the overlay.
-             y (int): The y-coordinate of the overlay.
+             x (float): The x-coordinate of the overlay.
+             y (float): The y-coordinate of the overlay.
              z (float): The z-coordinate of the overlay.
-             width (int): The width of the overlay.
-             height (int): The height of the overlay.
+             width (float): The width of the overlay.
+             height (float): The height of the overlay.
              alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
              static (bool): Indicates whether the overlay is static (does not move together with its parent).
              name (str): The name of the overlay.
              background_color (tuple): The color of the overlay background.
-             close_btn_size (int): Size of the close button on the overlay.
-             close_btn_offset (int): Offset of the close button from the top-right corner of the overlay.
+             close_btn_size (float): Size of the close button on the overlay.
+             close_btn_offset (float): Offset of the close button from the top-right corner of the overlay.
+             include_border (bool): Determines if a border should be added to the edge of the overlay box.
              parent: The parent object to which this overlay is attached.
              external_process_function (callable): External function to be called during the overlay's processing.
              external_process_arguments: Arguments for the external process function.
@@ -1436,20 +1445,23 @@ class Overlay(GameObject):
                   alpha=self.alpha, static=False, name="overlay_box")
         self.add_child(box)
 
-        border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=BLACK, parent=self,
-                        name="overlay_border")
-        self.add_child(border)
+        if include_border:
+            border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=BLACK,
+                            parent=self,
+                            name="overlay_border")
+            self.add_child(border)
 
         self.parent = parent
 
-        self.close_btn_size = close_btn_size
-        self.close_btn_offset = close_btn_offset
-        close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                           y=self.y + close_btn_offset, z=self.z, width=close_btn_size, height=close_btn_size,
-                           image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
-                           left_click_function=self.destroy, left_trigger_keys=["escape"],
-                           name="close_btn")
-        self.add_child(close_btn)
+        if include_close_button:
+            self.close_btn_size = close_btn_size
+            self.close_btn_offset = close_btn_offset
+            close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
+                               y=self.y + close_btn_offset, z=self.z, width=close_btn_size, height=close_btn_size,
+                               image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
+                               left_click_function=self.destroy, left_trigger_keys=["escape"],
+                               name="close_btn")
+            self.add_child(close_btn)
 
     def get_rect(self):
         """Gets the rectangular area occupied by the overlay.
@@ -1502,8 +1514,8 @@ class ConfirmationOverlay(Overlay):
         """
         Creates the Confirmation Overlay object.
         Args:
-            x (int): The x-coordinate of the overlay.
-            y (int): The y-coordinate of the overlay.
+            x (float): The x-coordinate of the overlay.
+            y (float): The y-coordinate of the overlay.
             yes_button_function (func): The function to be executed when the yes-button is pressed.
             args: The arguments to pass to the function.
         """
