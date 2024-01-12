@@ -507,14 +507,6 @@ class Board(assets.GameObject):
         start, stop = self.display_hand_start_index, self.display_hand_start_index + self.display_hand_number
         self.hand[start:stop] = sorted(self.hand[start:stop], key=lambda card: card.x)
 
-    def destroy_child(self, child):
-        """Destroys a child object.
-
-        Args:
-            child: The child object to destroy.
-        """
-        self.remove_card(child)
-
     def get_displayable_objects(self):
         """Gets all displayable objects on the board, namely the cards on the field and
         the visible cards in the hand."""
@@ -573,14 +565,14 @@ class Card(assets.MobileButton):
         location (str): A string representing the current location of the card.
     """
 
-    def __init__(self, x=0, y=0, card_id="423585", board=None):
+    def __init__(self, x=0, y=0, card_id="423585", parent=None, board=None):
         """Initializes a Card instance.
 
         Args:
             x (float): The x-coordinate of the card.
             y (float): The y-coordinate of the card.
             card_id (str): The ID of the card.
-            board: The board the card belongs to. Will also be used as the card's parent in some cases.
+            parent: The parent of the card.
         """
         matching_images = glob.glob(image_location + f"{card_id}.*")
         card_image_id = None
@@ -590,7 +582,7 @@ class Card(assets.MobileButton):
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=True,
                          indicate_clicks=False,
                          image_id=card_image_id, include_border=False,
-                         name=card_id, static=False, parent=board,
+                         name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_location_overlay)
 
         self.opaque_to_sibling = True
@@ -965,6 +957,10 @@ class Card(assets.MobileButton):
             return
         large_card_btn.destroy()
 
+    def destroy(self):
+        super().destroy()
+        self.board.remove_card(self)
+
 
 def create_large_card_overlay(card):
     """Creates a large card overlay for displaying a larger version of the card image for better readability.
@@ -1276,6 +1272,12 @@ class CardOverlay(assets.Overlay):
         else:
             self.start_index += change_in_limits
             self.stop_index += change_in_limits
+
+    def destroy(self):
+        super().destroy()
+        for card in self.cards:
+            card.remove_card_location_overlay()
+            card.remove_large_card_button()
 
 
 def cards_in_deck_string(scene=None):
