@@ -1274,10 +1274,12 @@ def get_fps():
 
 
 def start_text_input():
+    """Starts input event listening"""
     pygame.key.start_text_input()
 
 
 def stop_text_input():
+    """Stops input event listening"""
     pygame.key.stop_text_input()
 
 

@@ -579,7 +579,7 @@ class Card(assets.MobileButton):
         for image_path in matching_images:
             card_image_id = game_engine.load_image(str(image_path))
 
-        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=True,
+        super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,
                          image_id=card_image_id, include_border=False,
                          name=card_id, static=False, parent=parent,
@@ -797,10 +797,10 @@ class Card(assets.MobileButton):
 
         if self.get_rotation() == 0:
             overlay_width = self.width
-            overlay_height = round(overlay_width * card_aspect_ratio)
+            overlay_height = self.height
         else:
             overlay_width = self.height
-            overlay_height = round(overlay_width * card_aspect_ratio)
+            overlay_height = self.width
 
         button_space = 5
         number_of_buttons = 4
@@ -892,14 +892,18 @@ class Card(assets.MobileButton):
             if location != self.location:
                 location_buttons.append(location_button_dict[location])
 
-        y = button_space
-        used_space = sum([button.height + button_space for button in location_buttons]) + button_space
-        extra_height = overlay.height - used_space
-        extra_button_height = extra_height / len(location_buttons)
+        border = overlay.get_box().get_border()
+        if border is not None:
+            border_thickness = border.thickness
+        else:
+            border_thickness = 0
+        y = button_space + border_thickness
+        used_space = sum([button.height + button_space for button in location_buttons]) + button_space + 2 * border_thickness
+        unused_height = (overlay.height - used_space)
+        extra_button_space = unused_height / (len(location_buttons)+1)
         for btn in location_buttons:
-            btn.set_pos_relative_to_parent(button_space, y)
+            btn.set_pos_relative_to_parent(button_space, y + extra_button_space)
             btn.set_z(overlay.z)
-            btn.adjust_height(extra_button_height)
             y += btn.height + button_space
 
         overlay.add_multiple_children(location_buttons)
@@ -958,6 +962,7 @@ class Card(assets.MobileButton):
         large_card_btn.destroy()
 
     def destroy(self):
+        """Destroys the card, extending the base class method."""
         super().destroy()
         self.board.remove_card(self)
 
@@ -1388,9 +1393,17 @@ def generate_token():
     board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
 
 
-def destroy_overlays(same_overlay_name):
+def destroy_overlays(overlay_name):
+    """Destroys all active overlays, and returns whether an overlay with the name same_overlay_name was found.
+
+    Args:
+        overlay_name (str): The overlay name to be queried.
+
+    Returns:
+        bool: Whether an overlay with the query name was found.
+    """
     scene = game_engine.get_scene_manager().get_current_scene()
-    same_location_overlay = utils.find_object_from_name(scene.get_objects(), same_overlay_name)
+    same_location_overlay = utils.find_object_from_name(scene.get_objects(), overlay_name)
     overlays = [obj for obj in scene.get_objects() if isinstance(obj, assets.Overlay) and not obj.destroyed]
     number_of_overlays = len(overlays)
     if number_of_overlays == 0:
@@ -1453,6 +1466,7 @@ def create_location_overlay(location_name, card_list_function):
 
 
 def create_extra_options_overlay():
+    """Creates an overlay containing extra buttons for additional functionality."""
     scene = game_engine.get_scene_manager().get_current_scene()
     if destroy_overlays("extra_options_overlay"):
         return
@@ -1485,6 +1499,11 @@ def create_extra_options_overlay():
 
 
 def roll_dice(text_box):
+    """Rolls a six-sided dice, and modifies the text of the given text box.
+
+    Args:
+        text_box (assets.Box): The box which text should be modified.
+    """
     result = random.randint(1, 6)
     text_box.set_text(str(result))
 

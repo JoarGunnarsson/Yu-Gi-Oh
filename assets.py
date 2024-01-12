@@ -1200,7 +1200,7 @@ class Button(Box):
 
 
 class MobileButton(Button):
-    """A class for button that can be moved using the mouse.
+    """A class for a button that can be moved using the mouse.
 
     Attributes:
         moving (bool): Indicates whether the button is currently moving.
@@ -1292,7 +1292,8 @@ class MobileButton(Button):
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
 
 
-class InputTypes:
+class InputType:
+    """A class for storing possible character types and their associated allowed characters."""
     NUMBER = "0123456789"
     LOWERCASE = "abcdefghijklmnopqrstuvwxyzåäö"
     UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ"
@@ -1301,26 +1302,55 @@ class InputTypes:
 
 
 class InputField(Button):
+    """A class for a text-field, that can be left-clicked in order to modify its text with the keyboard.
+
+    Attributes:
+        is_selected (bool): Indicates if the InputField is currently selected, and can be written to.
+        fixed_text (str): The part of the InputField text that cannot be changed by input.
+        text_buffer (str): The part of the InputField text that can be changed by input.
+        allowed_input_type (str): A string containing all allowed characters.
+    """
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
-                 alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="", text_buffer_size=8,
-                 allowed_input_types=InputTypes.ANY,
+                 alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="",
+                 allowed_input_type=InputType.ANY,
                  name=None, include_border=True, static=False):
+        """Initializes an InputField object.
+
+        Args:
+            x (float): The x-coordinate of the InputField.
+            y (float): The y-coordinate of the InputField.
+            z (float): The z-coordinate of the InputField.
+            width (float): The width of the InputField.
+            height (float): The height of the InputField.
+            color (tuple): The color of the InputField
+            indicate_hover (bool): Indicates if the InputField should change appearance when it is hovered over.
+            indicate_clicks (bool): Indicates if the InputField should change appearance when it is clicked.
+            alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
+            text (str): The text displayed on the InputField (default is an empty string).
+            font_size (int): The font size of the text (default is 40).
+            text_color: The color of the text (default is BLACK).
+            initial_text_buffer (str): The initial text_buffer of the InputField
+            allowed_input_type (str): The allowed input type of the InputField.
+            name (str): The name of the InputField (default is None).
+            include_border (bool): Determines if the button should have a border or not.
+            static (bool): Indicates whether the InputField is static (does not move together with its parent).
+        """
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color,
                          indicate_hover=indicate_hover,
                          indicate_clicks=indicate_clicks, alpha=alpha, font_size=font_size,
                          text_color=text_color, name=name, include_border=include_border, static=static,
-                         left_click_function=self.create_text_detector)
+                         left_click_function=self.create_input_detector)
 
         self.is_selected = False
 
         self.fixed_text = text
         self.text_buffer = initial_text_buffer
-        self.text_buffer_size = text_buffer_size
         self.update_text_from_buffer()
 
-        self.allowed_input_types = allowed_input_types
+        self.allowed_input_type = allowed_input_type
 
-    def create_text_detector(self):
+    def create_input_detector(self):
+        """Creates a new InputDetector object."""
         text_detectors = utils.find_objects_from_type(self.children, InputDetector)
         if len(text_detectors) != 0:
             return
@@ -1329,33 +1359,66 @@ class InputField(Button):
         self.is_selected = True
 
     def get_display_surface(self):
+        """Return a tuple containing the surface to be displayed and the object's rect.
+
+        Returns:
+            tuple: The surface to be displayed and the object's rect.
+        """
         if self.is_selected:
             self.indicator_alpha = 10
         return super().get_display_surface()
 
-    def append_text(self, added_text):
-        if not self.verify_input_type(added_text):
+    def append_text(self, text):
+        """Appends text to the text_buffer.
+
+        Args:
+            text (str): The text to be added to the text_buffer.
+        """
+        if not self.verify_input_type(text):
             return
-        self.text_buffer += added_text
+        self.text_buffer += text
 
     def verify_input_type(self, new_input):
-        if self.allowed_input_types == InputTypes.ANY:
+        """Verifies the input against the allowed input_type.
+
+        Args:
+            new_input (str): The input.
+
+        Returns:
+            bool: True if the input is allowed, False otherwise.
+        """
+        if self.allowed_input_type == InputType.ANY:
             return True
-        return new_input in self.allowed_input_types
+        return new_input in self.allowed_input_type
 
     def update_text_from_buffer(self):
+        """Updates the InputFields text from the fixed_text and the text_buffer."""
         self.set_text(self.fixed_text + self.text_buffer)
         allowed_text_buffer_length = len(self.text) - len(self.fixed_text)
         self.text_buffer = self.text_buffer[:allowed_text_buffer_length]
 
     def process(self):
+        """Processes the InputField, updating it's text if it is currently selected."""
         super().process()
         if self.is_selected:
             self.update_text_from_buffer()
 
 
 class InputDetector(GameObject):
-    def __init__(self, parent=None, allowed_rects=None):
+    """A class for detecting input.
+
+    Attributes:
+        external_processing_function (callable): The function to be called at the start of processing the object.
+        external_processing_args (iterable): The arguments for the external_processing_function.
+        backspace_counter (int): The counter used for backspace delay.
+    """
+    def __init__(self, parent, allowed_rects=None):
+        """Initializes an InputDetector object.
+
+        Args:
+            parent (InputField): The parent of the InputDetector.
+            allowed_rects (list): The allowed rects for the destroy_on_external_clicks function.
+        """
         super().__init__(parent=parent)
         if allowed_rects is None:
             allowed_rects = []
@@ -1365,6 +1428,7 @@ class InputDetector(GameObject):
         self.backspace_counter = 0
 
     def process(self):
+        """Processes the InputDetector, writing text to its parent and handling input events."""
         self.external_processing_function(*self.external_processing_args)
         self.write_to_parent()
 
@@ -1377,12 +1441,14 @@ class InputDetector(GameObject):
         self.backspace_counter = 0
 
     def write_to_parent(self):
+        """Writes text to the InputDetectors parents text_buffer."""
         if environment.input_event is None:
             return
         self.parent.append_text(environment.input_event)
         environment.input_event = None
 
     def backspace(self):
+        """Handels the backspace key event."""
         if self.backspace_counter != 0:
             self.backspace_counter -= 1
             return
@@ -1391,12 +1457,14 @@ class InputDetector(GameObject):
         self.backspace_counter = 2  # Hard-coded value, in order for backspace to have the right speed.
 
     def destroy(self):
+        """Destroys the InputDetector, stopping input event detection globally."""
         super().destroy()
         game_engine.stop_text_input()
         self.parent.is_selected = False
 
 
 class Keys:
+    """A class for storing possible special key-presses."""
     SPACE = "space"
     RETURN = "return"
     BACKSPACE = "backspace"
@@ -1442,14 +1510,8 @@ class Overlay(GameObject):
         self.external_process_function = external_process_function
 
         box = Box(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=background_color,
-                  alpha=self.alpha, static=False, name="overlay_box")
+                  alpha=self.alpha, static=False, name="overlay_box", include_border=True)
         self.add_child(box)
-
-        if include_border:
-            border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=BLACK,
-                            parent=self,
-                            name="overlay_border")
-            self.add_child(border)
 
         self.parent = parent
 
