@@ -433,7 +433,7 @@ class Box(GameObject):
         text_offset (int): The space that should be between the buttons text (if any) and the edge of the box.
         text_color (tuple): The color of the text.
         font_size (int): The font size of the text.
-        font_surface_id (int): The id corresponding to the font surface of the box.
+        text_surface_id (int): The id corresponding to the font surface of the box.
         update_text_func (callable): The function responsible for updating the box text.
         surface_id (int): The id corresponding to the surface of the box.
     """
@@ -477,10 +477,11 @@ class Box(GameObject):
         self.text_color = text_color
         self.font_size = font_size
 
-        self.font_surface_id = None
+        self.text_surface_id = None
         if resize_to_fit_text and self.text != "":
             self.resize_to_fit_text()
-        self.set_text(self.text)
+        if self.text != "":
+            self.set_text(self.text)
 
         self.update_text_func = update_text_func
 
@@ -541,12 +542,17 @@ class Box(GameObject):
             new_text (str): The new text for the Box.
         """
         self.text = new_text
+        self.update_text_surface()
+
+    def update_text_surface(self):
+        """Updates the text surface of the box and truncates its text to fit the box."""
         self.truncate_text()
-        self.font_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
+        self.text_surface_id = game_engine.get_surface_manager().create_font_surface(self.text, self.text_color,
                                                                                      self.font_size,
-                                                                                     self.font_surface_id)
+                                                                                     self.text_surface_id)
 
     def truncate_text(self):
+        """Truncates the text of the box in order to fit the box."""
         font = game_engine.get_surface_manager().get_font(self.font_size)
         while len(self.text) > 0:
             occupied_width = pygame.font.Font.size(font, self.text)[0]
@@ -618,6 +624,9 @@ class Box(GameObject):
         if self.source_image_id is not None:
             self.update_image()
 
+        if self.text_surface_id is not None:
+            self.update_text_surface()
+
         game_engine.get_surface_manager().transform_surface(self.surface_id, (self.width, self.height),
                                                             self.rotation_angle, self.surface_id)
         self.changed_recently = False
@@ -647,10 +656,10 @@ class Box(GameObject):
         if self.update_text_func is not None:
             self.set_text(self.update_text_func())
             game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
-                                                                  self.font_surface_id)
+                                                                  self.text_surface_id)
 
         if self.text != "":
-            font_surface = game_engine.get_surface_manager().fetch_font_surface(self.font_surface_id)
+            font_surface = game_engine.get_surface_manager().fetch_font_surface(self.text_surface_id)
             surface = game_engine.get_surface_manager().fetch_surface(self.surface_id)
             surface_middle = [(self.width - font_surface.get_width()) / 2,
                               (self.height - font_surface.get_height()) / 2]
@@ -1105,10 +1114,12 @@ class Button(Box):
         mouse_over_rect = self.get_rect().collidepoint(mouse_position)
 
         if not self.click_blocked(mouse_position):
-            button_left_clicked = self.click_detector.left_clicked or environment.key_press in self.left_trigger_keys
+            left_click_keys = utils.common_elements(environment.get_new_key_presses(), self.left_trigger_keys)
+            button_left_clicked = self.click_detector.left_clicked or left_click_keys
             button_left_held = self.click_detector.left_clicked_long
 
-            button_right_clicked = self.click_detector.right_clicked or environment.key_press in self.right_trigger_keys
+            right_click_keys = utils.common_elements(environment.get_new_key_presses(), self.right_trigger_keys)
+            button_right_clicked = self.click_detector.right_clicked or right_click_keys
             button_right_held = self.click_detector.right_clicked_long
 
             hovering = mouse_over_rect
@@ -1122,12 +1133,13 @@ class Button(Box):
 
         self.status = ButtonState.HOVER
 
-        key_function, key_args = None, []
+        key_functions, key_args = [], []
         for key in self.key_functions:
-            if environment.key_press == key:
-                key_function = self.key_functions[key][0]
-                key_args = self.key_functions[key][1]
-                break
+            if key in environment.get_new_key_presses():
+                function = self.key_functions[key][0]
+                args = self.key_functions[key][1]
+                key_functions.append(function)
+                key_args.append(args)
 
         if button_left_clicked and self.left_click_function is not None:
             self.status = ButtonState.PRESSED
@@ -1158,11 +1170,12 @@ class Button(Box):
             else:
                 self.right_hold_function(*self.right_hold_args)
 
-        if key_function is not None:
-            if isinstance(key_args, dict):
-                key_function(**key_args)
-            else:
-                key_function(*key_args)
+        if len(key_functions) != 0:
+            for function, args in zip(key_functions, key_args):
+                if isinstance(args, dict):
+                    function(**args)
+                else:
+                    function(*args)
 
         if not hovering:
             self.status = ButtonState.NORMAL
@@ -1402,7 +1415,7 @@ class InputField(Button):
         self.text_buffer = self.text_buffer[:allowed_text_buffer_length]
 
     def process(self):
-        """Processes the InputField, updating it's text if it is currently selected."""
+        """Processes the InputField, updating its text if it is currently selected."""
         super().process()
         if self.is_selected:
             self.update_text_from_buffer()
@@ -1436,7 +1449,6 @@ class InputDetector(GameObject):
         self.external_processing_function(*self.external_processing_args)
         self.write_to_parent()
 
-        new_key = environment.get_key_press_this_tick()
         keys_pressed = environment.get_pressed_keys_this_tick()
         if Keys.BACKSPACE in keys_pressed:
             self.backspace()
@@ -1514,7 +1526,7 @@ class Overlay(GameObject):
         self.external_process_function = external_process_function
 
         box = Box(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, color=background_color,
-                  alpha=self.alpha, static=False, name="overlay_box", include_border=True)
+                  alpha=self.alpha, static=False, name="overlay_box", include_border=include_border)
         self.add_child(box)
 
         self.parent = parent

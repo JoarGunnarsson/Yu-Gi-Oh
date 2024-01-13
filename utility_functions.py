@@ -2,6 +2,22 @@ import game_engine
 import sys
 
 
+def common_elements(list1, list2):
+    """Checks if two lists have any elements in common.
+
+    Args:
+        list1 (list): The first list.
+        list2 (list): The second list.
+
+    Returns:
+        bool: True if list1 and list2 have elements in common, False otherwise.
+    """
+    for element in list1:
+        if element in list2:
+            return True
+    return False
+
+
 def eprint(*args, **kwargs):
     """Prints to stderr."""
     print(*args, file=sys.stderr, **kwargs)
