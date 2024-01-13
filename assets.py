@@ -82,7 +82,11 @@ class GameObject:
         self.x = round(x)
         self.y = round(y)
         self.z = z
+        if width < 0:
+            width = 0
         self.width = round(width)
+        if height < 0:
+            height = 0
         self.height = round(height)
         self.name = name
         self.destroyed = False

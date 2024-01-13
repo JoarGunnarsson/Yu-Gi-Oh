@@ -134,7 +134,7 @@ class PlaytestingScene(game_engine.Scene):
         input_field = assets.InputField(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
                                         width=button_width,
                                         height=button_height, text="Life points: ", initial_text_buffer="8000",
-                                        allowed_input_types=assets.InputTypes.NUMBER)
+                                        allowed_input_type=assets.InputType.NUMBER)
         small_button_size = 50
 
         hand_index_button_offset = int((hand_box.height - button_height / 2) / 2)
@@ -315,7 +315,8 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
 
         self.stop_processing(card)
         self.gy.insert(0, card)
@@ -330,7 +331,9 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
+
         self.stop_processing(card)
         self.banished.insert(0, card)
         previous_location.remove(card)
@@ -344,7 +347,9 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
+
         self.stop_processing(card)
         self.deck.insert(0, card)
         card.moving = False
@@ -359,7 +364,9 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
+
         self.stop_processing(card)
         self.extra_deck.insert(0, card)
 
@@ -375,7 +382,8 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
 
         if not card.moving:
             self.hand.append(card)
@@ -396,7 +404,9 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            raise IndexError("Card not found in previous location")
+            utils.eprint("Card not found in previous location")
+            return
+
         if card.location != "hand":
             default_x, default_y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(default_x, default_y)
@@ -861,7 +871,7 @@ class Card(assets.MobileButton):
                                       left_trigger_keys=["d"], left_click_function=board.add_to_the_deck,
                                       left_click_args=[self, card_location])
 
-        extra_deck_btn = assets.Button(width=button_width, height=button_height, font_size=15, text="Extra Deck",
+        extra_deck_btn = assets.Button(width=button_width, height=button_height, font_size=14, text="Extra Deck",
                                        name="send_to_extra_deck_btn", parent=overlay,
                                        left_trigger_keys=["d"], left_click_function=board.add_to_the_extra_deck,
                                        left_click_args=[self, card_location])
@@ -898,12 +908,14 @@ class Card(assets.MobileButton):
         else:
             border_thickness = 0
         y = button_space + border_thickness
-        used_space = sum([button.height + button_space for button in location_buttons]) + button_space + 2 * border_thickness
+        used_space_by_buttons = sum([button.height + button_space for button in location_buttons])
+        used_space = used_space_by_buttons + button_space + 2 * border_thickness
         unused_height = (overlay.height - used_space)
-        extra_button_space = unused_height / (len(location_buttons)+1)
+        extra_button_space = unused_height / (len(location_buttons))
         for btn in location_buttons:
-            btn.set_pos_relative_to_parent(button_space, y + extra_button_space)
+            btn.set_pos_relative_to_parent(button_space, y)
             btn.set_z(overlay.z)
+            btn.adjust_height(extra_button_space)
             y += btn.height + button_space
 
         overlay.add_multiple_children(location_buttons)
@@ -975,10 +987,11 @@ def create_large_card_overlay(card):
     """
     scene = game_engine.get_scene_manager().get_current_scene()
     large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
-    if large_card_overlay is not None:
+    large_card_btn = utils.find_object_from_name(card.children, "large_card_btn")
+    if large_card_overlay is not None or large_card_btn is None:
         return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
-    large_card_btn = utils.find_object_from_name(card.children, "large_card_btn")
+
     dummy_overlay = assets.Overlay()
     close_btn_size = dummy_overlay.close_btn_size
     close_btn_offset = dummy_overlay.close_btn_offset
@@ -1052,10 +1065,13 @@ class LargeCardOverlay(assets.Overlay):
         """Destroys the large card overlay. Overrides the base class method to remove the large card button from the
         allowed rects list used in the destroy_on_external_clicks function for the associated cards large card button.
         """
+        if self.destroyed:
+            return
         large_card_btn = utils.find_object_from_name(self.card.children, "large_card_btn")
-        allowed_rects = large_card_btn.get_external_process_arguments()
-        allowed_rects[1].remove(self.get_rect())
-        large_card_btn.set_external_process_arguments(allowed_rects)
+        if large_card_btn is not None:
+            allowed_rects = large_card_btn.get_external_process_arguments()
+            allowed_rects[1].remove(self.get_rect())
+            large_card_btn.set_external_process_arguments(allowed_rects)
         super().destroy()
 
 

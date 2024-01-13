@@ -13,8 +13,9 @@ import pygame
 
 # TODO: Add support for pendulum monsters.
 # This include show if a card is face-up or face-down (only has to be in the extra deck, but could as well include
-# this functionality for any card). Also add pendulum types for the get_card_type. Pendulum cards should be able
-# to be sent to the extra_deck.
+# this functionality for any card). Could be done by blitting a semi transparent card-back image to the card surface.
+# Also add pendulum types for the get_card_type. Pendulum cards should be able
+# to be sent to the extra_deck face-up only if they start in the main-deck, otherwise both face-up and face-down.
 
 # TODO: There are many "magic values", such as scene.name == "playtesting_scene", which has caused trouble before.
 # Fix this by for example using an Enum for scenes.
@@ -33,7 +34,19 @@ import pygame
 
 # TODO: Rescale deck selection deck images. Or use scrolling function.
 
-# TODO: Closing an overlay with keyboard button does not remove card_overlay. Should be easy to fix.
+# TODO: Destroying an object should perhaps destroy its children too. In that case, CardOverlay has to be
+# reworked so that it uses copies instead.
+
+# TODO: Allow multiple new key-presses at once.
+
+# TODO: When scaling boxes, text-surfaces should be rescaled too
+
+# TODO: Perhaps use color detection in order to figure out the level of a card, rank, or link rating. Could then
+# be used for sorting.
+
+# TODO: Card in hand position should be based on the card on the left + offset, so that the hand does not
+# flicker when a card is moved in and out.
+
 
 if __name__ == "__main__":
     pygame.init()
