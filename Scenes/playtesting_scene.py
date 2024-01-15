@@ -127,10 +127,13 @@ class PlaytestingScene(game_engine.Scene):
                                          left_click_function=game_engine.schedule_scene_change,
                                          left_click_args=[main_menu_scene.MainMenuScene()])
 
-        save_button = assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
+        save_button = assets.Box(x=30, y=30, z=20,
+                                    text="?", name="save_button", update_text_func=game_engine.get_fps)
+
+        """save_button = assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
                                     text="SAVE", name="save_button",
                                     left_click_function=game_engine.schedule_end_of_tick_function,
-                                    left_click_args=[game_engine.save, []])
+                                    left_click_args=[game_engine.save, []])"""
 
         """assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
                                   text="Reset", name="reset_button",
@@ -700,7 +703,9 @@ class Card(assets.MobileButton):
         if self.location in ["hand", "graveyard", "main_deck"]:
             return
 
-        if self.location == "extra_deck" and "pendulum" not in self.card_type:
+        starts_in_main_deck= self.card_starting_location() != "extra_deck"
+        not_extra_deck_pendulum_monster = "pendulum" not in self.card_type or starts_in_main_deck
+        if self.location == "extra_deck" and not_extra_deck_pendulum_monster:
             return
 
         self.is_face_up = not self.is_face_up
@@ -806,7 +811,6 @@ class Card(assets.MobileButton):
                 self.rotation_angle,
                 self.face_down_marker_id)
             face_down_marker_image = game_engine.get_surface_manager().fetch_image(self.face_down_marker_id)
-
             surf.blit(face_down_marker_image, (0, 0))
         return surf, rect
 
@@ -1503,6 +1507,7 @@ def generate_token():
 
     token = Card(card_id="token", board=board)
     token.static = True
+    token.is_face_up = True
     x, y = scene.get_default_position()  # TODO: Change this to something else? Perhaps use the board instead. Perhaps
     # use a counter so that all cards don't end up in the same location.
     token.set_pos(x, y)

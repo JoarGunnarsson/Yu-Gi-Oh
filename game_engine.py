@@ -334,7 +334,7 @@ class SurfaceHelper:
             font_data (tuple): Tuple related to font surfaces (text, text_color, font_size).
             surface_type (str): The type of the surface (e.g., SurfaceType.IMAGE).
         """
-        self.surface = surface
+        self.surface = surface.convert_alpha()
         if surface_id is None:
             self.surface_id = get_surface_manager().get_new_id()
         else:

@@ -45,6 +45,8 @@ import pygame
 # TODO: Implement multiple centering options, left-centering, center centering, right centering. Currently,
 # everything is center centered.
 
+# TODO: Add images with the face_down_marking already applied, would save a lot of performance probably.
+
 
 if __name__ == "__main__":
     pygame.init()
