@@ -1250,6 +1250,22 @@ def load_image(image_path):
     return get_surface_manager().load_image(image_path)
 
 
+def find_image_path_from_name(image_name):
+    """Finds the first matching file for the given file name in the image location.
+
+    Args:
+        image_name (str): The name of the image.
+
+    Returns:
+        str: The full path of the image.
+    """
+    image_paths = []
+    for image_type in allowed_image_types:
+        image_paths.extend(glob.glob(image_location + image_name + image_type))
+
+    return str(image_paths[0])
+
+
 def load_all_images():
     """Loads all images in the '/Images/' directory, to improve performance."""
     image_paths = []

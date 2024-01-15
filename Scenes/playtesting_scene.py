@@ -192,28 +192,27 @@ class Board(assets.GameObject):
         scene: The scene to which the board belongs.
     """
 
-    def __init__(self, card_ids=None, scene=None):
+    def __init__(self, deck, scene=None):
         """Initializes a Board instance.
 
         Args:
-            card_ids (list): List of card IDs for the cards in the deck.
+            deck (decks.Deck): The deck to be used for the board.
             scene (game_engine.Scene): The scene to which the board belongs.
         """
         super().__init__(name="board")
         self.z = 2
-        if card_ids is None:
-            card_ids = []
-
         self.deck = []
         self.extra_deck = []
-        for card_id in card_ids:
+
+        for card_id in deck.main_deck:
             new_card = Card(card_id=card_id, board=self)
-            card_start_location = new_card.card_starting_location()
-            new_card.location = card_start_location
-            if card_start_location == "main_deck":
-                self.deck.append(new_card)
-            else:
-                self.extra_deck.append(new_card)
+            new_card.location = "main_deck"
+            self.deck.append(new_card)
+
+        for card_id in deck.extra_deck:
+            new_card = Card(card_id=card_id, board=self)
+            new_card.location = "extra_deck"
+            self.extra_deck.append(new_card)
 
         card_sort_card_type(self.extra_deck)
 
@@ -315,7 +314,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         self.stop_processing(card)
@@ -331,7 +329,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         self.stop_processing(card)
@@ -347,7 +344,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         self.stop_processing(card)
@@ -364,7 +360,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         self.stop_processing(card)
@@ -382,7 +377,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         if not card.moving:
@@ -404,7 +398,6 @@ class Board(assets.GameObject):
             previous_location: The previous location of the card.
         """
         if card not in previous_location:
-            utils.eprint("Card not found in previous location")
             return
 
         if card.location != "hand":
@@ -562,7 +555,7 @@ def generate_board(scene, deck):
     if existing_board is not None:
         scene.remove_object(existing_board)
 
-    board = Board(card_ids=deck.cards, scene=scene)
+    board = Board(deck=deck, scene=scene)
     scene.add_object(board)
     return board
 
@@ -584,10 +577,8 @@ class Card(assets.MobileButton):
             card_id (str): The ID of the card.
             parent: The parent of the card.
         """
-        matching_images = glob.glob(image_location + f"{card_id}.*")
-        card_image_id = None
-        for image_path in matching_images:
-            card_image_id = game_engine.load_image(str(image_path))
+
+        card_image_id = game_engine.load_image(game_engine.find_image_path_from_name(card_id))
 
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,
@@ -1406,7 +1397,7 @@ def generate_token():
     token.set_pos(x, y)
     token.location = "field"
     board.field.append(token)
-    board.card_processing_order.append(token)  # TODO: Perhaps add a method in class Board for the adding of cards.
+    board.card_processing_order.append(token)  # TODO: Perhaps add a method in the Board class for the adding of cards.
 
 
 def destroy_overlays(overlay_name):
