@@ -492,6 +492,7 @@ class Box(GameObject):
         self.set_alpha(self.alpha)
         self.update_surfaces()
         self.changed_recently = False
+        self.temp_id = game_engine.load_image(image_location + "face_down_marker.png")
 
     def set_width(self, width):
         """Sets the width of the Box and updates the Box's image and surface,
@@ -584,11 +585,11 @@ class Box(GameObject):
         Returns:
             Border: The border object of the button.
         """
-        return utils.find_object_from_name(self.children, "btn_border")
+        return utils.find_object_from_name(self.children, "button_border")
 
     def add_border(self):
         border = Border(x=self.x, y=self.y, z=self.z, width=self.width, height=self.height, parent=self,
-                        name="btn_border")
+                        name="button_border")
         self.add_child(border)
 
     def resize_to_fit_text(self, offset=None):
@@ -611,13 +612,13 @@ class Box(GameObject):
         new_width = required_width + 2 * offset
         x_difference = new_width - self.width
         self.set_width(new_width)
-        self.shift_x(-x_difference // 2)
+        self.shift_x(-x_difference / 2)
 
     def _resize_height(self, required_height, offset):
         new_height = required_height + 2 * offset
         y_difference = new_height - self.height
         self.set_height(new_height)
-        self.shift_y(-y_difference // 2)
+        self.shift_y(-y_difference / 2)
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
@@ -641,7 +642,7 @@ class Box(GameObject):
         """Return a tuple containing the surface to be displayed and the object's rect.
 
         Returns:
-            tuple: The surface to be displayed and the object's rect.
+            tuple (pygame.Surface, pygame.Rect): The surface to be displayed and the object's rect.
         """
         if self.changed_recently:
             self.update_surfaces()
@@ -1203,6 +1204,11 @@ class Button(Box):
             self.indicator_alpha = 0
 
     def get_display_surface(self):
+        """Return a tuple containing the surface to be displayed and the object's rect.
+
+        Returns:
+            tuple (pygame.Surface, pygame.Rect): The surface to be displayed and the object's rect.
+        """
         surf, rect = super().get_display_surface()
 
         if self.indicator_alpha != 0:
@@ -1327,6 +1333,7 @@ class InputField(Button):
         text_buffer (str): The part of the InputField text that can be changed by input.
         allowed_input_type (str): A string containing all allowed characters.
     """
+
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
                  alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="",
                  allowed_input_type=InputType.ANY,
@@ -1429,6 +1436,7 @@ class InputDetector(GameObject):
         external_processing_args (iterable): The arguments for the external_processing_function.
         backspace_counter (int): The counter used for backspace delay.
     """
+
     def __init__(self, parent, allowed_rects=None):
         """Initializes an InputDetector object.
 
@@ -1495,7 +1503,8 @@ class Overlay(GameObject):
     """
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, include_border=True, include_close_button=True, parent=None,
+                 close_button_size=30, close_button_offset=5, include_border=True, include_close_button=True,
+                 parent=None,
                  external_process_function=None, external_process_arguments=None):
         """Creates a new overlay with an optional close button.
 
@@ -1509,8 +1518,8 @@ class Overlay(GameObject):
              static (bool): Indicates whether the overlay is static (does not move together with its parent).
              name (str): The name of the overlay.
              background_color (tuple): The color of the overlay background.
-             close_btn_size (float): Size of the close button on the overlay.
-             close_btn_offset (float): Offset of the close button from the top-right corner of the overlay.
+             close_button_size (float): Size of the close button on the overlay.
+             close_button_offset (float): Offset of the close button from the top-right corner of the overlay.
              include_border (bool): Determines if a border should be added to the edge of the overlay box.
              parent: The parent object to which this overlay is attached.
              external_process_function (callable): External function to be called during the overlay's processing.
@@ -1532,14 +1541,15 @@ class Overlay(GameObject):
         self.parent = parent
 
         if include_close_button:
-            self.close_btn_size = close_btn_size
-            self.close_btn_offset = close_btn_offset
-            close_btn = Button(x=self.x + self.width - close_btn_size - close_btn_offset,
-                               y=self.y + close_btn_offset, z=self.z, width=close_btn_size, height=close_btn_size,
-                               image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
-                               left_click_function=self.destroy, left_trigger_keys=["escape"],
-                               name="close_btn")
-            self.add_child(close_btn)
+            self.close_button_size = close_button_size
+            self.close_button_offset = close_button_offset
+            close_button = Button(x=self.x + self.width - close_button_size - close_button_offset,
+                                  y=self.y + close_button_offset, z=self.z, width=close_button_size,
+                                  height=close_button_size,
+                                  image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
+                                  left_click_function=self.destroy, left_trigger_keys=["escape"],
+                                  name="close_button")
+            self.add_child(close_button)
 
     def get_rect(self):
         """Gets the rectangular area occupied by the overlay.
@@ -1611,8 +1621,8 @@ class ConfirmationOverlay(Overlay):
         allowed_click_rects = [self, [self.get_rect()]]
         self.external_process_arguments = allowed_click_rects
 
-        close_btn = utils.find_object_from_name(self.get_buttons(), "close_btn")
-        self.destroy_child(close_btn)
+        close_button = utils.find_object_from_name(self.get_buttons(), "close_button")
+        self.destroy_child(close_button)
 
         button_width = 70
         button_height = 50
@@ -1622,21 +1632,22 @@ class ConfirmationOverlay(Overlay):
                        parent=self)
         text_box.set_pos(self.x + (self.width - text_box.width) // 2, text_box.y)
         self.add_child(text_box)
-        yes_btn = Button(width=button_width, height=button_height,
-                         text="Yes", text_offset=5, font_size=font_size, resize_to_fit_text=True,
-                         left_click_function=utils.execute_multiple_functions,
-                         left_click_args=[[self.destroy, yes_button_function], [[], args]],
-                         left_trigger_keys=["return"], static=False, parent=self, name="overlay_yes_btn")
-        no_btn = Button(width=button_width,
-                        height=button_height,
-                        text="No", text_offset=5, font_size=font_size, resize_to_fit_text=True,
-                        left_click_function=self.destroy, left_trigger_keys=["escape"], static=False, parent=self,
-                        name="overlay_no_btn")
+        yes_button = Button(width=button_width, height=button_height,
+                            text="Yes", text_offset=5, font_size=font_size, resize_to_fit_text=True,
+                            left_click_function=utils.execute_multiple_functions,
+                            left_click_args=[[self.destroy, yes_button_function], [[], args]],
+                            left_trigger_keys=["return"], static=False, parent=self, name="overlay_yes_button")
+        no_button = Button(width=button_width,
+                           height=button_height,
+                           text="No", text_offset=5, font_size=font_size, resize_to_fit_text=True,
+                           left_click_function=self.destroy, left_trigger_keys=["escape"], static=False, parent=self,
+                           name="overlay_no_button")
 
-        buttons = [yes_btn, no_btn]
+        buttons = [yes_button, no_button]
         number_of_buttons = len(buttons)
         x_offset = (self.width - number_of_buttons * button_width) // (number_of_buttons + 1)
-        for i, btn in enumerate(buttons):
-            btn.set_z(self.z)
-            self.add_child(btn)
-            btn.set_pos(self.x + (i + 1) * x_offset + i * button_width, y=self.y + self.height - offset - button_height)
+        for i, button in enumerate(buttons):
+            button.set_z(self.z)
+            self.add_child(button)
+            button.set_pos(self.x + (i + 1) * x_offset + i * button_width,
+                           y=self.y + self.height - offset - button_height)

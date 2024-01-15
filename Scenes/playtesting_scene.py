@@ -6,7 +6,6 @@ import utility_functions as utils
 from Scenes import main_menu_scene
 import random
 import math
-import glob
 
 
 class PlaytestingScene(game_engine.Scene):
@@ -62,101 +61,109 @@ class PlaytestingScene(game_engine.Scene):
         self.add_object(hand_border)
         board = generate_board(self, self.deck)
 
-        draw_btn = assets.Button(x=environment.get_width() - button_width - offset,
-                                 y=environment.get_height() - deck_height - offset,
-                                 width=deck_width, height=deck_height, image_id=game_engine.load_image(
+        draw_button = assets.Button(x=environment.get_width() - button_width - offset,
+                                    y=environment.get_height() - deck_height - offset,
+                                    width=deck_width, height=deck_height, image_id=game_engine.load_image(
                 image_location + "card_back.png"),
-                                 name="draw_btn", left_click_function=board.draw)
+                                    name="draw_button", left_click_function=board.draw)
 
         deck_text_box = assets.Box(width=100, height=30, text=cards_in_deck_string(self), resize_to_fit_text=True,
                                    font_size=25, color=LIGHT_GREY,
                                    update_text_func=cards_in_deck_string)
 
         deck_text_box.set_pos(x=right_side_box.x + (right_side_box.width - deck_text_box.width) / 2,
-                              y=draw_btn.y - deck_text_box.height - offset)
+                              y=draw_button.y - deck_text_box.height - offset)
 
-        show_deck_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - button_height - offset, width=button_width / 2,
-                                      height=button_height,
-                                      image_id=game_engine.load_image(image_location + "millennium_eye.png"),
-                                      name="show_deck_btn", left_click_function=create_deck_overlay)
+        show_deck_button = assets.Button(x=draw_button.x, y=deck_text_box.y - button_height - offset,
+                                         width=button_width / 2,
+                                         height=button_height,
+                                         image_id=game_engine.load_image(image_location + "millennium_eye.png"),
+                                         name="show_deck_button", left_click_function=create_deck_overlay)
 
-        show_extra_deck_btn = assets.Button(x=left_side_box.x + offset,
-                                            y=environment.get_height() - deck_height - offset,
-                                            width=deck_width, height=deck_height,
-                                            image_id=game_engine.load_image(image_location + "card_back.png"),
-                                            name="show_extra_deck_btn", left_click_function=create_extra_deck_overlay)
+        show_extra_deck_button = assets.Button(x=left_side_box.x + offset,
+                                               y=environment.get_height() - deck_height - offset,
+                                               width=deck_width, height=deck_height,
+                                               image_id=game_engine.load_image(image_location + "card_back.png"),
+                                               name="show_extra_deck_button",
+                                               left_click_function=create_extra_deck_overlay)
 
-        shuffle_deck_btn = assets.Button(x=draw_btn.x + button_width / 2, y=deck_text_box.y - button_height - offset,
-                                         width=button_width / 2, height=button_height,
-                                         image_id=game_engine.load_image(image_location + "shuffle.png"),
-                                         name="shuffle_deck_btn",
-                                         left_click_function=board.shuffle_the_deck)
+        shuffle_deck_button = assets.Button(x=draw_button.x + button_width / 2,
+                                            y=deck_text_box.y - button_height - offset,
+                                            width=button_width / 2, height=button_height,
+                                            image_id=game_engine.load_image(image_location + "shuffle.png"),
+                                            name="shuffle_deck_button",
+                                            left_click_function=board.shuffle_the_deck)
 
-        show_gy_btn = assets.Button(x=draw_btn.x, y=deck_text_box.y - 2 * button_height - offset,
-                                    width=button_width / 2,
-                                    height=button_height,
-                                    image_id=game_engine.load_image(image_location + "gy_icon.png"),
-                                    name="show_gy_btn", left_click_function=create_gy_overlay)
+        show_graveyard_button = assets.Button(x=draw_button.x, y=deck_text_box.y - 2 * button_height - offset,
+                                              width=button_width / 2,
+                                              height=button_height,
+                                              image_id=game_engine.load_image(image_location + "graveyard_icon.png"),
+                                              name="show_graveyard_button",
+                                              left_click_function=create_graveyard_overlay)
 
-        show_banished_btn = assets.Button(x=draw_btn.x + button_width / 2,
-                                          y=deck_text_box.y - 2 * button_height - offset,
-                                          width=button_width / 2,
-                                          height=button_height,
-                                          image_id=game_engine.load_image(image_location + "banished_icon.png"),
-                                          name="show_banished_btn", left_click_function=create_banished_overlay)
+        show_banished_button = assets.Button(x=draw_button.x + button_width / 2,
+                                             y=deck_text_box.y - 2 * button_height - offset,
+                                             width=button_width / 2,
+                                             height=button_height,
+                                             image_id=game_engine.load_image(image_location + "banished_icon.png"),
+                                             name="show_banished_button", left_click_function=create_banished_overlay)
 
-        extra_options_button = assets.Button(x=show_gy_btn.x, y=show_gy_btn.y - button_height, width=button_width / 2,
+        extra_options_button = assets.Button(x=show_graveyard_button.x, y=show_graveyard_button.y - button_height,
+                                             width=button_width / 2,
                                              height=button_height,
                                              image_id=game_engine.load_image(image_location + "extra_options.png"),
                                              name="extra_options_button",
                                              left_click_function=create_extra_options_overlay)
 
-        token_btn = assets.Button(x=show_gy_btn.x + button_width / 2, y=show_gy_btn.y - button_height,
-                                  width=button_width / 2,
-                                  height=button_height,
-                                  text="Token", font_size=30, name="token_btn", left_click_function=generate_token)
+        token_button = assets.Button(x=show_graveyard_button.x + button_width / 2,
+                                     y=show_graveyard_button.y - button_height,
+                                     width=button_width / 2,
+                                     height=button_height,
+                                     text="Token", font_size=30, name="token_button",
+                                     left_click_function=generate_token)
 
-        main_menu_btn = assets.Button(x=draw_btn.x, y=offset, width=button_width, height=button_height,
-                                      text="Main Menu", name="main_menu_btn", font_size=35,
-                                      left_click_function=game_engine.schedule_scene_change,
-                                      left_click_args=[main_menu_scene.MainMenuScene()])
+        main_menu_button = assets.Button(x=draw_button.x, y=offset, width=button_width, height=button_height,
+                                         text="Main Menu", name="main_menu_button", font_size=35,
+                                         left_click_function=game_engine.schedule_scene_change,
+                                         left_click_args=[main_menu_scene.MainMenuScene()])
 
-        save_btn = assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
-                                 text="SAVE", name="save_btn",
-                                 left_click_function=game_engine.schedule_end_of_tick_function,
-                                 left_click_args=[game_engine.save, []])
+        save_button = assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
+                                    text="SAVE", name="save_button",
+                                    left_click_function=game_engine.schedule_end_of_tick_function,
+                                    left_click_args=[game_engine.save, []])
 
-        """assets.Button(x=main_menu_btn.x, y=main_menu_btn.y + main_menu_btn.height + offset,
-                                  text="Reset", name="reset_btn",
+        """assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
+                                  text="Reset", name="reset_button",
                                   left_click_function=game_engine.schedule_scene_change,
                                   left_click_args=[create_play_testing])"""
 
-        input_field = assets.InputField(x=show_extra_deck_btn.x, y=show_extra_deck_btn.y - offset - button_height,
+        input_field = assets.InputField(x=show_extra_deck_button.x, y=show_extra_deck_button.y - offset - button_height,
                                         width=button_width,
                                         height=button_height, text="Life points: ", initial_text_buffer="8000",
                                         allowed_input_type=assets.InputType.NUMBER)
         small_button_size = 50
 
         hand_index_button_offset = int((hand_box.height - button_height / 2) / 2)
-        hand_index_increment_btn = assets.Button(x=hand_box.x + hand_box.width + offset,
-                                                 y=hand_box.y + hand_index_button_offset,
-                                                 height=small_button_size,
-                                                 width=small_button_size, text="+", font_size=35,
-                                                 name="index_increment_btn",
-                                                 left_click_function=board.set_display_hand_start_index_relative,
-                                                 left_click_args=[board.display_hand_number])
-        hand_index_decrement_btn = assets.Button(x=hand_box.x - small_button_size - 2 * offset,
-                                                 y=hand_box.y + hand_index_button_offset,
-                                                 height=small_button_size, width=small_button_size, text="-",
-                                                 font_size=35,
-                                                 name="index_decrement_btn",
-                                                 left_click_function=board.set_display_hand_start_index_relative,
-                                                 left_click_args=[-board.display_hand_number])
+        hand_index_increment_button = assets.Button(x=hand_box.x + hand_box.width + offset,
+                                                    y=hand_box.y + hand_index_button_offset,
+                                                    height=small_button_size,
+                                                    width=small_button_size, text="+", font_size=35,
+                                                    name="index_increment_button",
+                                                    left_click_function=board.set_display_hand_start_index_relative,
+                                                    left_click_args=[board.display_hand_number])
+        hand_index_decrement_button = assets.Button(x=hand_box.x - small_button_size - 2 * offset,
+                                                    y=hand_box.y + hand_index_button_offset,
+                                                    height=small_button_size, width=small_button_size, text="-",
+                                                    font_size=35,
+                                                    name="index_decrement_button",
+                                                    left_click_function=board.set_display_hand_start_index_relative,
+                                                    left_click_args=[-board.display_hand_number])
 
         self.add_multiple_objects(
-            [main_menu_btn, draw_btn, show_deck_btn, save_btn, shuffle_deck_btn, show_extra_deck_btn,
-             show_gy_btn, show_banished_btn, extra_options_button, token_btn, input_field, hand_index_increment_btn,
-             hand_index_decrement_btn])
+            [main_menu_button, draw_button, show_deck_button, save_button, shuffle_deck_button, show_extra_deck_button,
+             show_graveyard_button, show_banished_button, extra_options_button, token_button, input_field,
+             hand_index_increment_button,
+             hand_index_decrement_button])
 
         self.add_multiple_objects([deck_text_box])
 
@@ -218,7 +225,7 @@ class Board(assets.GameObject):
 
         random.shuffle(self.deck)
         self.hand = []
-        self.gy = []
+        self.graveyard = []
         self.banished = []
         self.field = []
         self.card_processing_order = []
@@ -255,7 +262,7 @@ class Board(assets.GameObject):
         Returns:
             list: The location of the card.
         """
-        location_list = [self.hand, self.field, self.gy, self.banished, self.deck, self.extra_deck]
+        location_list = [self.hand, self.field, self.graveyard, self.banished, self.deck, self.extra_deck]
         for location in location_list:
             for comparison_card in location:
                 if card == comparison_card:
@@ -306,7 +313,7 @@ class Board(assets.GameObject):
         drawn_card = self.deck[0]
         self.add_to_hand(drawn_card, self.deck)
 
-    def send_to_gy(self, card, previous_location):
+    def send_to_graveyard(self, card, previous_location):
         """Sends a card to the graveyard and removes it from the previous location.
 
         Args:
@@ -317,16 +324,17 @@ class Board(assets.GameObject):
             return
 
         self.stop_processing(card)
-        self.gy.insert(0, card)
+        self.graveyard.insert(0, card)
         previous_location.remove(card)
-        card.new_location(location="gy")
+        card.new_location(location="graveyard", face_up=True)
 
-    def banish(self, card, previous_location):
+    def banish(self, card, previous_location, face_up=True):
         """Banishes a card and removes it from the previous location.
 
         Args:
             card: The card to banish.
             previous_location: The previous location of the card.
+            face_up (bool): Indicates if the card should be banished face-up or face-down.
         """
         if card not in previous_location:
             return
@@ -334,7 +342,10 @@ class Board(assets.GameObject):
         self.stop_processing(card)
         self.banished.insert(0, card)
         previous_location.remove(card)
-        card.new_location(location="banished")
+        card.new_location(location="banished", face_up=face_up)
+
+    def banish_face_down(self, card, previous_location):
+        self.banish(card, previous_location, face_up=False)
 
     def add_to_the_deck(self, card, previous_location):
         """Adds a card to the main deck and removes it from the previous location.
@@ -350,14 +361,15 @@ class Board(assets.GameObject):
         self.deck.insert(0, card)
         card.moving = False
         previous_location.remove(card)
-        card.new_location(location="main_deck")
+        card.new_location(location="main_deck", face_up=False)
 
-    def add_to_the_extra_deck(self, card, previous_location):
+    def add_to_the_extra_deck(self, card, previous_location, face_up=False):
         """Adds a card to the extra deck and removes it from the previous location.
 
         Args:
             card: The card to add to the extra deck.
             previous_location: The previous location of the card.
+            face_up (bool): Indicates if the card should be added to the extra deck face-up or face-down.
         """
         if card not in previous_location:
             return
@@ -367,7 +379,10 @@ class Board(assets.GameObject):
 
         card.moving = False
         previous_location.remove(card)
-        card.new_location(location="extra_deck")
+        card.new_location(location="extra_deck", face_up=face_up)
+
+    def add_to_the_extra_deck_face_up(self, card, previous_location):
+        self.add_to_the_extra_deck(card, previous_location, face_up=True)
 
     def add_to_hand(self, card, previous_location):
         """Adds a card to the hand and removes it from the previous location.
@@ -388,7 +403,7 @@ class Board(assets.GameObject):
             self.hand.insert(card_index, card)
 
         previous_location.remove(card)
-        card.new_location(location="hand", visible_after=self.is_card_visible(card))
+        card.new_location(location="hand", visible_after=self.is_card_visible(card), face_up=True)
 
     def move_to_field(self, card, previous_location):
         """Moves a card to the field and removes it from the previous location.
@@ -411,7 +426,7 @@ class Board(assets.GameObject):
             x, y = game_engine.get_scene_manager().get_current_scene().get_default_position()
             card.set_pos(x, y)
 
-        card.new_location(location="field", visible_after=True)
+        card.new_location(location="field", visible_after=True, face_up=True)
 
     def find_index_by_x_value(self, card):
         """Calculates the index a card should have in the hand, based on its x-coordinate.
@@ -579,7 +594,6 @@ class Card(assets.MobileButton):
         """
 
         card_image_id = game_engine.load_image(game_engine.find_image_path_from_name(card_id))
-
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False,
                          image_id=card_image_id, include_border=False,
@@ -590,6 +604,12 @@ class Card(assets.MobileButton):
         self.card_type = self.get_card_type()
         self.board = board
         self.location = None
+        self.is_face_up = False
+
+        self.face_down_marker_source_id = game_engine.load_image(image_location + "face_down_marker.png")
+        self.face_down_marker_id = game_engine.get_surface_manager().transform_image(self.face_down_marker_source_id,
+                                                                                     (self.width, self.height),
+                                                                                     self.rotation_angle)
 
     def get_card_type(self):
         """Determine the type of the card based on the color of its card frame.
@@ -597,7 +617,7 @@ class Card(assets.MobileButton):
         Returns:
             str: The type of the card.
         """
-        image = game_engine.get_surface_manager().fetch_image(self.image_id)
+        image = game_engine.get_surface_manager().fetch_image(self.source_image_id)
         card_colors = {"normal": (200, 169, 105),
                        "effect": (196, 127, 86),
                        "spell": (42, 170, 155),
@@ -608,12 +628,26 @@ class Card(assets.MobileButton):
                        "fusion": (150, 90, 162),
                        "link": (51, 105, 165),
                        "token": (145, 145, 145)}
-        width_fraction = 0.05463182897
-        height_fraction = 0.34853420195
+        width_fraction = 0.04
+        height_fraction = 0.3
         x = round(width_fraction * image.get_width())
         y = round(height_fraction * image.get_height())
         pixel_value = image.get_at((x, y))
         best_match = closest_color(card_colors, pixel_value)
+
+        width_fraction = 0.04
+        height_fraction = 1 - 0.3
+        x = round(width_fraction * image.get_width())
+        y = round(height_fraction * image.get_height())
+        pixel_value = image.get_at((x, y))
+        best_match2 = closest_color(card_colors, pixel_value)
+        if best_match != best_match2 and best_match2 == "spell" and best_match in ["normal",
+                                                                                   "effect",
+                                                                                   "ritual", "xyz",
+                                                                                   "synchro",
+                                                                                   "fusion", "fusion pendulum"]:
+            return best_match + " pendulum"
+
         return best_match
 
     def clamp_pos(self, rect):
@@ -661,15 +695,28 @@ class Card(assets.MobileButton):
         if self.get_rect().colliderect(hand_box.get_rect()):
             self.set_rotation(0)
 
+    def flip(self):
+        """Flips the card face-down if it is face-up, and face-up if it is face-down."""
+        if self.location in ["hand", "graveyard", "main_deck"]:
+            return
+
+        if self.location == "extra_deck" and "pendulum" not in self.card_type:
+            return
+
+        self.is_face_up = not self.is_face_up
+
     def card_starting_location(self):
         """Returns the starting location of the card based on its type.
 
         Returns:
             str: The starting location of the card (e.g., "main_deck" or "extra_deck").
         """
-        if self.card_type in ["normal", "effect", "ritual", "spell", "trap"]:
+
+        if self.card_type in ["normal", "normal pendulum", "effect", "effect pendulum", "ritual", "ritual pendulum",
+                              "spell", "trap"]:
             return "main_deck"
-        elif self.card_type in ["fusion", "synchro", "xyz", "link"]:
+        elif self.card_type in ["fusion", "fusion pendulum", "synchro", "synchro pendulum", "xyz", "xyz pendulum",
+                                "link"]:
             return "extra_deck"
         return None
 
@@ -728,10 +775,10 @@ class Card(assets.MobileButton):
             bool: True if there is a collision, False otherwise.
         """
         scene = game_engine.get_scene_manager().get_current_scene()
-        draw_btn = utils.find_object_from_name(scene.get_objects(), "draw_btn")
-        extra_deck_btn = utils.find_object_from_name(scene.get_objects(), "show_extra_deck_btn")
-        on_the_deck = draw_btn.get_rect().colliderect(self.get_rect())
-        on_the_extra_deck = extra_deck_btn.get_rect().colliderect(self.get_rect())
+        draw_button = utils.find_object_from_name(scene.get_objects(), "draw_button")
+        extra_deck_button = utils.find_object_from_name(scene.get_objects(), "show_extra_deck_button")
+        on_the_deck = draw_button.get_rect().colliderect(self.get_rect())
+        on_the_extra_deck = extra_deck_button.get_rect().colliderect(self.get_rect())
 
         starting_location = self.card_starting_location()
 
@@ -743,6 +790,25 @@ class Card(assets.MobileButton):
             board.add_to_the_extra_deck(self, current_location)
             return True
         return False
+
+    def get_display_surface(self):
+        """Return a tuple containing the surface to be displayed and the object's rect.
+
+        Returns:
+            tuple (pygame.Surface, pygame.Rect): The surface to be displayed and the object's rect.
+        """
+        surf, rect = super().get_display_surface()
+
+        if not self.is_face_up:
+            self.face_down_marker_id = game_engine.get_surface_manager().transform_image(
+                self.face_down_marker_source_id,
+                (self.width, self.height),
+                self.rotation_angle,
+                self.face_down_marker_id)
+            face_down_marker_image = game_engine.get_surface_manager().fetch_image(self.face_down_marker_id)
+
+            surf.blit(face_down_marker_image, (0, 0))
+        return surf, rect
 
     def process(self):
         """Processes the card, updating its state."""
@@ -763,12 +829,13 @@ class Card(assets.MobileButton):
 
         self.create_large_card_button()
 
-    def new_location(self, location=None, visible_after=False):
+    def new_location(self, location=None, visible_after=False, face_up=True):
         """Updates the card's location, destroying the card overlay and/or large card button if necessary.
 
         Args:
             location (str): The new location of the card.
             visible_after (bool): Indicates if the card will be visible at its new location.
+            face_up (bool): Indicates if the card should be face-up or face-down.
         """
         previous_location = self.location
         self.location = location
@@ -777,6 +844,11 @@ class Card(assets.MobileButton):
 
         if not visible_after:
             self.remove_large_card_button()
+
+        if face_up:
+            self.is_face_up = True
+        else:
+            self.is_face_up = False
 
         if self.location in ["hand", "field"] and previous_location not in ["hand", "field"]:
             self.change_to_movable_card()
@@ -789,8 +861,9 @@ class Card(assets.MobileButton):
         self.set_parent(self.board)
 
     def create_card_location_overlay(self):
-        """Creates an overlay for the card. Includes buttons for sending the card to the gy, field, deck, hand, etc."""
-
+        """Creates an overlay for the card. Includes buttons for sending the card to the graveyard, field, deck, hand,
+        etc."""
+        # TODO: Add flip card button here, and remove function from large_card_button.
         card_location_overlay = utils.find_object_from_name(self.children, "card_location_overlay")
 
         if card_location_overlay is not None:
@@ -813,7 +886,7 @@ class Card(assets.MobileButton):
                                  name="card_location_overlay", parent=self, static=False,
                                  external_process_function=utils.destroy_on_external_clicks)
         overlay.external_process_arguments = [overlay, [overlay.get_rect(), self.get_rect()]]
-        overlay_close_button = utils.find_object_from_name(overlay.children, "close_btn")
+        overlay_close_button = utils.find_object_from_name(overlay.children, "close_button")
         overlay_close_button.destroy()
         self.add_child(overlay)
         board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
@@ -821,95 +894,125 @@ class Card(assets.MobileButton):
         starting_location = self.card_starting_location()
         card_location = board.get_location(self)
 
-        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
-        if large_card_btn is None:
-            large_card_btn = self.create_large_card_button()
+        large_card_button = utils.find_object_from_name(self.children, "large_card_button")
+        if large_card_button is None:
+            large_card_button = self.create_large_card_button()
 
-        [large_card_btn_arg, large_card_btn_allowed_rect_list] = large_card_btn.get_external_process_arguments()
-        large_card_btn_allowed_rect_list.append(overlay.get_rect())
-        large_card_btn.set_external_process_arguments([large_card_btn_arg, large_card_btn_allowed_rect_list])
+        [large_card_button_arg,
+         large_card_button_allowed_rect_list] = large_card_button.get_external_process_arguments()
+        large_card_button_allowed_rect_list.append(overlay.get_rect())
+        large_card_button.set_external_process_arguments([large_card_button_arg, large_card_button_allowed_rect_list])
 
-        remove_btn_height = round(overlay_height - button_space * 4)
-        remove_btn = assets.Button(width=button_width, height=remove_btn_height, text="Remove", font_size=15,
-                                   parent=overlay, name="token_remove_btn",
-                                   left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
+        remove_button_height = round(overlay_height - button_space * 4)
+        remove_button = assets.Button(width=button_width, height=remove_button_height, text="Remove", font_size=15,
+                                      parent=overlay, name="token_remove_button",
+                                      left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
 
-        gy_btn = assets.Button(width=button_width, height=button_height, text="Graveyard", name="gy_btn", font_size=15,
-                               parent=overlay, left_trigger_keys=["g"], left_click_function=board.send_to_gy,
-                               left_click_args=[self, card_location])
+        flip_button = assets.Button(width=button_width, height=button_height, text="Flip", name="flip_button",
+                                    font_size=15, parent=overlay, left_click_function=self.flip)
 
-        banish_btn = assets.Button(width=button_width,
-                                   height=button_height, text="Banish", font_size=15, name="banish_btn",
-                                   parent=overlay,
-                                   left_trigger_keys=["b"], left_click_function=board.banish,
-                                   left_click_args=[self, card_location])
+        graveyard_button = assets.Button(width=button_width, height=button_height, text="Graveyard",
+                                         name="graveyard_button",
+                                         font_size=15,
+                                         parent=overlay, left_trigger_keys=["g"],
+                                         left_click_function=board.send_to_graveyard,
+                                         left_click_args=[self, card_location])
 
-        hand_btn = assets.Button(width=button_width,
-                                 height=button_height, font_size=15, text="Hand", name="hand_btn",
-                                 parent=overlay,
-                                 left_trigger_keys=["h"], left_click_function=board.add_to_hand,
-                                 left_click_args=[self, card_location])
-
-        field_btn = assets.Button(width=button_width,
-                                  height=button_height, font_size=15, text="Field", name="field_btn",
-                                  parent=overlay,
-                                  left_trigger_keys=["f"], left_click_function=board.move_to_field,
-                                  left_click_args=[self, card_location])
-
-        main_deck_btn = assets.Button(width=button_width,
-                                      height=button_height, font_size=15, text="Deck", name="send_to_deck_btn",
+        banish_button = assets.Button(width=button_width,
+                                      height=button_height, text="Banish", font_size=15, name="banish_button",
                                       parent=overlay,
-                                      left_trigger_keys=["d"], left_click_function=board.add_to_the_deck,
+                                      left_trigger_keys=["b"], left_click_function=board.banish,
                                       left_click_args=[self, card_location])
 
-        extra_deck_btn = assets.Button(width=button_width, height=button_height, font_size=14, text="Extra Deck",
-                                       name="send_to_extra_deck_btn", parent=overlay,
-                                       left_trigger_keys=["d"], left_click_function=board.add_to_the_extra_deck,
-                                       left_click_args=[self, card_location])
+        face_down_banish_button = assets.Button(width=button_width,
+                                                height=button_height, text="Banish FD", font_size=15,
+                                                name="face_down_banish_button",
+                                                parent=overlay, left_click_function=board.banish_face_down,
+                                                left_click_args=[self, card_location])
+
+        hand_button = assets.Button(width=button_width,
+                                    height=button_height, font_size=15, text="Hand", name="hand_button",
+                                    parent=overlay,
+                                    left_trigger_keys=["h"], left_click_function=board.add_to_hand,
+                                    left_click_args=[self, card_location])
+
+        field_button = assets.Button(width=button_width,
+                                     height=button_height, font_size=15, text="Field", name="field_button",
+                                     parent=overlay,
+                                     left_trigger_keys=["f"], left_click_function=board.move_to_field,
+                                     left_click_args=[self, card_location])
+
+        main_deck_button = assets.Button(width=button_width,
+                                         height=button_height, font_size=15, text="Deck", name="send_to_deck_button",
+                                         parent=overlay,
+                                         left_trigger_keys=["d"], left_click_function=board.add_to_the_deck,
+                                         left_click_args=[self, card_location])
+
+        extra_deck_button = assets.Button(width=button_width, height=button_height, font_size=14, text="Extra Deck",
+                                          name="send_to_extra_deck_button", parent=overlay,
+                                          left_trigger_keys=["d"], left_click_function=board.add_to_the_extra_deck,
+                                          left_click_args=[self, card_location])
+
+        face_up_extra_deck_button = assets.Button(width=button_width, height=button_height, font_size=14,
+                                                  text="Extra Deck FU",
+                                                  name="send_to_extra_deck_face_up_button", parent=overlay,
+                                                  left_click_function=board.add_to_the_extra_deck_face_up,
+                                                  left_click_args=[self, card_location])
 
         if self.card_type == "token":
             location_button_dict = {
-                "": remove_btn
+                "": remove_button
             }
 
         elif starting_location == "extra_deck":
             location_button_dict = {
-                "extra_deck": extra_deck_btn,
-                "gy": gy_btn,
-                "banished": banish_btn,
-                "field": field_btn,
+                "extra_deck": extra_deck_button,
+                "graveyard": graveyard_button,
+                "banished": banish_button,
+                "banished_face_down": face_down_banish_button,
+                "field": field_button,
             }
+            if "pendulum" in self.card_type:
+                location_button_dict["face_up_extra_deck"] = face_up_extra_deck_button
         else:
             location_button_dict = {
-                "main_deck": main_deck_btn,
-                "gy": gy_btn,
-                "banished": banish_btn,
-                "field": field_btn,
-                "hand": hand_btn
-            }
+                "main_deck": main_deck_button,
+                "graveyard": graveyard_button,
+                "banished": banish_button,
+                "banished_face_down": face_down_banish_button,
+                "field": field_button,
+                "hand": hand_button}
 
-        location_buttons = []
+            if "pendulum" in self.card_type:
+                location_button_dict["face_up_extra_deck"] = face_up_extra_deck_button
+
+        buttons = []
+
+        if self.card_type != "token":
+            buttons.append(flip_button)
+
         for location in location_button_dict:
-            if location != self.location:
-                location_buttons.append(location_button_dict[location])
+            if self.location not in location:
+                buttons.append(location_button_dict[location])
 
         border = overlay.get_box().get_border()
         if border is not None:
             border_thickness = border.thickness
         else:
             border_thickness = 0
+
         y = button_space + border_thickness
-        used_space_by_buttons = sum([button.height + button_space for button in location_buttons])
+        used_space_by_buttons = sum([button.height + button_space for button in buttons])
         used_space = used_space_by_buttons + button_space + 2 * border_thickness
         unused_height = (overlay.height - used_space)
-        extra_button_space = unused_height / (len(location_buttons))
-        for btn in location_buttons:
-            btn.set_pos_relative_to_parent(button_space, y)
-            btn.set_z(overlay.z)
-            btn.adjust_height(extra_button_space)
-            y += btn.height + button_space
+        extra_button_space = unused_height / (len(buttons))
+        for button in buttons:
+            button.set_pos_relative_to_parent(button_space, y)
+            button.set_z(overlay.z)
+            button.adjust_height(extra_button_space)
+            y += button.height + button_space
 
-        overlay.add_multiple_children(location_buttons)
+        overlay.add_multiple_children(buttons)
 
     def update_card_location_overlay_anchor(self):
         """Updates the card overlay anchor."""
@@ -919,8 +1022,8 @@ class Card(assets.MobileButton):
 
     def create_large_card_button(self):
         """Creates a large card button."""
-        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
-        if large_card_btn is not None:
+        large_card_button = utils.find_object_from_name(self.children, "large_card_button")
+        if large_card_button is not None:
             return
 
         scene = game_engine.get_scene_manager().get_current_scene()
@@ -929,26 +1032,26 @@ class Card(assets.MobileButton):
             return
         large_card_offset = (left_side_box.width - large_card_width) / 2
 
-        large_card_btn = assets.Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
-                                       z=self.z - 0.1,
-                                       width=large_card_width,
-                                       height=round(large_card_width * card_aspect_ratio),
-                                       image_id=self.source_image_id,
-                                       name="large_card_btn",
-                                       left_click_function=create_large_card_overlay, left_click_args=[self],
-                                       key_functions={"r": [self.rotate, []]})
+        large_card_button = assets.Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
+                                          z=self.z - 0.1,
+                                          width=large_card_width,
+                                          height=round(large_card_width * card_aspect_ratio),
+                                          image_id=self.source_image_id,
+                                          name="large_card_button",
+                                          left_click_function=create_large_card_overlay, left_click_args=[self],
+                                          key_functions={"r": [self.rotate, []]})
 
-        large_card_btn.set_require_continuous_hovering(False)
-        large_card_btn.set_external_process_function(utils.destroy_on_external_clicks)
-        large_card_btn.static = True
-        allowed_rect_list = [self.get_rect(), large_card_btn.get_rect()]
+        large_card_button.set_require_continuous_hovering(False)
+        large_card_button.set_external_process_function(utils.destroy_on_external_clicks)
+        large_card_button.static = True
+        allowed_rect_list = [self.get_rect(), large_card_button.get_rect()]
         card_overlay = utils.find_object_from_name(self.children, "card_location_overlay")
         if card_overlay is not None:
             allowed_rect_list.append(card_overlay.get_rect())
-        large_card_btn.set_external_process_arguments([large_card_btn, allowed_rect_list])
+        large_card_button.set_external_process_arguments([large_card_button, allowed_rect_list])
 
-        self.add_child(large_card_btn)
-        return large_card_btn
+        self.add_child(large_card_button)
+        return large_card_button
 
     def remove_card_location_overlay(self):
         """Removes the card location overlay."""
@@ -959,10 +1062,10 @@ class Card(assets.MobileButton):
 
     def remove_large_card_button(self):
         """Removes the large card button."""
-        large_card_btn = utils.find_object_from_name(self.children, "large_card_btn")
-        if large_card_btn is None:
+        large_card_button = utils.find_object_from_name(self.children, "large_card_button")
+        if large_card_button is None:
             return
-        large_card_btn.destroy()
+        large_card_button.destroy()
 
     def destroy(self):
         """Destroys the card, extending the base class method."""
@@ -978,39 +1081,39 @@ def create_large_card_overlay(card):
     """
     scene = game_engine.get_scene_manager().get_current_scene()
     large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
-    large_card_btn = utils.find_object_from_name(card.children, "large_card_btn")
-    if large_card_overlay is not None or large_card_btn is None:
+    large_card_button = utils.find_object_from_name(card.children, "large_card_button")
+    if large_card_overlay is not None or large_card_button is None:
         return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
 
     dummy_overlay = assets.Overlay()
-    close_btn_size = dummy_overlay.close_btn_size
-    close_btn_offset = dummy_overlay.close_btn_offset
+    close_button_size = dummy_overlay.close_button_size
+    close_button_offset = dummy_overlay.close_button_offset
 
     height = field_box.height
-    width = round((height - close_btn_size - close_btn_offset) / card_aspect_ratio)
+    width = round((height - close_button_size - close_button_offset) / card_aspect_ratio)
 
     overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay",
                                card=card)
-    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
+    close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
     offset = 15
 
-    card_height = overlay.height - 3 * offset - close_btn.height
+    card_height = overlay.height - 3 * offset - close_button.height
     card_width = round(card_height / card_aspect_ratio)
 
     large_card_box = assets.Box(x=overlay.x + offset,
-                                y=close_btn.y + offset + close_btn.height,
+                                y=close_button.y + offset + close_button.height,
                                 z=overlay.z,
                                 width=card_width,
                                 height=card_height,
                                 source_image_id=card.source_image_id)
     large_card_box.set_parent(overlay)
 
-    allowed_rect_list = [overlay.get_box().get_rect(), large_card_btn.get_rect()]
+    allowed_rect_list = [overlay.get_box().get_rect(), large_card_button.get_rect()]
     overlay.external_process_function = utils.destroy_on_external_clicks
     overlay.external_process_arguments = [overlay, allowed_rect_list]
 
-    large_card_btn.external_process_arguments[1].append(overlay.get_rect())
+    large_card_button.external_process_arguments[1].append(overlay.get_rect())
 
     overlay.add_child(large_card_box)
 
@@ -1025,7 +1128,7 @@ class LargeCardOverlay(assets.Overlay):
     """
 
     def __init__(self, x=0, y=0, z=0, width=1540, height=760, alpha=255, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, parent=None, card=None,
+                 close_button_size=30, close_button_offset=5, parent=None, card=None,
                  external_process_function=None, external_process_arguments=None):
         """Initializes a LargeCardOverlay instance.
 
@@ -1038,8 +1141,8 @@ class LargeCardOverlay(assets.Overlay):
             alpha (int): The alpha value of the overlay.
             name (str): The name of the overlay.
             background_color: The background color of the overlay.
-            close_btn_size (float): The size of the close button.
-            close_btn_offset (float): The offset of the close button.
+            close_button_size (float): The size of the close button.
+            close_button_offset (float): The offset of the close button.
             parent: The parent object.
             card: The card associated with the large overlay.
             external_process_function: The external process function for the overlay.
@@ -1047,7 +1150,7 @@ class LargeCardOverlay(assets.Overlay):
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, name=name,
                          background_color=background_color,
-                         close_btn_size=close_btn_size, close_btn_offset=close_btn_offset, parent=parent,
+                         close_button_size=close_button_size, close_button_offset=close_button_offset, parent=parent,
                          external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
         self.card = card
@@ -1058,11 +1161,11 @@ class LargeCardOverlay(assets.Overlay):
         """
         if self.destroyed:
             return
-        large_card_btn = utils.find_object_from_name(self.card.children, "large_card_btn")
-        if large_card_btn is not None:
-            allowed_rects = large_card_btn.get_external_process_arguments()
+        large_card_button = utils.find_object_from_name(self.card.children, "large_card_button")
+        if large_card_button is not None:
+            allowed_rects = large_card_button.get_external_process_arguments()
             allowed_rects[1].remove(self.get_rect())
-            large_card_btn.set_external_process_arguments(allowed_rects)
+            large_card_button.set_external_process_arguments(allowed_rects)
         super().destroy()
 
 
@@ -1080,7 +1183,7 @@ class CardOverlay(assets.Overlay):
         """
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
-                 close_btn_size=30, close_btn_offset=5, parent=None, external_process_function=None,
+                 close_button_size=30, close_button_offset=5, parent=None, external_process_function=None,
                  external_process_arguments=None, card_list_function=None):
         """Initializes a CardOverlay instance.
 
@@ -1094,22 +1197,22 @@ class CardOverlay(assets.Overlay):
             static (bool): Indicates whether the overlay is static.
             name (str): The name of the overlay.
             background_color: The background color of the overlay.
-            close_btn_size (float): The size of the close button.
-            close_btn_offset (float): The offset of the close button.
+            close_button_size (float): The size of the close button.
+            close_button_offset (float): The offset of the close button.
             parent: The parent object.
             external_process_function: The external process function for the overlay.
             external_process_arguments: The external process arguments for the overlay.
             card_list_function: The function to retrieve the list of cards for the overlay.
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, static=static, name=name,
-                         background_color=background_color, close_btn_size=close_btn_size,
-                         close_btn_offset=close_btn_offset, parent=parent,
+                         background_color=background_color, close_button_size=close_button_size,
+                         close_button_offset=close_button_offset, parent=parent,
                          external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
         self.card_list_function = card_list_function
 
-        self.cards_per_row = 7
-        self.number_of_rows = 4
+        self.cards_per_row = 5
+        self.number_of_rows = 3
         self.start_index = 0
         self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
@@ -1229,8 +1332,8 @@ class CardOverlay(assets.Overlay):
         items_to_be_processed = []
 
         items_to_be_processed.extend(self.get_box().schedule_processing())
-        for btn in self.get_buttons():
-            items_to_be_processed.extend(btn.schedule_processing())
+        for button in self.get_buttons():
+            items_to_be_processed.extend(button.schedule_processing())
 
         for j, card in enumerate(reversed(self.cards.copy())):
             i = len(self.cards) - 1 - j
@@ -1255,6 +1358,10 @@ class CardOverlay(assets.Overlay):
 
         self.update_card_list()
 
+        if self.stop_index + 1 > len(self.cards) - 1 + self.cards_per_row:
+            desired_stop_index = len(self.cards) - 1
+            self.change_overlay_limits(desired_stop_index - self.stop_index)
+
         self.update_card_positions()
         for j, card in enumerate(reversed(self.cards)):
             i = len(self.cards) - 1 - j
@@ -1273,17 +1380,21 @@ class CardOverlay(assets.Overlay):
             moves up.
         """
         new_start_index = self.start_index + change_in_limits
-        new_stop_index = new_start_index + (self.number_of_rows - 1) * self.cards_per_row + 1
-        new_index_out_of_bounds = new_stop_index > len(self.cards)
+        new_stop_index = new_start_index + self.cards_per_row * self.number_of_rows - 1
+        new_index_out_of_bounds = new_stop_index + 1 > len(self.cards) - 1 + self.cards_per_row
         if new_index_out_of_bounds and change_in_limits > 0:
             return
 
         elif new_start_index < 0:
             self.start_index = 0
+            self.stop_index = self.start_index + self.cards_per_row * self.number_of_rows - 1
 
         else:
             self.start_index += change_in_limits
             self.stop_index += change_in_limits
+
+    def process(self):
+        super().process()
 
     def destroy(self):
         super().destroy()
@@ -1317,9 +1428,9 @@ def create_extra_deck_overlay():
     create_location_overlay("extra_deck", cards_in_extra_deck)
 
 
-def create_gy_overlay():
+def create_graveyard_overlay():
     """Creates an overlay displaying cards in the graveyard."""
-    create_location_overlay("gy", cards_in_gy)
+    create_location_overlay("graveyard", cards_in_graveyard)
 
 
 def create_banished_overlay():
@@ -1355,14 +1466,14 @@ def cards_in_extra_deck():
     return board.extra_deck
 
 
-def cards_in_gy():
+def cards_in_graveyard():
     """Gets the cards in the current game board's graveyard.
 
     Returns:
         list: A list of the cards in the graveyard.
     """
     board = utils.find_object_from_name(game_engine.get_scene_manager().get_current_scene().get_objects(), "board")
-    return board.gy
+    return board.graveyard
 
 
 def cards_in_banished():
@@ -1447,28 +1558,28 @@ def create_location_overlay(location_name, card_list_function):
     small_button_width = 50
     small_button_height = small_button_width
 
-    close_btn = utils.find_object_from_name(overlay.get_buttons(), "close_btn")
-    scroll_up_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
-                                  y=overlay.y + 2 * y_offset + close_btn.height,
-                                  z=overlay.z,
-                                  width=small_button_width, height=small_button_height,
-                                  image_id=game_engine.load_image(image_location + "up_arrow.png"),
-                                  name="scroll_up_btn",
-                                  left_trigger_keys=["up"],
-                                  left_click_function=overlay.change_overlay_limits,
-                                  left_click_args=[-overlay.cards_per_row])
+    close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
+    scroll_up_button = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
+                                     y=overlay.y + 2 * y_offset + close_button.height,
+                                     z=overlay.z,
+                                     width=small_button_width, height=small_button_height,
+                                     image_id=game_engine.load_image(image_location + "up_arrow.png"),
+                                     name="scroll_up_button",
+                                     left_trigger_keys=["up"],
+                                     left_click_function=overlay.change_overlay_limits,
+                                     left_click_args=[-overlay.cards_per_row])
 
-    scroll_down_btn = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
-                                    y=overlay.y + overlay_height - small_button_height - y_offset,
-                                    z=overlay.z,
-                                    width=small_button_width, height=small_button_height,
-                                    image_id=game_engine.load_image(image_location + "down_arrow.png"),
-                                    name="scroll_down_btn",
-                                    left_trigger_keys=["down"],
-                                    left_click_function=overlay.change_overlay_limits,
-                                    left_click_args=[overlay.cards_per_row])
+    scroll_down_button = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
+                                       y=overlay.y + overlay_height - small_button_height - y_offset,
+                                       z=overlay.z,
+                                       width=small_button_width, height=small_button_height,
+                                       image_id=game_engine.load_image(image_location + "down_arrow.png"),
+                                       name="scroll_down_button",
+                                       left_trigger_keys=["down"],
+                                       left_click_function=overlay.change_overlay_limits,
+                                       left_click_args=[overlay.cards_per_row])
 
-    overlay.add_multiple_children([scroll_up_btn, scroll_down_btn])
+    overlay.add_multiple_children([scroll_up_button, scroll_down_button])
     scene.add_object(overlay)
 
 
@@ -1572,8 +1683,10 @@ def card_type_int(card):
     Raises:
         ValueError: If the card type is not valid.
     """
-    card_type = card.get_card_type()
-    card_type_order = ["normal", "effect", "spell", "trap", "ritual", "xyz", "synchro", "fusion", "link", "token"]
+    card_type = card.card_type
+    card_type_order = ["normal", "normal pendulum", "effect", "effect pendulum", "spell", "trap", "ritual", "xyz",
+                       "xyz pendulum",
+                       "synchro", "synchro pendulum", "fusion", "fusion pendulum", "link", "token"]
     for i, element in enumerate(card_type_order):
         if card_type == element:
             return i

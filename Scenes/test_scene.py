@@ -22,28 +22,28 @@ class TestScene(Scene):
             Scene: The test scene.
         """
         self.background_color = SIENNA
-        exit_btn = assets.Button(text="Main Menu", alpha=255,
-                                 left_click_function=game_engine.schedule_scene_change,
-                                 left_click_args=[main_menu_scene.MainMenuScene()],
-                                 name="exit_btn")
-        self.add_object(exit_btn)
+        exit_button = assets.Button(text="Main Menu", alpha=255,
+                                    left_click_function=game_engine.schedule_scene_change,
+                                    left_click_args=[main_menu_scene.MainMenuScene()],
+                                    name="exit_button")
+        self.add_object(exit_button)
         button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                                resize_to_fit_text=True,
                                left_click_function=self.create_object,
                                left_click_args=[assets.ConfirmationOverlay, 700, 700, test_button, []],
                                color=SADDLE_BROWN, alpha=175,
-                               name="test_btn")
-        movable_btn = assets.MobileButton(x=100, y=100, z=1, name="mobile_btn")
+                               name="test_button")
+        movable_button = assets.MobileButton(x=100, y=100, z=1, name="mobile_button")
 
-        follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_btn, static=False,
+        follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_button, static=False,
                                             image_id=game_engine.load_image(
                                                 image_location + "transparent_card.png"),
                                             name="follow_mobile")
 
-        movable_btn.add_child(follow_mobile)
+        movable_button.add_child(follow_mobile)
         follow_mobile.opaque_to_ancestor = True
 
-        self.add_object(movable_btn)
+        self.add_object(movable_button)
         self.add_object(button)
         transparent_box = assets.Box(x=600, y=600, source_image_id=game_engine.load_image(
             image_location + "transparent_card.png"),

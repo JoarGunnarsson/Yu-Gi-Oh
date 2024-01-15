@@ -34,18 +34,16 @@ import pygame
 
 # TODO: Rescale deck selection deck images. Or use scrolling function.
 
-# TODO: Destroying an object should perhaps destroy its children too. In that case, CardOverlay has to be
-# reworked so that it uses copies instead.
-
-# TODO: Allow multiple new key-presses at once.
-
-# TODO: When scaling boxes, text-surfaces should be rescaled too
-
 # TODO: Perhaps use color detection in order to figure out the level of a card, rank, or link rating. Could then
 # be used for sorting.
 
-# TODO: Card in hand position should be based on the card on the left + offset, so that the hand does not
-# flicker when a card is moved in and out.
+# TODO: Add deck view?
+
+# TODO: Move some functionality out from game_engine.py. For example, loading files etc. Everything that is not
+# used for the game screen.
+
+# TODO: Implement multiple centering options, left-centering, center centering, right centering. Currently,
+# everything is center centered.
 
 
 if __name__ == "__main__":

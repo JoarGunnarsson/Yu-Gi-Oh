@@ -30,13 +30,17 @@ class Deck:
 
         self.load_deck_from_file(file_path)
         if main_card_id is None:
-            main_card_id = self.main_deck[0]
+            if len(self.main_deck) != 0:
+                main_card_id = self.main_deck[0]
+            else:
+                main_card_id = "card_back"
 
         self.download_necessary_images()
 
         self.name = file_path.split("/")[-1][:-4]
 
-        self.image_id = game_engine.load_image(image_location + main_card_id + ".jpg")
+        image_path = game_engine.find_image_path_from_name(main_card_id)
+        self.image_id = game_engine.load_image(image_path)
 
     def get_image_id(self):
         """Returns the ID of the image representing the main card.
@@ -69,9 +73,10 @@ class Deck:
         for card_id in card_list.copy():
             if not image_exists(card_id):
                 try:
+                    print(f"Requesting card image with id {card_id} from ygoprodeck.com.")
                     response = requests.get(f"https://images.ygoprodeck.com/images/cards/{card_id}.jpg")
                     if response.status_code != 200:
-                        print(f"Card id {card_id} is not valid. Card will be ignored ")
+                        print(f"Card id {card_id} is not a valid card id.")
                         card_list.remove(card_id)
                         continue
                     card_image = response.content
@@ -132,6 +137,6 @@ def find_index_by_string(array, string):
 
 
 DECKS = []
+
 for deck_path in glob.glob("./Decks/*.ydk"):
     DECKS.append(Deck(deck_path))
-
