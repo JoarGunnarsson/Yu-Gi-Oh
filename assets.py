@@ -24,6 +24,12 @@ class GameScript:
         pass
 
 
+class CenteringOptions:
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+
+
 class GameObject:
     """A Class for representing a GameObject.
 
@@ -53,10 +59,12 @@ class GameObject:
         rotation_angle (int): Rotation angle of the object in degrees.
         relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
+        position_centering (str): Indicates how the box should be centered when it is resized is changed etc.
    """
 
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  opaque_to_ancestor=True, opaque_to_descendant=False, opaque_to_sibling=False,
+                 position_centering=CenteringOptions.LEFT,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -71,13 +79,14 @@ class GameObject:
             parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
+            position_centering (string): The position centering mode.
             opaque (bool): Indicates whether the object blocks objects below it from being clicked.
             opaque_to_ancestor (bool): Indicates whether the object should block clicks for its ancestors, if they
-            share the same z-value.
+                share the same z-value.
             opaque_to_descendant (bool):Indicates whether the object should block clicks for its descendants, if they
-            share the same z-value.
+                share the same z-value.
             opaque_to_ancestor (bool): Indicates whether the object should block clicks for its siblings, if they
-            share the same z-value.
+                share the same z-value.
         """
         self.opaque_to_relative = False
         self.x = round(x)
@@ -106,6 +115,8 @@ class GameObject:
             self.relative_x, self.relative_y = 0, 0
         else:
             self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
+
+        self.position_centering = position_centering
 
     def get_rect(self):
         """Get rect of the object
@@ -311,6 +322,13 @@ class GameObject:
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.set_size(self.height, self.width)
 
+        if self.position_centering == CenteringOptions.CENTER:
+            self.shift_x(self.height / 2 - self.width / 2)
+            self.shift_y(self.width / 2 - self.height / 2)
+
+        elif self.position_centering == CenteringOptions.RIGHT:
+            self.shift_x(self.height - self.width)
+
         self.rotation_angle = angle
 
     def rotate(self, angle):
@@ -424,18 +442,11 @@ class GameObject:
         return displayable_objects
 
 
-class CenteringOptions:
-    LEFT = "left"
-    CENTER = "center"
-    RIGHT = "right"
-
-
 class Box(GameObject):
     """
     A class representing boxes, inheriting from the base class GameObject.
 
     Attributes:
-        position_centering (str): Indicates how the box should be centered when it is resized is changed etc.
         changed_recently (bool): Indicates if the box has been transformed since the last time it was displayed.
         text (str): The string to be displayed on the box
         text_offset (int): The space that should be between the buttons text (if any) and the edge of the box.
@@ -638,7 +649,10 @@ class Box(GameObject):
         new_height = required_height + 2 * offset
         y_difference = new_height - self.height
         self.set_height(new_height)
-        self.shift_y(-y_difference / 2)
+        if self.position_centering == CenteringOptions.CENTER:
+            self.shift_y(-y_difference / 2)
+        elif self.position_centering == CenteringOptions.RIGHT:
+            self.shift_y(-y_difference)
 
     def update_surfaces(self):
         """Updates the surfaces of the box. First updates the image, and then the surface."""
@@ -1329,6 +1343,24 @@ class MobileButton(Button):
                          external_process_arguments=external_process_arguments)
         super().set_require_continuous_hovering(False)
 
+    def set_x(self, x):
+        """Sets the x-position of the MobileButton, and updates the click-position.
+
+        Args:
+            x (float): The new x-position.
+        """
+        super().set_x(x)
+        self.update_click_position()
+
+    def set_y(self, y):
+        """Sets the y-position of the MobileButton, and updates the click-position.
+
+        Args:
+            y (float): The new y-position.
+        """
+        super().set_y(y)
+        self.update_click_position()
+
     def update_position(self):
         """Updates the mobile buttons position."""
 
@@ -1348,8 +1380,12 @@ class MobileButton(Button):
 
     def start_movement(self):
         """Starts the movement of the mobile button."""
-        mouse_position = environment.get_mouse_position()
         self.moving = True
+        self.update_click_position()
+
+    def update_click_position(self):
+        """Updates the click position of the MobileButton."""
+        mouse_position = environment.get_mouse_position()
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
 
 
@@ -1485,6 +1521,7 @@ class InputDetector(GameObject):
             allowed_rects (list): The allowed rects for the destroy_on_external_clicks function.
         """
         super().__init__(parent=parent)
+        # TODO: Move this functionality into InputField.
         if allowed_rects is None:
             allowed_rects = []
         game_engine.start_text_input()

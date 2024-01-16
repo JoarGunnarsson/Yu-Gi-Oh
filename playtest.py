@@ -42,6 +42,8 @@ import pygame
 
 # TODO: Add background image to each location overlay, so it's clear which one is open.
 
+# TODO: Implement vertical text-offset and horizontal text-offset.
+
 
 if __name__ == "__main__":
     pygame.init()

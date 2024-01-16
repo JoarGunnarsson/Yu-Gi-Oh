@@ -635,7 +635,7 @@ class Card(assets.MobileButton):
 
         card_image_id = game_engine.load_image(game_engine.find_image_path_from_name(card_id))
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
-                         indicate_clicks=False,
+                         indicate_clicks=False, position_centering=assets.CenteringOptions.CENTER,
                          source_image_id=card_image_id, include_border=False,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_location_overlay)
@@ -1274,11 +1274,9 @@ class CardOverlay(assets.Overlay):
         """
         card.set_parent(self)
         x, y, card_width, card_height = self.get_card_info(i)
-        print(card.changed_recently)
         card.set_pos(x, y)
         card.set_z(self.z)
         card.set_size(card_width, card_height)
-        print(card.changed_recently)
         card.set_left_click_function(card.create_large_card_button)
         card.set_left_hold_function(None)
         return card
