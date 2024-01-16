@@ -424,11 +424,18 @@ class GameObject:
         return displayable_objects
 
 
+class CenteringOptions:
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+
+
 class Box(GameObject):
     """
     A class representing boxes, inheriting from the base class GameObject.
 
     Attributes:
+        position_centering (str): Indicates how the box should be centered when it is resized is changed etc.
         changed_recently (bool): Indicates if the box has been transformed since the last time it was displayed.
         text (str): The string to be displayed on the box
         text_offset (int): The space that should be between the buttons text (if any) and the edge of the box.
@@ -441,7 +448,8 @@ class Box(GameObject):
 
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
                  text_offset=standard_text_offset, text_color=BLACK, font_size=40, resize_to_fit_text=False,
-                 update_text_func=None, parent=None,
+                 update_text_func=None, text_centering=CenteringOptions.CENTER,
+                 position_centering=CenteringOptions.LEFT, parent=None,
                  static=True, opaque=True,
                  include_border=False, name=None):
         """Initializes a Box object.
@@ -460,6 +468,8 @@ class Box(GameObject):
             text_color (tuple): The color of the text.
             font_size (int): The font size of the text
             resize_to_fit_text (bool): Indicates whether the box should be resized in order to fit its text.
+            text_centering (string): The text centering mode.
+            position_centering (string): The position centering mode.
             update_text_func (callable): The function responsible for updating the box text.
             parent: The parent object to which this box is attached.
             static (bool): Indicates whether the box is static (does not move together with its parent).
@@ -469,6 +479,8 @@ class Box(GameObject):
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
                          displayable=True, opaque=opaque, name=name)
+
+        self.position_centering = position_centering
         self.color = color
         self.image_id = None
         self.source_image_id = source_image_id
@@ -477,10 +489,12 @@ class Box(GameObject):
         self.text_offset = text_offset
         self.text_color = text_color
         self.font_size = font_size
+        self.text_centering = text_centering
 
         self.text_surface_id = None
         if resize_to_fit_text and self.text != "":
             self.resize_to_fit_text()
+
         if self.text != "":
             self.set_text(self.text)
 
@@ -603,6 +617,8 @@ class Box(GameObject):
             offset = self.text_offset
         font = game_engine.get_surface_manager().get_font(self.font_size)
         required_width, required_height = pygame.font.Font.size(font, self.text)
+        required_width += 2 * self.text_offset
+        required_height += 2 * self.text_offset
         if required_width > self.width:
             self._resize_width(required_width, offset)
 
@@ -613,7 +629,10 @@ class Box(GameObject):
         new_width = required_width + 2 * offset
         x_difference = new_width - self.width
         self.set_width(new_width)
-        self.shift_x(-x_difference / 2)
+        if self.position_centering == CenteringOptions.CENTER:
+            self.shift_x(-x_difference / 2)
+        elif self.position_centering == CenteringOptions.RIGHT:
+            self.shift_x(-x_difference)
 
     def _resize_height(self, required_height, offset):
         new_height = required_height + 2 * offset
@@ -660,9 +679,20 @@ class Box(GameObject):
 
         if self.text != "":
             font_surface = game_engine.get_surface_manager().fetch_font_surface(self.text_surface_id)
-            surface_middle = [(self.width - font_surface.get_width()) / 2,
-                              (self.height - font_surface.get_height()) / 2]
-            game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(font_surface, surface_middle)
+
+            surface_blit_point = (0, 0)
+            if self.text_centering == CenteringOptions.LEFT:
+                surface_blit_point = [self.text_offset, (self.height - font_surface.get_height()) / 2]
+
+            elif self.text_centering == CenteringOptions.CENTER:
+                surface_blit_point = [(self.width - font_surface.get_width()) / 2,
+                                      (self.height - font_surface.get_height()) / 2]
+
+            elif self.text_centering == CenteringOptions.RIGHT:
+                surface_blit_point = [self.width - self.text_offset,
+                                      (self.height - font_surface.get_height()) / 2]
+
+            game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(font_surface, surface_blit_point)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
 
@@ -896,7 +926,8 @@ class Button(Box):
     # TODO: Change left_click_args etc. to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
                  indicate_clicks=True, alpha=255, source_image_id=None, text="", text_offset=standard_text_offset,
-                 font_size=40, text_color=BLACK, resize_to_fit_text=False,
+                 font_size=40, text_color=BLACK, resize_to_fit_text=False, text_centering=CenteringOptions.CENTER,
+                 position_centering=CenteringOptions.LEFT,
                  name=None, parent=None, include_border=True,
                  static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
@@ -922,6 +953,8 @@ class Button(Box):
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
             resize_to_fit_text (bool): Indicates if the button should be resized in order to fit its text.
+            text_centering (string): The text centering mode.
+            position_centering (string): The position centering mode.
             include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
@@ -983,7 +1016,8 @@ class Button(Box):
             self.key_functions = key_functions
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
                          source_image_id=source_image_id, text=text, text_offset=text_offset, font_size=font_size,
-                         text_color=text_color, resize_to_fit_text=resize_to_fit_text, parent=parent,
+                         text_color=text_color, resize_to_fit_text=resize_to_fit_text, text_centering=text_centering,
+                         position_centering=position_centering, parent=parent,
                          static=static, name=name, include_border=include_border)
 
         self.left_click_function = left_click_function
@@ -1233,7 +1267,8 @@ class MobileButton(Button):
                  indicate_hover=True,
                  indicate_clicks=False, alpha=255, static=False,
                  source_image_id=None, text="", font_size=40,
-                 text_color=BLACK, include_border=True, name=None, parent=None,
+                 text_color=BLACK, text_centering=CenteringOptions.CENTER, position_centering=CenteringOptions.LEFT,
+                 include_border=True, name=None, parent=None,
                  left_trigger_keys=None, left_hold_function=None,
                  left_hold_args=None, right_trigger_keys=None,
                  right_click_function=None, right_click_args=None, right_hold_function=None, right_hold_args=None,
@@ -1256,6 +1291,8 @@ class MobileButton(Button):
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
+            text_centering (string): The text centering mode.
+            position_centering (string): The position centering mode.
             include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
@@ -1279,7 +1316,9 @@ class MobileButton(Button):
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicator_color=indicator_color,
                          indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha,
                          source_image_id=source_image_id,
-                         text=text, font_size=font_size, text_color=text_color, include_border=include_border,
+                         text=text, font_size=font_size, text_color=text_color, text_centering=text_centering,
+                         position_centering=position_centering,
+                         include_border=include_border,
                          name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
                          left_click_function=self.start_movement, left_hold_function=left_hold_function,
@@ -1335,7 +1374,7 @@ class InputField(Button):
 
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
                  alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="",
-                 allowed_input_type=InputTypes.ANY,
+                 allowed_input_type=InputTypes.ANY, text_centering=CenteringOptions.LEFT,
                  name=None, include_border=True, static=False):
         """Initializes an InputField object.
 
@@ -1353,6 +1392,7 @@ class InputField(Button):
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
             initial_text_buffer (str): The initial text_buffer of the InputField
+            text_centering (string): The text centering mode.
             allowed_input_type (str): The allowed input type of the InputField.
             name (str): The name of the InputField (default is None).
             include_border (bool): Determines if the button should have a border or not.
@@ -1361,7 +1401,8 @@ class InputField(Button):
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color,
                          indicate_hover=indicate_hover,
                          indicate_clicks=indicate_clicks, alpha=alpha, font_size=font_size,
-                         text_color=text_color, name=name, include_border=include_border, static=static,
+                         text_color=text_color, text_centering=text_centering, text_offset=standard_text_offset*2,
+                         name=name, include_border=include_border, static=static,
                          left_click_function=self.create_input_detector)
 
         self.is_selected = False
@@ -1454,15 +1495,22 @@ class InputDetector(GameObject):
 
     def process(self):
         """Processes the InputDetector, writing text to its parent and handling input events."""
+        # TODO: Move some of this into game_engine.environment.
         self.external_processing_function(*self.external_processing_args)
         self.write_to_parent()
 
         keys_pressed = environment.get_pressed_keys_this_tick()
-        if Keys.BACKSPACE in keys_pressed:
-            self.backspace()
-            return
 
-        self.backspace_counter = 1
+        new_backspace_press = False
+        for event in game_engine.environment.events:
+            if event.type == pygame.KEYUP and pygame.key.name(event.key) == Keys.BACKSPACE:
+                self.backspace_counter = 0
+            if event.type == pygame.KEYDOWN and pygame.key.name(event.key) == Keys.BACKSPACE:
+                new_backspace_press = True
+
+        if Keys.BACKSPACE in keys_pressed:
+            self.backspace(new_press=new_backspace_press)
+            return
 
     def write_to_parent(self):
         """Writes text to the InputDetectors parents text_buffer."""
@@ -1471,7 +1519,7 @@ class InputDetector(GameObject):
         self.parent.append_text(environment.input_event)
         environment.input_event = None
 
-    def backspace(self):
+    def backspace(self, new_press=False):
         """Handels the backspace key event."""
         if self.backspace_counter > 0:
             if time.time() - self.backspace_timer > 0.02:  # Hard-coded value.
@@ -1480,7 +1528,7 @@ class InputDetector(GameObject):
             return
         self.parent.text_buffer = self.parent.text_buffer[:-1]
         self.backspace_timer = time.time()
-        if self.backspace_counter == -1:
+        if new_press:
             self.backspace_counter = 8  # Hard-coded value.
         else:
             self.backspace_counter = 2  # Hard-coded value.

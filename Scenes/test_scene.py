@@ -22,10 +22,11 @@ class TestScene(Scene):
             Scene: The test scene.
         """
         self.background_color = SIENNA
-        exit_button = assets.Button(text="Main Menu", alpha=255,
+        exit_button = assets.Button(x=10, y=10, text="Main Menu", alpha=255, resize_to_fit_text=True,
                                     left_click_function=game_engine.schedule_scene_change,
                                     left_click_args=[main_menu_scene.MainMenuScene()],
                                     name="exit_button")
+
         self.add_object(exit_button)
         button = assets.Button(x=500, y=500, width=200, height=100, text="Create confirmation overlay",
                                resize_to_fit_text=True,

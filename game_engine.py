@@ -41,6 +41,7 @@ class Environment:
         self.events_last_tick = {"left_mouse_button": False, "right_mouse_button": False, "pressed_keys": []}
         self.events_this_tick = {"left_mouse_button": False, "right_mouse_button": False, "pressed_keys": []}
         self.input_event = None
+        self.events = []
 
     def get_width(self):
         """Gets the width of the game window.
@@ -215,7 +216,8 @@ class Environment:
         is_running = True
         self.key_press = None
         pressed_keys = self.get_pressed_keys_last_tick().copy()
-        for event in pygame.event.get():
+        self.events = pygame.event.get()
+        for event in self.events:
             if event.type == pygame.QUIT:
                 is_running = False
             elif event.type == pygame.KEYDOWN:

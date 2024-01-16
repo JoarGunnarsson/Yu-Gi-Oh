@@ -172,7 +172,9 @@ class PlaytestingScene(game_engine.Scene):
 
         input_field = assets.InputField(x=show_extra_deck_button.x, y=show_extra_deck_button.y - offset - button_height,
                                         width=button_width,
-                                        height=button_height, text="Life points: ", initial_text_buffer="8000",
+                                        height=button_height, text="LP: ", font_size=35,
+                                        initial_text_buffer="8000",
+                                        text_centering=assets.CenteringOptions.LEFT,
                                         allowed_input_type=assets.InputTypes.NUMBER)
         small_button_size = 50
 
@@ -903,7 +905,6 @@ class Card(assets.MobileButton):
     def create_card_location_overlay(self):
         """Creates an overlay for the card. Includes buttons for sending the card to the graveyard, field, deck, hand,
         etc."""
-        # TODO: Add flip card button here, and remove function from large_card_button.
         card_location_overlay = utils.find_object_from_name(self.children, "card_location_overlay")
 
         if card_location_overlay is not None:

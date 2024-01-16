@@ -30,12 +30,7 @@ import pygame
 
 # TODO: Make the large card overlay look better.
 
-# TODO: Perhaps clamp cards that are placed to the field using default_position.
-
 # TODO: Rescale deck selection deck images. Or use scrolling function.
-
-# TODO: Perhaps use color detection in order to figure out the level of a card, rank, or link rating. Could then
-# be used for sorting.
 
 # TODO: Add deck view?
 
@@ -44,10 +39,6 @@ import pygame
 
 # TODO: Implement multiple centering options, left-centering, center centering, right centering. Currently,
 # everything is center centered.
-
-# TODO: Add images with the face_down_marking already applied, would save a lot of performance probably.
-
-# TODO: Add classes for card types, card locations, etc.
 
 # TODO: Add background image to each location overlay, so it's clear which one is open.
 

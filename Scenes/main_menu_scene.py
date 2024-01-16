@@ -27,7 +27,6 @@ class MainMenuScene(Scene):
         font_size = 35
         start_button = assets.Button(y=environment.get_height() // 2, width=width,
                                      height=height, text="Start", font_size=font_size,
-                                     resize_to_fit_text=True,
                                      left_click_function=game_engine.schedule_scene_change,
                                      left_click_args=[deck_selection_scene.DeckSelectionScene()])
 
