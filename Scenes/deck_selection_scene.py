@@ -3,7 +3,7 @@ import game_engine
 import assets
 from constants import *
 import utility_functions as utils
-from Scenes import playtesting_scene
+from Scenes import playtesting_scene, scenes
 from decks import DECKS
 
 
@@ -14,7 +14,7 @@ class DeckSelectionScene(Scene):
     """
 
     def __init__(self):
-        super().__init__(name="deck_selection_scene")
+        super().__init__(name=scenes.DECK_SELECTION_SCENE)
 
     def create_scene(self):
         """Creates a scene for deck selection.
@@ -54,9 +54,14 @@ class DeckSelectionScene(Scene):
                                         left_click_args=[assets.ConfirmationOverlay, button_x, None,
                                                          choose_deck, [deck]])
             deck_button.set_image(deck.get_image_id())
-            text_box_y = deck_button.y + deck_button.height + (
-                    deck_options_overlay.y + deck_options_overlay.height - deck_button.y - deck_button.height) / 2 - 40 / 2
-            deck_text_box = assets.Box(x=deck_button.x + deck_button.width / 2 - 100 // 2,
+
+            text_box_width, text_box_height = 100, 40
+            text_box_x = utils.center_rectangle(deck_button.x, deck_button.x + deck_button.width, text_box_width)
+            deck_button_bottom_y = deck_button.y + deck_button.height
+            options_overlay_bottom_y = deck_options_overlay.y + deck_options_overlay.height
+            text_box_y = utils.center_rectangle(deck_button_bottom_y, options_overlay_bottom_y, text_box_height)
+
+            deck_text_box = assets.Box(x=text_box_x,
                                        y=text_box_y, z=1,
                                        width=100, height=40, text=deck.name, resize_to_fit_text=True,
                                        include_border=True)

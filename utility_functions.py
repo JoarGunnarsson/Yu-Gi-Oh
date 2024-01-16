@@ -111,9 +111,28 @@ def destroy_on_external_clicks(obj, allowed_rect_list):
 
 
 def center_rectangle(low, high, width):
+    """Calculates the coordinate so that a rectangle with a certain width has it's it middle between two points.
+
+    Args:
+        low (float): The coordinate of the lower point.
+        high (float): The coordinate of the higher point.
+        width (float): The width of the rectangle.
+
+    Returns:
+        float: The coordinate that ensures the rectangle is centered.
+    """
     midpoint = calculate_midpoint(low, high)
     return round(low + midpoint - width / 2)
 
 
 def calculate_midpoint(low, high):
+    """Calculates the midpoint of an interval that starts at low and stops at high.
+
+    Args:
+        low (float): The minimum of the interval.
+        high (float): The maximum of the interval.
+
+    Returns:
+        The midpoint of low and high.
+    """
     return (high - low) / 2

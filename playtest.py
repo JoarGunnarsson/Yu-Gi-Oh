@@ -47,6 +47,10 @@ import pygame
 
 # TODO: Add images with the face_down_marking already applied, would save a lot of performance probably.
 
+# TODO: Add classes for card types, card locations, etc.
+
+# TODO: Add background image to each location overlay, so it's clear which one is open.
+
 
 if __name__ == "__main__":
     pygame.init()

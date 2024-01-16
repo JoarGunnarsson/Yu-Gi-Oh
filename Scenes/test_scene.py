@@ -2,7 +2,7 @@ from game_engine import Scene
 import game_engine
 import assets
 from constants import *
-from Scenes import main_menu_scene
+from Scenes import main_menu_scene, scenes
 import time
 
 
@@ -13,7 +13,7 @@ class TestScene(Scene):
     """
 
     def __init__(self):
-        super().__init__(name="test_scene")
+        super().__init__(name=scenes.TEST_SCENE)
 
     def create_scene(self):
         """Creates a test scene for testing different functionality.
@@ -36,7 +36,7 @@ class TestScene(Scene):
         movable_button = assets.MobileButton(x=100, y=100, z=1, name="mobile_button")
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_button, static=False,
-                                            image_id=game_engine.load_image(
+                                            source_image_id=game_engine.load_image(
                                                 image_location + "transparent_card.png"),
                                             name="follow_mobile")
 

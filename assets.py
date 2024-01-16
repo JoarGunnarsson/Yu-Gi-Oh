@@ -6,6 +6,7 @@ import pygame
 from game_engine import environment
 import game_engine
 import utility_functions as utils
+import time
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
@@ -656,15 +657,12 @@ class Box(GameObject):
 
         if self.update_text_func is not None:
             self.set_text(self.update_text_func())
-            game_engine.get_surface_manager().create_font_surface(self.text, self.text_color, self.font_size,
-                                                                  self.text_surface_id)
 
         if self.text != "":
             font_surface = game_engine.get_surface_manager().fetch_font_surface(self.text_surface_id)
-            surface = game_engine.get_surface_manager().fetch_surface(self.surface_id)
             surface_middle = [(self.width - font_surface.get_width()) / 2,
                               (self.height - font_surface.get_height()) / 2]
-            surface.blit(font_surface, surface_middle)
+            game_engine.get_surface_manager().fetch_surface(self.surface_id).blit(font_surface, surface_middle)
 
         return game_engine.get_surface_manager().fetch_surface(self.surface_id), self.get_rect()
 
@@ -897,7 +895,7 @@ class Button(Box):
 
     # TODO: Change left_click_args etc. to args and kwargs.
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
-                 indicate_clicks=True, alpha=255, image_id=None, text="", text_offset=standard_text_offset,
+                 indicate_clicks=True, alpha=255, source_image_id=None, text="", text_offset=standard_text_offset,
                  font_size=40, text_color=BLACK, resize_to_fit_text=False,
                  name=None, parent=None, include_border=True,
                  static=False, left_trigger_keys=None,
@@ -918,7 +916,7 @@ class Button(Box):
             indicate_hover (bool): Indicates if the button should change appearance when it is hovered over.
             indicate_clicks (bool): Indicates if the button should change appearance when it is clicked.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
-            image_id (int): The id of the image used for the button (default is None).
+            source_image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
             text_offset (int): The space that should be between the buttons text (if any) and the edge of the button.
             font_size (int): The font size of the text (default is 40).
@@ -984,7 +982,7 @@ class Button(Box):
         else:
             self.key_functions = key_functions
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
-                         source_image_id=image_id, text=text, text_offset=text_offset, font_size=font_size,
+                         source_image_id=source_image_id, text=text, text_offset=text_offset, font_size=font_size,
                          text_color=text_color, resize_to_fit_text=resize_to_fit_text, parent=parent,
                          static=static, name=name, include_border=include_border)
 
@@ -1234,7 +1232,7 @@ class MobileButton(Button):
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=(100, 100, 100), indicator_color=WHITE,
                  indicate_hover=True,
                  indicate_clicks=False, alpha=255, static=False,
-                 image_id=None, text="", font_size=40,
+                 source_image_id=None, text="", font_size=40,
                  text_color=BLACK, include_border=True, name=None, parent=None,
                  left_trigger_keys=None, left_hold_function=None,
                  left_hold_args=None, right_trigger_keys=None,
@@ -1254,7 +1252,7 @@ class MobileButton(Button):
             indicate_clicks (bool): Indicates if the button should change appearance when it is clicked.
             alpha (int): The alpha value, ranging from 0 (transparent) to 255 (opaque).
             static (bool): Indicates whether the button is static (does not move together with its parent).
-            image_id (int): The id of the image used for the button (default is None).
+            source_image_id (int): The id of the image used for the button (default is None).
             text (str): The text displayed on the button (default is an empty string).
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
@@ -1279,7 +1277,8 @@ class MobileButton(Button):
         self.click_x = None
         self.click_y = None
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, indicator_color=indicator_color,
-                         indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha, image_id=image_id,
+                         indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha,
+                         source_image_id=source_image_id,
                          text=text, font_size=font_size, text_color=text_color, include_border=include_border,
                          name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
@@ -1315,7 +1314,7 @@ class MobileButton(Button):
         self.click_x, self.click_y = mouse_position[0] - self.x, mouse_position[1] - self.y
 
 
-class InputType:
+class InputTypes:
     """A class for storing possible character types and their associated allowed characters."""
     NUMBER = "0123456789"
     LOWERCASE = "abcdefghijklmnopqrstuvwxyzåäö"
@@ -1336,7 +1335,7 @@ class InputField(Button):
 
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicate_hover=False, indicate_clicks=True,
                  alpha=255, text="", font_size=20, text_color=BLACK, initial_text_buffer="",
-                 allowed_input_type=InputType.ANY,
+                 allowed_input_type=InputTypes.ANY,
                  name=None, include_border=True, static=False):
         """Initializes an InputField object.
 
@@ -1411,7 +1410,7 @@ class InputField(Button):
         Returns:
             bool: True if the input is allowed, False otherwise.
         """
-        if self.allowed_input_type == InputType.ANY:
+        if self.allowed_input_type == InputTypes.ANY:
             return True
         return new_input in self.allowed_input_type
 
@@ -1451,6 +1450,7 @@ class InputDetector(GameObject):
         self.external_processing_function = utils.destroy_on_external_clicks
         self.external_processing_args = [self, allowed_rects]
         self.backspace_counter = 0
+        self.backspace_timer = 0
 
     def process(self):
         """Processes the InputDetector, writing text to its parent and handling input events."""
@@ -1462,7 +1462,7 @@ class InputDetector(GameObject):
             self.backspace()
             return
 
-        self.backspace_counter = 0
+        self.backspace_counter = 1
 
     def write_to_parent(self):
         """Writes text to the InputDetectors parents text_buffer."""
@@ -1473,12 +1473,17 @@ class InputDetector(GameObject):
 
     def backspace(self):
         """Handels the backspace key event."""
-        if self.backspace_counter != 0:
-            self.backspace_counter -= 1
+        if self.backspace_counter > 0:
+            if time.time() - self.backspace_timer > 0.02:  # Hard-coded value.
+                self.backspace_counter -= 2
+                self.backspace_timer = time.time()
             return
         self.parent.text_buffer = self.parent.text_buffer[:-1]
-
-        self.backspace_counter = 2  # Hard-coded value, in order for backspace to have the right speed.
+        self.backspace_timer = time.time()
+        if self.backspace_counter == -1:
+            self.backspace_counter = 8  # Hard-coded value.
+        else:
+            self.backspace_counter = 2  # Hard-coded value.
 
     def destroy(self):
         """Destroys the InputDetector, stopping input event detection globally."""
@@ -1546,7 +1551,8 @@ class Overlay(GameObject):
             close_button = Button(x=self.x + self.width - close_button_size - close_button_offset,
                                   y=self.y + close_button_offset, z=self.z, width=close_button_size,
                                   height=close_button_size,
-                                  image_id=game_engine.load_image("Images/close_button.png"), font_size=15, parent=self,
+                                  source_image_id=game_engine.load_image("Images/close_button.png"), font_size=15,
+                                  parent=self,
                                   left_click_function=self.destroy, left_trigger_keys=["escape"],
                                   name="close_button")
             self.add_child(close_button)

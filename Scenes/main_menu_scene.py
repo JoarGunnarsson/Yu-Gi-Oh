@@ -3,7 +3,7 @@ import game_engine
 from constants import *
 import sys
 import assets
-from Scenes import test_scene, deck_selection_scene
+from Scenes import test_scene, deck_selection_scene, scenes
 
 
 class MainMenuScene(Scene):
@@ -13,7 +13,7 @@ class MainMenuScene(Scene):
     """
 
     def __init__(self):
-        super().__init__(name="main_menu_scene")
+        super().__init__(name=scenes.MAIN_MENU_SCENE)
 
     def create_scene(self):
         """Creates the main menu scene.

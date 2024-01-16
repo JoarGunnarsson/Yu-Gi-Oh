@@ -573,8 +573,16 @@ class SurfaceManager:
        Returns:
            pygame.Surface: The transformed surface.
        """
-        rotated_surface = pygame.transform.rotate(surface, rotation_angle)
-        rotated_and_scaled_surface = pygame.transform.smoothscale(rotated_surface, size)
+        if rotation_angle != 0:
+            rotated_surface = pygame.transform.rotate(surface, rotation_angle)
+        else:
+            rotated_surface = surface
+
+        if size != rotated_surface.get_size():
+            rotated_and_scaled_surface = pygame.transform.smoothscale(rotated_surface, size)
+        else:
+            rotated_and_scaled_surface = rotated_surface
+
         return rotated_and_scaled_surface
 
     def reset_surface(self, surface_id):
@@ -1087,7 +1095,7 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
 
     visually_blocked = object_index < masking_object_index
     if relation_distance is None:
-        non_opaque_to_relative = not visually_blocked
+        dont_block_clicks = same_z and not visually_blocked
     else:
         related_up = relation_distance > 0
         related_down = relation_distance < 0
@@ -1095,12 +1103,9 @@ def should_not_block_clicks(obj, object_index, masking_object, masking_object_in
         non_opaque_to_ancestor = related_up and not masking_object.opaque_to_ancestor
         non_opaque_to_descendant = related_down and not masking_object.opaque_to_descendant
         non_opaque_to_sibling = siblings and not masking_object.opaque_to_sibling
-        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant or non_opaque_to_sibling or \
-                                 not visually_blocked
+        non_opaque_to_relative = non_opaque_to_ancestor or non_opaque_to_descendant or non_opaque_to_sibling
+        dont_block_clicks = same_z and (non_opaque_to_relative or not visually_blocked)
 
-    same_z_exception = same_z and non_opaque_to_relative
-
-    dont_block_clicks = same_z_exception
     return dont_block_clicks
 
 
