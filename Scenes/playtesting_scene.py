@@ -158,12 +158,16 @@ class PlaytestingScene(game_engine.Scene):
                                          left_click_function=game_engine.schedule_scene_change,
                                          left_click_args=[main_menu_scene.MainMenuScene()])
 
-        save_button = assets.Box(x=30, y=30, z=20, text="?", name="save_button", update_text_func=game_engine.get_fps)
+        fps_button = assets.Box(x=30, y=30, z=20, text="?", name="save_button", update_text_func=game_engine.get_fps)
 
-        """save_button = assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
-                                    text="SAVE", name="save_button",
+        save_button_low_center = main_menu_button.y + main_menu_button.height
+        save_button_height = extra_options_button.y - save_button_low_center - 2 * offset
+        save_button_y = utils.center_rectangle(save_button_low_center, extra_options_button.y, save_button_height)
+        save_button = assets.Button(x=main_menu_button.x, y=save_button_y,
+                                    height=save_button_height,
+                                    text="Save", name="save_button",
                                     left_click_function=game_engine.schedule_end_of_tick_function,
-                                    left_click_args=[game_engine.save, []])"""
+                                    left_click_args=[game_engine.save, []])
 
         """assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
                                   text="Reset", name="reset_button",
@@ -199,7 +203,8 @@ class PlaytestingScene(game_engine.Scene):
                                                     left_click_args=[-board.display_hand_number])
 
         self.add_multiple_objects(
-            [main_menu_button, draw_button, show_deck_button, save_button, shuffle_deck_button, show_extra_deck_button,
+            [main_menu_button, draw_button, show_deck_button, save_button, fps_button, shuffle_deck_button,
+             show_extra_deck_button,
              show_graveyard_button, show_banished_button, extra_options_button, token_button, input_field,
              hand_index_increment_button,
              hand_index_decrement_button])
@@ -635,7 +640,8 @@ class Card(assets.MobileButton):
 
         card_image_id = game_engine.load_image(game_engine.find_image_path_from_name(card_id))
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
-                         indicate_clicks=False, position_centering=assets.CenteringOptions.CENTER,
+                         indicate_clicks=False, x_centering=assets.CenteringOptions.RIGHT,
+                         y_centering=assets.CenteringOptions.BOTTOM,
                          source_image_id=card_image_id, include_border=False,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_location_overlay)
@@ -1321,7 +1327,7 @@ class CardOverlay(assets.Overlay):
         """
         max_cards_to_show = self.cards_per_row * self.number_of_rows
         min_x_offset = 10
-        min_y_offset = 10
+        min_y_offset = 150
         card_space = 5
         aspect_ratio = card_aspect_ratio
 
@@ -1600,6 +1606,16 @@ def create_location_overlay(location_name, card_list_function):
     small_button_width = 50
     small_button_height = small_button_width
 
+    text_box_start_width = 100
+    modified_location_name = location_name[0].upper() + location_name[1:]
+    location_text_box_x = utils.center_rectangle(overlay.x, overlay.x + overlay.width, text_box_start_width)
+    location_text_box = assets.Box(x=location_text_box_x, y=overlay.y + y_offset,
+                                   width=text_box_start_width, height=80, text=modified_location_name,
+                                   name="location_text_box",
+                                   include_border=True, font_size=30, resize_to_fit_text=True,
+                                   x_centering=assets.CenteringOptions.CENTER, y_centering=assets.CenteringOptions.TOP)
+
+    overlay.add_child(location_text_box)
     close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
     scroll_up_button = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
                                      y=overlay.y + 2 * y_offset + close_button.height,

@@ -44,6 +44,8 @@ import pygame
 
 # TODO: Implement vertical text-offset and horizontal text-offset.
 
+# TODO: Add aspect-ratio preserving images for boxes
+
 
 if __name__ == "__main__":
     pygame.init()

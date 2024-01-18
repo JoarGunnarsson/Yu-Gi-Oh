@@ -40,7 +40,8 @@ class DeckSelectionScene(Scene):
                                      y=centered_y,
                                      z=1,
                                      width=300, height=30, text="Choose a deck", resize_to_fit_text=True,
-                                     color=SADDLE_BROWN, include_border=True)
+                                     color=SADDLE_BROWN, y_centering=assets.CenteringOptions.CENTER,
+                                     include_border=True)
         deck_options_overlay.add_child(instruction_box)
 
         for i, deck in enumerate(DECKS):
@@ -64,7 +65,8 @@ class DeckSelectionScene(Scene):
             deck_text_box = assets.Box(x=text_box_x,
                                        y=text_box_y, z=1,
                                        width=100, height=40, text=deck.name, resize_to_fit_text=True,
-                                       position_centering=assets.CenteringOptions.CENTER,
+                                       x_centering=assets.CenteringOptions.CENTER,
+                                       y_centering=assets.CenteringOptions.CENTER,
                                        include_border=True)
 
             deck_options_overlay.add_child(deck_button)

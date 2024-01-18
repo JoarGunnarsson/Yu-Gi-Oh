@@ -28,6 +28,8 @@ class CenteringOptions:
     LEFT = "left"
     CENTER = "center"
     RIGHT = "right"
+    TOP = "top"
+    BOTTOM = "bottom"
 
 
 class GameObject:
@@ -59,12 +61,13 @@ class GameObject:
         rotation_angle (int): Rotation angle of the object in degrees.
         relative_x (int): The x-coordinate of the object in relation to its parent, if applicable.
         relative_y (int): The y-coordinate of the object in relation to its parent, if applicable.
-        position_centering (str): Indicates how the box should be centered when it is resized is changed etc.
+        x_centering (str): Indicates how the x-coordinate of the object should be centered when it is resized etc.
+        y_centering (str): Indicates how the y-coordinate of the object should be centered when it is resized etc.
    """
 
     def __init__(self, x=0, y=0, z=0, width=0, height=0, alpha=255, parent=None, static=True, opaque=True,
                  opaque_to_ancestor=True, opaque_to_descendant=False, opaque_to_sibling=False,
-                 position_centering=CenteringOptions.LEFT,
+                 x_centering=CenteringOptions.LEFT, y_centering=CenteringOptions.TOP,
                  displayable=False, name=""):
         """Initializes a GameObject.
 
@@ -79,7 +82,8 @@ class GameObject:
             parent: The parent object to which this object is attached.
             static (bool): Indicates whether the object is static (does not move together with its parent).
             displayable (bool): Indicates whether the object is visible.
-            position_centering (string): The position centering mode.
+            x_centering (str): Indicates how the x-coordinate of the object should be centered when it is resized etc.
+            y_centering (str): Indicates how the y-coordinate of the object should be centered when it is resized etc.
             opaque (bool): Indicates whether the object blocks objects below it from being clicked.
             opaque_to_ancestor (bool): Indicates whether the object should block clicks for its ancestors, if they
                 share the same z-value.
@@ -116,7 +120,8 @@ class GameObject:
         else:
             self.relative_x, self.relative_y = self.x - self.parent.x, self.y - self.parent.y
 
-        self.position_centering = position_centering
+        self.x_centering = x_centering
+        self.y_centering = y_centering
 
     def get_rect(self):
         """Get rect of the object
@@ -322,12 +327,17 @@ class GameObject:
         if ((self.rotation_angle - angle) // 90) % 2 == 1:
             self.set_size(self.height, self.width)
 
-        if self.position_centering == CenteringOptions.CENTER:
+        if self.x_centering == CenteringOptions.CENTER:
             self.shift_x(self.height / 2 - self.width / 2)
+
+        if self.x_centering == CenteringOptions.RIGHT:
+            self.shift_x(self.height - self.width)
+
+        if self.y_centering == CenteringOptions.CENTER:
             self.shift_y(self.width / 2 - self.height / 2)
 
-        elif self.position_centering == CenteringOptions.RIGHT:
-            self.shift_x(self.height - self.width)
+        if self.y_centering == CenteringOptions.BOTTOM:
+            self.shift_y(self.width - self.height)
 
         self.rotation_angle = angle
 
@@ -460,7 +470,7 @@ class Box(GameObject):
     def __init__(self, x=0, y=0, z=0, width=100, height=100, color=WHITE, alpha=255, source_image_id=None, text="",
                  text_offset=standard_text_offset, text_color=BLACK, font_size=40, resize_to_fit_text=False,
                  update_text_func=None, text_centering=CenteringOptions.CENTER,
-                 position_centering=CenteringOptions.LEFT, parent=None,
+                 x_centering=CenteringOptions.LEFT, y_centering=CenteringOptions.TOP, parent=None,
                  static=True, opaque=True,
                  include_border=False, name=None):
         """Initializes a Box object.
@@ -480,7 +490,8 @@ class Box(GameObject):
             font_size (int): The font size of the text
             resize_to_fit_text (bool): Indicates whether the box should be resized in order to fit its text.
             text_centering (string): The text centering mode.
-            position_centering (string): The position centering mode.
+            x_centering (str): Indicates how the x-coordinate of the box should be centered when it is resized etc.
+            y_centering (str): Indicates how the y-coordinate of the box should be centered when it is resized etc.
             update_text_func (callable): The function responsible for updating the box text.
             parent: The parent object to which this box is attached.
             static (bool): Indicates whether the box is static (does not move together with its parent).
@@ -489,9 +500,9 @@ class Box(GameObject):
             name (str): The name of the box.
         """
         super().__init__(x=x, y=y, z=z, width=width, height=height, alpha=alpha, parent=parent, static=static,
-                         displayable=True, opaque=opaque, name=name)
+                         opaque=opaque, x_centering=x_centering, y_centering=y_centering,
+                         displayable=True, name=name)
 
-        self.position_centering = position_centering
         self.color = color
         self.image_id = None
         self.source_image_id = source_image_id
@@ -640,18 +651,18 @@ class Box(GameObject):
         new_width = required_width + 2 * offset
         x_difference = new_width - self.width
         self.set_width(new_width)
-        if self.position_centering == CenteringOptions.CENTER:
+        if self.x_centering == CenteringOptions.CENTER:
             self.shift_x(-x_difference / 2)
-        elif self.position_centering == CenteringOptions.RIGHT:
+        elif self.x_centering == CenteringOptions.RIGHT:
             self.shift_x(-x_difference)
 
     def _resize_height(self, required_height, offset):
         new_height = required_height + 2 * offset
         y_difference = new_height - self.height
         self.set_height(new_height)
-        if self.position_centering == CenteringOptions.CENTER:
+        if self.y_centering == CenteringOptions.CENTER:
             self.shift_y(-y_difference / 2)
-        elif self.position_centering == CenteringOptions.RIGHT:
+        elif self.y_centering == CenteringOptions.RIGHT:
             self.shift_y(-y_difference)
 
     def update_surfaces(self):
@@ -941,7 +952,7 @@ class Button(Box):
     def __init__(self, x=0, y=0, z=1, width=200, height=120, color=GREY, indicator_color=WHITE, indicate_hover=True,
                  indicate_clicks=True, alpha=255, source_image_id=None, text="", text_offset=standard_text_offset,
                  font_size=40, text_color=BLACK, resize_to_fit_text=False, text_centering=CenteringOptions.CENTER,
-                 position_centering=CenteringOptions.LEFT,
+                 x_centering=CenteringOptions.LEFT, y_centering=CenteringOptions.TOP,
                  name=None, parent=None, include_border=True,
                  static=False, left_trigger_keys=None,
                  right_trigger_keys=None, left_click_function=None, left_click_args=None, left_hold_function=None,
@@ -968,7 +979,8 @@ class Button(Box):
             text_color: The color of the text (default is BLACK).
             resize_to_fit_text (bool): Indicates if the button should be resized in order to fit its text.
             text_centering (string): The text centering mode.
-            position_centering (string): The position centering mode.
+            x_centering (str): Indicates how the x-coordinate of the button should be centered when it is resized etc.
+            y_centering (str): Indicates how the y-coordinate of the button should be centered when it is resized etc.
             include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
@@ -1031,7 +1043,7 @@ class Button(Box):
         super().__init__(x=x, y=y, z=z, width=width, height=height, color=color, alpha=alpha,
                          source_image_id=source_image_id, text=text, text_offset=text_offset, font_size=font_size,
                          text_color=text_color, resize_to_fit_text=resize_to_fit_text, text_centering=text_centering,
-                         position_centering=position_centering, parent=parent,
+                         x_centering=x_centering, y_centering=y_centering, parent=parent,
                          static=static, name=name, include_border=include_border)
 
         self.left_click_function = left_click_function
@@ -1281,7 +1293,8 @@ class MobileButton(Button):
                  indicate_hover=True,
                  indicate_clicks=False, alpha=255, static=False,
                  source_image_id=None, text="", font_size=40,
-                 text_color=BLACK, text_centering=CenteringOptions.CENTER, position_centering=CenteringOptions.LEFT,
+                 text_color=BLACK, text_centering=CenteringOptions.CENTER, x_centering=CenteringOptions.LEFT,
+                 y_centering=CenteringOptions.TOP,
                  include_border=True, name=None, parent=None,
                  left_trigger_keys=None, left_hold_function=None,
                  left_hold_args=None, right_trigger_keys=None,
@@ -1306,7 +1319,8 @@ class MobileButton(Button):
             font_size (int): The font size of the text (default is 40).
             text_color: The color of the text (default is BLACK).
             text_centering (string): The text centering mode.
-            position_centering (string): The position centering mode.
+            x_centering (str): Indicates how the x-coordinate of the button should be centered when it is resized etc.
+            y_centering (str): Indicates how the y-coordinate of the box should be centered when it is resized etc.
             include_border (bool): Determines if the button should have a border or not.
             name (str): The name of the button (default is None).
             parent: The parent object (default is None).
@@ -1331,7 +1345,7 @@ class MobileButton(Button):
                          indicate_hover=indicate_hover, indicate_clicks=indicate_clicks, alpha=alpha,
                          source_image_id=source_image_id,
                          text=text, font_size=font_size, text_color=text_color, text_centering=text_centering,
-                         position_centering=position_centering,
+                         x_centering=x_centering, y_centering=y_centering,
                          include_border=include_border,
                          name=name, parent=parent, static=static,
                          left_trigger_keys=left_trigger_keys, right_trigger_keys=right_trigger_keys,
