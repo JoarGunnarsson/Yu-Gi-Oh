@@ -641,8 +641,8 @@ class Card(assets.MobileButton):
 
         card_image_id = file_op.load_image(file_op.find_image_path_from_name(card_id))
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
-                         indicate_clicks=False, x_centering=assets.CenteringOptions.RIGHT,
-                         y_centering=assets.CenteringOptions.BOTTOM,
+                         indicate_clicks=False, x_centering=assets.CenteringOptions.CENTER,
+                         y_centering=assets.CenteringOptions.CENTER,
                          source_image_id=card_image_id, include_border=False,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_location_overlay)
