@@ -1,0 +1,27 @@
+# TODO: Perhaps implement a place to enter commands, such as shuffle deck etc.
+
+# TODO: Perhaps merge the card lists of the board to a single list.
+
+# TODO: Change the file structure further, so that assets can be imported without creating a game window?
+
+# TODO: Fix the remove_on_external_clicks functionality -> GameScript.
+
+# TODO: Rescale all size constants, it should be possible to use a lower resolution.
+
+# TODO: Rescale deck selection deck images. Or use scrolling function.
+
+# TODO: Add deck view?
+
+# TODO: Move some functionality out from game_engine.py. For example, loading files etc. Everything that is not
+# used for the game screen.
+
+# TODO: Add background image to each location overlay, so it's clear which one is open.
+
+# TODO: Implement vertical text-offset and horizontal text-offset.
+
+# TODO: Add aspect-ratio preserving images for boxes
+
+# TODO: Replace file_op.load_image(file_op.find_image_path_from_name) with file_op.load_image_from_name.
+
+# TODO: Split up game_engine.py into multiple files. game_engine.py -> scene_manager.py, scenes.py,
+# surface_manager.py (also contains game Window?), environment.py (handles key events etc.),

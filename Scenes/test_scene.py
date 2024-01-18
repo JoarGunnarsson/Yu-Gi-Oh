@@ -4,6 +4,7 @@ import assets
 from constants import *
 from Scenes import main_menu_scene, scenes
 import time
+import file_operations as file_op
 
 
 class TestScene(Scene):
@@ -37,7 +38,7 @@ class TestScene(Scene):
         movable_button = assets.MobileButton(x=100, y=100, z=1, name="mobile_button")
 
         follow_mobile = assets.MobileButton(x=200, y=125, z=1, parent=movable_button, static=False,
-                                            source_image_id=game_engine.load_image(
+                                            source_image_id=file_op.load_image(
                                                 image_location + "transparent_card.png"),
                                             name="follow_mobile")
 
@@ -46,7 +47,7 @@ class TestScene(Scene):
 
         self.add_object(movable_button)
         self.add_object(button)
-        transparent_box = assets.Box(x=600, y=600, source_image_id=game_engine.load_image(
+        transparent_box = assets.Box(x=600, y=600, source_image_id=file_op.load_image(
             image_location + "transparent_card.png"),
                                      name="transparent_box")
         self.add_object(transparent_box)

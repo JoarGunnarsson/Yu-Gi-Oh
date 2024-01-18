@@ -7,6 +7,7 @@ from game_engine import environment
 import game_engine
 import utility_functions as utils
 import time
+import file_operations as file_op
 
 
 # TODO: Change external_process_function functionality into a GameScript object instead.
@@ -529,7 +530,6 @@ class Box(GameObject):
         self.set_alpha(self.alpha)
         self.update_surfaces()
         self.changed_recently = False
-        self.temp_id = game_engine.load_image(image_location + "face_down_marker.png")
 
     def set_width(self, width):
         """Sets the width of the Box and updates the Box's image and surface,
@@ -1620,7 +1620,7 @@ class Overlay(GameObject):
             close_button = Button(x=self.x + self.width - close_button_size - close_button_offset,
                                   y=self.y + close_button_offset, z=self.z, width=close_button_size,
                                   height=close_button_size,
-                                  source_image_id=game_engine.load_image("Images/close_button.png"), font_size=15,
+                                  source_image_id=file_op.load_image("Images/close_button.png"), font_size=15,
                                   parent=self,
                                   left_click_function=self.destroy, left_trigger_keys=["escape"],
                                   name="close_button")

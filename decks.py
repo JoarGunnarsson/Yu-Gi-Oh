@@ -1,9 +1,8 @@
 import glob
-
 from constants import *
-import game_engine
 import requests
 import time
+import file_operations as file_op
 
 
 class Deck:
@@ -39,8 +38,8 @@ class Deck:
 
         self.name = file_path.split("/")[-1][:-4]
 
-        image_path = game_engine.find_image_path_from_name(main_card_id)
-        self.image_id = game_engine.load_image(image_path)
+        image_path = file_op.find_image_path_from_name(main_card_id)
+        self.image_id = file_op.load_image(image_path)
 
     def get_image_id(self):
         """Returns the ID of the image representing the main card.
@@ -71,7 +70,7 @@ class Deck:
     @staticmethod
     def download_card_list_images(card_list):
         for card_id in card_list.copy():
-            if not image_exists(card_id):
+            if not file_op.image_exists(card_id):
                 try:
                     print(f"Requesting card image with id {card_id} from ygoprodeck.com.")
                     response = requests.get(f"https://images.ygoprodeck.com/images/cards/{card_id}.jpg")
@@ -80,25 +79,12 @@ class Deck:
                         card_list.remove(card_id)
                         continue
                     card_image = response.content
-                    save_image(card_image, f"{image_location}{card_id}.jpg")
+                    file_op.save_image(card_image, f"{image_location}{card_id}.jpg")
                     time.sleep(0.5)
                 except requests.exceptions.RequestException:
                     print(f"Error with requesting card image with id {card_id} from YGOPRODECK.COM API. Card will be "
                           f"temporarily ignored. \nPlease try again later.")
                     card_list.remove(card_id)
-
-
-def image_exists(image_name):
-    image_paths = []
-    for image_type in allowed_image_types:
-        image_paths.extend(glob.glob(image_location + image_name + image_type))
-
-    return len(image_paths) != 0
-
-
-def save_image(image, desired_image_path):
-    with open(desired_image_path, "wb") as image_file:
-        image_file.write(image)
 
 
 def write_deck_to_file(deck):
@@ -130,6 +116,15 @@ def write_deck_to_file(deck):
 
 
 def find_index_by_string(array, string):
+    """Finds the index of an element that contains a certain string in an array.
+
+    Args:
+        array (list): The array to be searched
+        string (str): The string to match the elements against.
+
+    Returns:
+        int or None: The index of the element if it exists, None otherwise.
+    """
     for i, element in enumerate(array):
         if string in element:
             return i

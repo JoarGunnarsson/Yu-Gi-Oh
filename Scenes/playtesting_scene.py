@@ -1,6 +1,7 @@
 import assets
 from game_engine import environment, Scene
 import game_engine
+import file_operations as file_op
 from constants import *
 import utility_functions as utils
 from Scenes import main_menu_scene, scenes
@@ -91,7 +92,7 @@ class PlaytestingScene(game_engine.Scene):
 
         draw_button = assets.Button(x=environment.get_width() - button_width - offset,
                                     y=environment.get_height() - deck_height - offset,
-                                    width=deck_width, height=deck_height, source_image_id=game_engine.load_image(
+                                    width=deck_width, height=deck_height, source_image_id=file_op.load_image(
                 image_location + "card_back.png"),
                                     name="draw_button", left_click_function=board.draw)
 
@@ -105,27 +106,27 @@ class PlaytestingScene(game_engine.Scene):
         show_deck_button = assets.Button(x=draw_button.x, y=deck_text_box.y - button_height - offset,
                                          width=button_width / 2,
                                          height=button_height,
-                                         source_image_id=game_engine.load_image(image_location + "millennium_eye.png"),
+                                         source_image_id=file_op.load_image(image_location + "millennium_eye.png"),
                                          name="show_deck_button", left_click_function=create_deck_overlay)
 
         show_extra_deck_button = assets.Button(x=left_side_box.x + offset,
                                                y=environment.get_height() - deck_height - offset,
                                                width=deck_width, height=deck_height,
-                                               source_image_id=game_engine.load_image(image_location + "card_back.png"),
+                                               source_image_id=file_op.load_image(image_location + "card_back.png"),
                                                name="show_extra_deck_button",
                                                left_click_function=create_extra_deck_overlay)
 
         shuffle_deck_button = assets.Button(x=draw_button.x + button_width / 2,
                                             y=deck_text_box.y - button_height - offset,
                                             width=button_width / 2, height=button_height,
-                                            source_image_id=game_engine.load_image(image_location + "shuffle.png"),
+                                            source_image_id=file_op.load_image(image_location + "shuffle.png"),
                                             name="shuffle_deck_button",
                                             left_click_function=board.shuffle_the_deck)
 
         show_graveyard_button = assets.Button(x=draw_button.x, y=deck_text_box.y - 2 * button_height - offset,
                                               width=button_width / 2,
                                               height=button_height,
-                                              source_image_id=game_engine.load_image(
+                                              source_image_id=file_op.load_image(
                                                   image_location + "graveyard_icon.png"),
                                               name="show_graveyard_button",
                                               left_click_function=create_graveyard_overlay)
@@ -134,14 +135,14 @@ class PlaytestingScene(game_engine.Scene):
                                              y=deck_text_box.y - 2 * button_height - offset,
                                              width=button_width / 2,
                                              height=button_height,
-                                             source_image_id=game_engine.load_image(
+                                             source_image_id=file_op.load_image(
                                                  image_location + "banished_icon.png"),
                                              name="show_banished_button", left_click_function=create_banished_overlay)
 
         extra_options_button = assets.Button(x=show_graveyard_button.x, y=show_graveyard_button.y - button_height,
                                              width=button_width / 2,
                                              height=button_height,
-                                             source_image_id=game_engine.load_image(
+                                             source_image_id=file_op.load_image(
                                                  image_location + "extra_options.png"),
                                              name="extra_options_button",
                                              left_click_function=create_extra_options_overlay)
@@ -183,7 +184,7 @@ class PlaytestingScene(game_engine.Scene):
         small_button_size = 50
 
         hand_index_button_offset = round((hand_box.height - button_height / 2) / 2)
-        right_arrow_id = game_engine.load_image(image_location + "right_arrow.png")
+        right_arrow_id = file_op.load_image(image_location + "right_arrow.png")
         hand_index_increment_button = assets.Button(x=hand_box.x + hand_box.width + offset,
                                                     y=hand_box.y + hand_index_button_offset,
                                                     height=small_button_size,
@@ -193,7 +194,7 @@ class PlaytestingScene(game_engine.Scene):
                                                     left_click_function=board.set_display_hand_start_index_relative,
                                                     left_click_args=[board.display_hand_number])
 
-        left_arrow_id = game_engine.load_image(image_location + "left_arrow.png")
+        left_arrow_id = file_op.load_image(image_location + "left_arrow.png")
         hand_index_decrement_button = assets.Button(x=hand_box.x - small_button_size - 2 * offset,
                                                     y=hand_box.y + hand_index_button_offset,
                                                     height=small_button_size, width=small_button_size,
@@ -638,7 +639,7 @@ class Card(assets.MobileButton):
             parent: The parent of the card.
         """
 
-        card_image_id = game_engine.load_image(game_engine.find_image_path_from_name(card_id))
+        card_image_id = file_op.load_image(file_op.find_image_path_from_name(card_id))
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
                          indicate_clicks=False, x_centering=assets.CenteringOptions.RIGHT,
                          y_centering=assets.CenteringOptions.BOTTOM,
@@ -652,7 +653,7 @@ class Card(assets.MobileButton):
         self.location = None
         self.is_face_up = False
 
-        self.face_down_marker_source_id = game_engine.load_image(image_location + "face_down_marker.png")
+        self.face_down_marker_source_id = file_op.load_image(image_location + "face_down_marker.png")
         self.face_down_marker_id = game_engine.get_surface_manager().transform_image(self.face_down_marker_source_id,
                                                                                      (self.width, self.height),
                                                                                      self.rotation_angle)
@@ -1144,7 +1145,7 @@ def create_large_card_overlay(card):
                                card=card)
     close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
     close_button.destroy()
-    overlay.set_background_image(game_engine.load_image(game_engine.find_image_path_from_name("graveyard_icon")))
+    overlay.set_background_image(file_op.load_image(file_op.find_image_path_from_name("graveyard_icon")))
     # TODO: Change the used image here to something that looks a bit nicer.
 
     large_card_box = assets.Box(x=overlay.x + offset,
@@ -1620,7 +1621,7 @@ def create_location_overlay(location_name, card_list_function):
                                      y=overlay.y + 2 * y_offset + close_button.height,
                                      z=overlay.z,
                                      width=small_button_width, height=small_button_height,
-                                     source_image_id=game_engine.load_image(image_location + "up_arrow.png"),
+                                     source_image_id=file_op.load_image(image_location + "up_arrow.png"),
                                      name="scroll_up_button",
                                      left_trigger_keys=["up"],
                                      left_click_function=overlay.change_overlay_limits,
@@ -1630,7 +1631,7 @@ def create_location_overlay(location_name, card_list_function):
                                        y=overlay.y + overlay_height - small_button_height - y_offset,
                                        z=overlay.z,
                                        width=small_button_width, height=small_button_height,
-                                       source_image_id=game_engine.load_image(image_location + "down_arrow.png"),
+                                       source_image_id=file_op.load_image(image_location + "down_arrow.png"),
                                        name="scroll_down_button",
                                        left_trigger_keys=["down"],
                                        left_click_function=overlay.change_overlay_limits,
@@ -1663,7 +1664,7 @@ def create_extra_options_overlay():
     dice_button = assets.Button(x=options_overlay.x + standard_space, y=options_overlay.y + standard_space,
                                 z=options_overlay.z, width=100, height=100,
                                 parent=options_overlay,
-                                source_image_id=game_engine.load_image(image_location + "dice.png"),
+                                source_image_id=file_op.load_image(image_location + "dice.png"),
                                 name="dice_button")
 
     dice_button.set_left_click_function(roll_dice, [dice_result_box])
