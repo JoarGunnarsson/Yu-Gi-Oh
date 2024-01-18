@@ -1463,24 +1463,20 @@ class InputField(Button):
 
         self.allowed_input_type = allowed_input_type
 
+        self.backspace_counter = 0
+        self.backspace_timer = 0
+
     def create_input_detector(self):
         """Creates a new InputDetector object."""
-        text_detectors = utils.find_objects_from_type(self.children, InputDetector)
-        if len(text_detectors) != 0:
-            return
-        text_detector = InputDetector(self, [self.get_rect()])
-        self.add_child(text_detector)
         self.is_selected = True
+        game_engine.start_text_input()
 
-    def get_display_surface(self):
-        """Return a tuple containing the surface to be displayed and the object's rect.
-
-        Returns:
-            tuple: The surface to be displayed and the object's rect.
-        """
-        if self.is_selected:
-            self.indicator_alpha = 10
-        return super().get_display_surface()
+    def write(self):
+        """Writes text to the InputDetectors parents text_buffer."""
+        if environment.input_event is None:
+            return
+        self.append_text(environment.input_event)
+        environment.input_event = None
 
     def append_text(self, text):
         """Appends text to the text_buffer.
@@ -1511,44 +1507,8 @@ class InputField(Button):
         allowed_text_buffer_length = len(self.text) - len(self.fixed_text)
         self.text_buffer = self.text_buffer[:allowed_text_buffer_length]
 
-    def process(self):
-        """Processes the InputField, updating its text if it is currently selected."""
-        super().process()
-        if self.is_selected:
-            self.update_text_from_buffer()
-
-
-class InputDetector(GameObject):
-    """A class for detecting input.
-
-    Attributes:
-        external_processing_function (callable): The function to be called at the start of processing the object.
-        external_processing_args (iterable): The arguments for the external_processing_function.
-        backspace_counter (int): The counter used for backspace delay.
-    """
-
-    def __init__(self, parent, allowed_rects=None):
-        """Initializes an InputDetector object.
-
-        Args:
-            parent (InputField): The parent of the InputDetector.
-            allowed_rects (list): The allowed rects for the destroy_on_external_clicks function.
-        """
-        super().__init__(parent=parent)
-        # TODO: Move this functionality into InputField.
-        if allowed_rects is None:
-            allowed_rects = []
-        game_engine.start_text_input()
-        self.external_processing_function = utils.destroy_on_external_clicks
-        self.external_processing_args = [self, allowed_rects]
-        self.backspace_counter = 0
-        self.backspace_timer = 0
-
-    def process(self):
-        """Processes the InputDetector, writing text to its parent and handling input events."""
-        # TODO: Move some of this into game_engine.environment.
-        self.external_processing_function(*self.external_processing_args)
-        self.write_to_parent()
+    def check_for_input(self):
+        self.write()
 
         keys_pressed = environment.get_pressed_keys_this_tick()
 
@@ -1563,13 +1523,6 @@ class InputDetector(GameObject):
             self.backspace(new_press=new_backspace_press)
             return
 
-    def write_to_parent(self):
-        """Writes text to the InputDetectors parents text_buffer."""
-        if environment.input_event is None:
-            return
-        self.parent.append_text(environment.input_event)
-        environment.input_event = None
-
     def backspace(self, new_press=False):
         """Handels the backspace key event."""
         if self.backspace_counter > 0:
@@ -1577,18 +1530,35 @@ class InputDetector(GameObject):
                 self.backspace_counter -= 2
                 self.backspace_timer = time.time()
             return
-        self.parent.text_buffer = self.parent.text_buffer[:-1]
+        self.text_buffer = self.text_buffer[:-1]
         self.backspace_timer = time.time()
         if new_press:
             self.backspace_counter = 8  # Hard-coded value.
         else:
             self.backspace_counter = 2  # Hard-coded value.
 
-    def destroy(self):
-        """Destroys the InputDetector, stopping input event detection globally."""
-        super().destroy()
-        game_engine.stop_text_input()
-        self.parent.is_selected = False
+    def process(self):
+        """Processes the InputField, updating its text if it is currently selected."""
+        super().process()
+
+        if utils.detect_external_clicks([self.get_rect()]):
+            game_engine.stop_text_input()
+            self.is_selected = False
+
+        self.check_for_input()
+
+        if self.is_selected:
+            self.update_text_from_buffer()
+
+    def get_display_surface(self):
+        """Return a tuple containing the surface to be displayed and the object's rect.
+
+        Returns:
+            tuple: The surface to be displayed and the object's rect.
+        """
+        if self.is_selected:
+            self.indicator_alpha = 10
+        return super().get_display_surface()
 
 
 class Keys:
@@ -1687,6 +1657,14 @@ class Overlay(GameObject):
             color (tuple): The color to set as the background color.
         """
         self.get_box().set_color(color)
+
+    def set_background_image(self, source_id):
+        """Sets the background image of the overlay.
+
+        Args:
+            source_id (int): The source ID of the new background image.
+        """
+        self.get_box().set_image(source_id)
 
     def process(self):
         """Processes the overlay, including external processing and the standard processing routine."""

@@ -88,12 +88,14 @@ def find_objects_from_type(obj_list, match_type):
     return found_objects
 
 
-def destroy_on_external_clicks(obj, allowed_rect_list):
-    """Destroys an object if a mouse click occurs outside a list of allowed rectangles.
+def detect_external_clicks(allowed_rect_list):
+    """Detects if the mouse button (right or left) has been clicked while not on top of the allowed rects.
 
     Args:
-        obj: The object to be destroyed.
-        allowed_rect_list (list): List of pygame.Rect objects representing allowed areas.
+        allowed_rect_list (list): The list containing the allowed rects.
+
+    Returns:
+        bool: True if an external click was detected, False otherwise.
     """
     mouse_click_this_tick = game_engine.environment.get_left_mouse_click_this_tick() or game_engine.environment.\
         get_right_mouse_click_this_tick()
@@ -101,12 +103,24 @@ def destroy_on_external_clicks(obj, allowed_rect_list):
     mouse_click_last_tick = game_engine.environment.get_left_mouse_click_last_tick() or game_engine.environment.\
         get_right_mouse_click_last_tick()
     if not mouse_click_this_tick or (mouse_click_this_tick and mouse_click_last_tick):
-        return
+        return False
 
     mouse_position = game_engine.environment.get_mouse_position()
     for rect in allowed_rect_list:
         if rect.collidepoint(mouse_position):
-            return
+            return False
+    return True
+
+
+def destroy_on_external_clicks(obj, allowed_rect_list):
+    """Destroys an object if a mouse click occurs outside a list of allowed rectangles.
+
+    Args:
+        obj: The object to be destroyed.
+        allowed_rect_list (list): List of pygame.Rect objects representing allowed areas.
+    """
+    if not detect_external_clicks(allowed_rect_list):
+        return
     obj.destroy()
 
 

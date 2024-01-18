@@ -1133,23 +1133,22 @@ def create_large_card_overlay(card):
         return
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
 
-    dummy_overlay = assets.Overlay()
-    close_button_size = dummy_overlay.close_button_size
-    close_button_offset = dummy_overlay.close_button_offset
+    offset = 15
+    overlay_height = field_box.height
+    card_height = overlay_height - 2 * offset
+    card_width = (card_height / card_aspect_ratio)
+    overlay_width = card_width + 2 * offset
 
-    height = field_box.height
-    width = round((height - close_button_size - close_button_offset) / card_aspect_ratio)
-
-    overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=width, height=height, name="large_card_overlay",
+    overlay = LargeCardOverlay(x=field_box.x, y=field_box.y, z=2, width=overlay_width, height=overlay_height,
+                               name="large_card_overlay",
                                card=card)
     close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
-    offset = 15
-
-    card_height = overlay.height - 3 * offset - close_button.height
-    card_width = round(card_height / card_aspect_ratio)
+    close_button.destroy()
+    overlay.set_background_image(game_engine.load_image(game_engine.find_image_path_from_name("graveyard_icon")))
+    # TODO: Change the used image here to something that looks a bit nicer.
 
     large_card_box = assets.Box(x=overlay.x + offset,
-                                y=close_button.y + offset + close_button.height,
+                                y=overlay.y + offset,
                                 z=overlay.z,
                                 width=card_width,
                                 height=card_height,

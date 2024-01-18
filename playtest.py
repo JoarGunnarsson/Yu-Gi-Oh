@@ -28,8 +28,6 @@ import pygame
 
 # TODO: Rescale all size constants, it should be possible to use a lower resolution.
 
-# TODO: Make the large card overlay look better.
-
 # TODO: Rescale deck selection deck images. Or use scrolling function.
 
 # TODO: Add deck view?
