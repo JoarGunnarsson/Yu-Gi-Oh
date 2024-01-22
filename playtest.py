@@ -2,8 +2,10 @@
 from Scenes import main_menu_scene
 import game_engine
 from game_engine import environment
-from constants import *
+from constants import FPS
 import file_operations as file_op
+import os
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 

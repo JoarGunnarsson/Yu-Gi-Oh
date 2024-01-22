@@ -6,7 +6,7 @@ from constants import *
 import utility_functions as utils
 from Scenes import main_menu_scene, scenes
 import random
-import math
+import pygame
 
 
 class CardTypes:
@@ -34,8 +34,8 @@ class CardLocations:
     HAND = "hand"
     GRAVEYARD = "graveyard"
     BANISHED = "banished"
-    MAIN_DECK = "main_deck"
-    EXTRA_DECK = "extra_deck"
+    MAIN_DECK = "main deck"
+    EXTRA_DECK = "extra deck"
 
 
 class PlaytestingScene(game_engine.Scene):
@@ -58,7 +58,7 @@ class PlaytestingScene(game_engine.Scene):
         button_width = 200
         button_height = 100
         deck_width = button_width
-        deck_height = round(button_width * card_aspect_ratio)
+        deck_height = button_width * card_aspect_ratio
         offset = 15
         side_width = max(button_width, deck_width) + 2 * offset
         card_height = standard_card_width * card_aspect_ratio
@@ -73,14 +73,14 @@ class PlaytestingScene(game_engine.Scene):
 
         field_box = assets.Box(x=left_side_box.x + left_side_box.width,
                                width=environment.get_width() - left_side_box.width - right_side_box.width,
-                               height=environment.get_height() - round(card_height) - offset, color=SADDLE_BROWN,
+                               height=environment.get_height() - card_height - offset, color=SADDLE_BROWN,
                                name="field_box")
 
         hand_box_width = environment.get_width() - left_side_box.width - right_side_box.width - 2 * button_width
         hand_box = assets.Box(x=left_side_box.width + button_width,
-                              y=environment.get_height() - round(card_height) - offset,
+                              y=environment.get_height() - card_height - offset,
                               width=hand_box_width,
-                              height=round(card_height) + offset, color=DARK_GREY, name="hand_box")
+                              height=card_height + offset, color=DARK_GREY, name="hand_box")
 
         hand_border = assets.Border(x=hand_box.x, y=hand_box.y, width=hand_box.width,
                                     height=hand_box.height,
@@ -167,8 +167,7 @@ class PlaytestingScene(game_engine.Scene):
         save_button = assets.Button(x=main_menu_button.x, y=save_button_y,
                                     height=save_button_height,
                                     text="Save", name="save_button",
-                                    left_click_function=game_engine.schedule_end_of_tick_function,
-                                    left_click_args=[game_engine.save, []])
+                                    left_click_function=game_engine.save_state)
 
         """assets.Button(x=main_menu_button.x, y=main_menu_button.y + main_menu_button.height + offset,
                                   text="Reset", name="reset_button",
@@ -183,7 +182,7 @@ class PlaytestingScene(game_engine.Scene):
                                         allowed_input_type=assets.InputTypes.NUMBER)
         small_button_size = 50
 
-        hand_index_button_offset = round((hand_box.height - button_height / 2) / 2)
+        hand_index_button_offset = (hand_box.height - button_height / 2) / 2
         right_arrow_id = file_op.load_image(image_location + "right_arrow.png")
         hand_index_increment_button = assets.Button(x=hand_box.x + hand_box.width + offset,
                                                     y=hand_box.y + hand_index_button_offset,
@@ -951,7 +950,7 @@ class Card(assets.MobileButton):
         large_card_button_allowed_rect_list.append(overlay.get_rect())
         large_card_button.set_external_process_arguments([large_card_button_arg, large_card_button_allowed_rect_list])
 
-        remove_button_height = round(overlay_height - button_space * 4)
+        remove_button_height = overlay_height - button_space * 4
         remove_button = assets.Button(width=button_width, height=remove_button_height, text="Remove", font_size=15,
                                       parent=overlay, name="token_remove_button",
                                       left_click_function=self.destroy, left_trigger_keys=["g", "b", "d"])
@@ -1083,7 +1082,7 @@ class Card(assets.MobileButton):
         large_card_button = assets.Button(x=left_side_box.x + large_card_offset, y=left_side_box.y + large_card_offset,
                                           z=self.z - 0.1,
                                           width=large_card_width,
-                                          height=round(large_card_width * card_aspect_ratio),
+                                          height=large_card_width * card_aspect_ratio,
                                           source_image_id=self.source_image_id,
                                           name="large_card_button",
                                           left_click_function=create_large_card_overlay, left_click_args=[self],
@@ -1231,7 +1230,7 @@ class CardOverlay(assets.Overlay):
 
     def __init__(self, x=0, y=0, z=2, width=1540, height=760, alpha=255, static=True, name=None, background_color=WHITE,
                  close_button_size=30, close_button_offset=5, parent=None, external_process_function=None,
-                 external_process_arguments=None, card_list_function=None):
+                 external_process_arguments=None, card_list_function=None, card_box_rect=None):
         """Initializes a CardOverlay instance.
 
         Args:
@@ -1257,6 +1256,11 @@ class CardOverlay(assets.Overlay):
                          external_process_function=external_process_function,
                          external_process_arguments=external_process_arguments)
         self.card_list_function = card_list_function
+        if card_box_rect is None:
+            card_box_rect_offset = 2 * standard_space
+            card_box_rect = pygame.Rect(self.x + card_box_rect_offset, self.y+card_box_rect_offset,
+                                        self.width-2*card_box_rect_offset, self.height - 2*card_box_rect_offset)
+        self.card_box_rect = card_box_rect
 
         self.cards_per_row = 5
         self.number_of_rows = 3
@@ -1267,6 +1271,54 @@ class CardOverlay(assets.Overlay):
         self.cards = []
         for i, card in enumerate(self.card_list):
             self.set_overlay_card(self.create_overlay_card(card, i), i)
+
+    def get_card_box_rect_offsets(self):
+        """Gets the offsets for the card_box_rect.
+
+        Returns:
+            Tuple[int, int, int, int]: The four offsets that determine the position and size of the card_box_rect.
+        """
+        if self.card_box_rect is None:
+            return None, None, None, None
+        left_offset = self.card_box_rect.x - self.x
+        top_offset = self.card_box_rect.y - self.y
+        right_offset = self.width - self.card_box_rect.width - left_offset
+        bottom_offset = self.height - self.card_box_rect.height - top_offset
+        return left_offset, right_offset, top_offset, bottom_offset
+
+    def propagate_new_position(self):
+        """Updates the position of the CardOverlays related attributes, including card_box_rect."""
+        left_offset, right_offset, top_offset, bottom_offset = self.get_card_box_rect_offsets()
+        super().propagate_new_position()
+        self.update_card_box_rect(left_offset, right_offset, top_offset, bottom_offset)
+
+    def set_width(self, width):
+        """Sets the width of the CardOverlay.
+
+        Args:
+            width (float): The new width.
+        """
+        left_offset, right_offset, top_offset, bottom_offset = self.get_card_box_rect_offsets()
+        super().set_width(width)
+        self.update_card_box_rect(left_offset, right_offset, top_offset, bottom_offset)
+
+    def set_height(self, height):
+        """Sets the width of the CardOverlay.
+
+        Args:
+            height (float): The new width.
+        """
+        left_offset, right_offset, top_offset, bottom_offset = self.get_card_box_rect_offsets()
+        super().set_height(height)
+        self.update_card_box_rect(left_offset, right_offset, top_offset, bottom_offset)
+
+    def update_card_box_rect(self, left_offset, right_offset, top_offset, bottom_offset):
+        """Updates the card_box_rect of the CardOverlay."""
+        if self.card_box_rect is None:
+            return
+        self.card_box_rect.update(self.x + left_offset, self.y + top_offset,
+                                  self.width - left_offset - right_offset,
+                                  self.height - top_offset - bottom_offset)
 
     def create_overlay_card(self, card, i):
         """Turns a card into an overlay card.
@@ -1325,27 +1377,27 @@ class CardOverlay(assets.Overlay):
         Returns:
             Tuple[int, int, int, int]: The x, y, width, and height of the overlay card.
         """
-        max_cards_to_show = self.cards_per_row * self.number_of_rows
-        min_x_offset = 10
-        min_y_offset = 150
+        min_x_offset = 0
+        min_y_offset = 0
         card_space = 5
-        aspect_ratio = card_aspect_ratio
 
-        card_width = round(
-            min((self.get_box().height - 2 * min_y_offset - (math.ceil(max_cards_to_show / self.cards_per_row) - 1)
-                 * card_space) / (math.ceil(max_cards_to_show / self.cards_per_row) * aspect_ratio),
-                (self.get_box().width - 2 * min_x_offset - (self.cards_per_row - 1) * card_space)
-                / self.cards_per_row))
+        available_width = self.card_box_rect.width - 2 * min_x_offset
+        necessary_card_space_horizontal = (self.cards_per_row - 1) * card_space
+        width_per_card_from_box_width = (available_width - necessary_card_space_horizontal) / self.cards_per_row
 
-        card_height = round(aspect_ratio * card_width)
+        available_height = self.card_box_rect.height - 2 * min_y_offset
+        necessary_card_space_vertical = (self.number_of_rows - 1) * card_space
+        height_per_card = (available_height - necessary_card_space_vertical) / self.number_of_rows
+        width_per_card_from_box_height = height_per_card / card_aspect_ratio
 
-        x_offset = round(
-            (self.get_box().width - (self.cards_per_row - 1) * card_space - self.cards_per_row * card_width) / 2)
+        card_width = min(width_per_card_from_box_width, width_per_card_from_box_height)
+        card_height = (card_aspect_ratio * card_width)
 
-        y_offset = round((self.get_box().height - math.ceil(max_cards_to_show / self.cards_per_row - 1) * card_space
-                          - math.ceil(max_cards_to_show / self.cards_per_row) * card_height) / 2)
-        x = self.get_box().x + x_offset + round(i % self.cards_per_row * (card_space + card_width))
-        y = self.get_box().y + y_offset + round(i // self.cards_per_row * (card_space + card_height))
+        x_offset = (self.card_box_rect.width - necessary_card_space_horizontal - self.cards_per_row * card_width) / 2
+        y_offset = (self.card_box_rect.height - necessary_card_space_vertical - self.number_of_rows * card_height) / 2
+
+        x = self.card_box_rect.x + x_offset + (i % self.cards_per_row * (card_space + card_width))
+        y = self.card_box_rect.y + y_offset + (i // self.cards_per_row * (card_space + card_height))
         return x, y, card_width, card_height
 
     def is_card_visible(self, card=None, i=None):
@@ -1440,10 +1492,8 @@ class CardOverlay(assets.Overlay):
             self.start_index += change_in_limits
             self.stop_index += change_in_limits
 
-    def process(self):
-        super().process()
-
     def destroy(self):
+        """Destroys the CardOverlay, and removes the card_location_overlay and large_card_buttons for its cards."""
         super().destroy()
         for card in self.cards:
             card.remove_card_location_overlay()
@@ -1596,26 +1646,48 @@ def create_location_overlay(location_name, card_list_function):
         return
 
     field_box = utils.find_object_from_name(scene.get_objects(), "field_box")
-    x_offset = 10
-    y_offset = 10
+    x_offset = standard_space
+    y_offset = standard_space
+    overlay_x = field_box.x + x_offset
+    overlay_y = field_box.y + y_offset
     overlay_width = field_box.width - 2 * x_offset
     overlay_height = field_box.height - 2 * y_offset
-    overlay = CardOverlay(x=field_box.x + x_offset, y=field_box.y + y_offset, z=2, width=overlay_width,
-                          height=overlay_height, alpha=180, name=location_name,
-                          card_list_function=card_list_function)
-    small_button_width = 50
-    small_button_height = small_button_width
 
     text_box_start_width = 100
     modified_location_name = location_name[0].upper() + location_name[1:]
-    location_text_box_x = utils.center_rectangle(overlay.x, overlay.x + overlay.width, text_box_start_width)
-    location_text_box = assets.Box(x=location_text_box_x, y=overlay.y + y_offset,
-                                   width=text_box_start_width, height=80, text=modified_location_name,
+    location_text_box_x = utils.center_rectangle(overlay_x, overlay_x + overlay_width, text_box_start_width)
+
+    location_text_box = assets.Box(x=location_text_box_x, y=overlay_y + y_offset, z=2,
+                                   width=text_box_start_width, height=50, text=modified_location_name,
                                    name="location_text_box",
-                                   include_border=True, font_size=30, resize_to_fit_text=True,
+                                   include_border=True, font_size=20, resize_to_fit_text=True,
                                    x_centering=assets.CenteringOptions.CENTER, y_centering=assets.CenteringOptions.TOP)
 
+    card_box_offset = standard_space
+    usable_overlay_width = overlay_width - 2 * card_box_offset
+
+    card_box_start_x = overlay_x + card_box_offset
+    card_box_stop_x = overlay_x + overlay_width - card_box_offset
+
+    card_box_rect_x = utils.center_rectangle(card_box_start_x, card_box_stop_x, usable_overlay_width)
+    card_box_rect_y = location_text_box.y + location_text_box.height + card_box_offset
+
+    card_box_start_y = location_text_box.y + card_box_offset + location_text_box.height
+    card_box_stop_y = overlay_y + overlay_height - card_box_offset
+
+    usable_overlay_height = card_box_stop_y - card_box_start_y
+    card_box_rect = pygame.Rect(card_box_rect_x, card_box_rect_y,
+                                usable_overlay_width,
+                                usable_overlay_height)
+    overlay = CardOverlay(x=overlay_x, y=overlay_y, z=2, width=overlay_width,
+                          height=overlay_height, alpha=180, name=location_name,
+                          card_list_function=card_list_function, card_box_rect=card_box_rect)
+
+    small_button_width = 50
+    small_button_height = small_button_width
+
     overlay.add_child(location_text_box)
+
     close_button = utils.find_object_from_name(overlay.get_buttons(), "close_button")
     scroll_up_button = assets.Button(x=overlay.x + overlay_width - small_button_width - x_offset,
                                      y=overlay.y + 2 * y_offset + close_button.height,

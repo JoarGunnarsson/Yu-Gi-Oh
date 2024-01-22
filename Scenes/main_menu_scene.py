@@ -31,7 +31,7 @@ class MainMenuScene(Scene):
                                      left_click_args=[deck_selection_scene.DeckSelectionScene()])
 
         load_button = assets.Button(y=environment.get_height() // 2, width=width, font_size=font_size,
-                                    height=height, text="Load Save", left_click_function=game_engine.load)
+                                    height=height, text="Load Save", left_click_function=game_engine.load_state)
 
         test_button = assets.Button(y=environment.get_height() // 2, width=width, height=height,
                                     text="Testing", font_size=font_size,

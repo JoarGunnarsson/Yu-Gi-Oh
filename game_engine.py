@@ -721,46 +721,46 @@ def schedule_scene_change(scene):
     get_scene_manager().schedule_scene_change(scene)
 
 
-def save(save_number=0):
+def save_state(save_number=0):
     """Schedules the asynchronous saving of the game state at the end of the current tick.
 
     Args:
-        save_number (int): The identifier for the save file. Defaults to 0.
+        save_number (int): The identifier for the save_state file. Defaults to 0.
     """
-    schedule_end_of_tick_function(_save, [save_number])
+    schedule_end_of_tick_function(_save_state, [save_number])
 
 
-def _save(save_number):
+def _save_state(save_number):
     """Saves the game state to a file. Should be called at the end of the tick.
 
     Args:
-        save_number (int): The identifier for the save file.
+        save_number (int): The identifier for the save_state file.
     """
-    with open(f'save{save_number}.txt', 'wb') as save_file:
+    with open(f'save_{save_number}.txt', 'wb') as save_file:
         savable_game_state = game_state.get_savable_copy()
         pickle.dump(savable_game_state, save_file)
 
 
-def load(save_number=0):
+def load_state(save_number=0):
     """Schedules the asynchronous loading of the game state at the end of the current tick.
 
     Args:
-        save_number (int): The identifier of the save file. Defaults to 0.
+        save_number (int): The identifier of the save_state file. Defaults to 0.
     """
-    schedule_end_of_tick_function(_load, [save_number])
+    schedule_end_of_tick_function(_load_state, [save_number])
 
 
-def _load(save_number):
+def _load_state(save_number):
     """Load a saved game state from a file.
 
     Args:
-        save_number (int): The identifier of the save file.
+        save_number (int): The identifier of the save_state file.
 
     Notes:
-        This function loads the game state from the specified save file, including surface manager data and the
+        This function loads the game state from the specified save_state file, including surface manager data and the
         scene manager. It updates the current game state accordingly.
     """
-    with open(f'save{save_number}.txt', 'rb') as save_file:
+    with open(f'save_state{save_number}.txt', 'rb') as save_file:
         loaded_game_state = pickle.load(save_file)
         get_surface_manager().load_surfaces(loaded_game_state)
         set_scene_manager(loaded_game_state.scene_manager)
