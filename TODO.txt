@@ -12,10 +12,7 @@
 
 # TODO: Add deck view?
 
-# TODO: Move some functionality out from game_engine.py. For example, loading files etc. Everything that is not
-# used for the game screen.
-
-# TODO: Add background image to each location overlay, so it's clear which one is open.
+# TODO: Add background image to each location overlay?
 
 # TODO: Implement vertical text-offset and horizontal text-offset.
 
@@ -23,5 +20,6 @@
 
 # TODO: Replace file_op.load_image(file_op.find_image_path_from_name) with file_op.load_image_from_name.
 
-# TODO: Split up game_engine.py into multiple files. game_engine.py -> scene_manager.py, scenes.py,
-# surface_manager.py (also contains game Window?), environment.py (handles key events etc.),
+# TODO: Create a ScrollBar class. Should be easy. Should be either vertical or horizontal.
+
+# TODO: Destroying a card overlay with escape button does not close large card overlay.

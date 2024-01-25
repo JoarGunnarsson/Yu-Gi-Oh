@@ -1495,9 +1495,14 @@ class CardOverlay(assets.Overlay):
     def destroy(self):
         """Destroys the CardOverlay, and removes the card_location_overlay and large_card_buttons for its cards."""
         super().destroy()
+        scene = game_engine.get_scene_manager().get_current_scene()
+        large_card_overlay = utils.find_object_from_name(scene.get_objects(), "large_card_overlay")
+
         for card in self.cards:
             card.remove_card_location_overlay()
             card.remove_large_card_button()
+            if large_card_overlay is not None and large_card_overlay.card == card:
+                large_card_overlay.destroy()
 
 
 def cards_in_deck_string(scene=None):
