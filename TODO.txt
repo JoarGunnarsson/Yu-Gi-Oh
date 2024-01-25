@@ -20,6 +20,4 @@
 
 # TODO: Replace file_op.load_image(file_op.find_image_path_from_name) with file_op.load_image_from_name.
 
-# TODO: Create a ScrollBar class. Should be easy. Should be either vertical or horizontal.
-
-# TODO: Destroying a card overlay with escape button does not close large card overlay.
+# TODO: Create a ScrollBar class. Should be able to be either vertical or horizontal.

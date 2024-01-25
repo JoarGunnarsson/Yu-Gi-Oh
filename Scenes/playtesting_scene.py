@@ -640,8 +640,8 @@ class Card(assets.MobileButton):
 
         card_image_id = file_op.load_image(file_op.find_image_path_from_name(card_id))
         super().__init__(x=x, y=y, z=1, width=standard_card_width, height=standard_card_height, indicate_hover=False,
-                         indicate_clicks=False, x_centering=assets.CenteringOptions.CENTER,
-                         y_centering=assets.CenteringOptions.CENTER,
+                         indicate_clicks=False, x_centering=assets.CenteringOptions.RIGHT,
+                         y_centering=assets.CenteringOptions.TOP,
                          source_image_id=card_image_id, include_border=False,
                          name=card_id, static=False, parent=parent,
                          right_click_function=self.create_card_location_overlay)
@@ -845,8 +845,9 @@ class Card(assets.MobileButton):
         Returns:
             tuple (pygame.Surface, pygame.Rect): The surface to be displayed and the object's rect.
         """
-
-        if not self.is_face_up and self.changed_recently:
+        face_down_marker_image = game_engine.get_surface_manager().fetch_image(self.face_down_marker_id)
+        mismatching_size = face_down_marker_image.get_size() != (round(self.width), round(self.height))
+        if not self.is_face_up and (self.changed_recently or mismatching_size):
             self.face_down_marker_id = game_engine.get_surface_manager().transform_image(
                 self.face_down_marker_source_id, (self.width, self.height), self.rotation_angle,
                 self.face_down_marker_id)
@@ -1013,22 +1014,23 @@ class Card(assets.MobileButton):
 
         elif starting_location == CardLocations.EXTRA_DECK:
             location_button_dict = {
-                CardLocations.EXTRA_DECK: extra_deck_button,
+                CardLocations.FIELD: field_button,
                 CardLocations.GRAVEYARD: graveyard_button,
                 CardLocations.BANISHED: banish_button,
                 "banished_face_down": face_down_banish_button,
-                CardLocations.FIELD: field_button,
-            }
+                CardLocations.EXTRA_DECK: extra_deck_button}
+
             if "pendulum" in self.card_type:
                 location_button_dict["face_up_extra_deck"] = face_up_extra_deck_button
         else:
             location_button_dict = {
-                CardLocations.MAIN_DECK: main_deck_button,
+                CardLocations.HAND: hand_button,
+                CardLocations.FIELD: field_button,
                 CardLocations.GRAVEYARD: graveyard_button,
                 CardLocations.BANISHED: banish_button,
                 "banished_face_down": face_down_banish_button,
-                CardLocations.FIELD: field_button,
-                CardLocations.HAND: hand_button}
+                CardLocations.MAIN_DECK: main_deck_button,
+                }
 
             if "pendulum" in self.card_type:
                 location_button_dict["face_up_extra_deck"] = face_up_extra_deck_button
