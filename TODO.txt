@@ -21,3 +21,9 @@
 # TODO: Replace file_op.load_image(file_op.find_image_path_from_name) with file_op.load_image_from_name.
 
 # TODO: Create a ScrollBar class. Should be able to be either vertical or horizontal.
+
+# TODO: Add animations.
+
+# TODO: Add sound and music functionality.
+
+# TODO: Move destroy_on_external_clicks and detect_external_clicks to assets.py.

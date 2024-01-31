@@ -410,6 +410,7 @@ class GameObject:
 
     def schedule_processing(self):
         """Schedules the game object and its children for processing in the game loop.
+        The children are processed before the parent.
 
         Returns:
             list: List of game objects to be processed in the game loop.
