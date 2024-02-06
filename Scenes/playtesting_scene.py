@@ -572,6 +572,9 @@ class Board(assets.GameObject):
     def get_displayable_objects(self):
         """Gets all displayable objects on the board, namely the cards on the field and
         the visible cards in the hand."""
+
+        if len(self.get_visible_hand()) < self.display_hand_number:
+            self.set_display_hand_start_index_relative(self.display_hand_number - len(self.get_visible_hand()))
         displayable_objects = []
 
         for i, card in enumerate(self.hand):
